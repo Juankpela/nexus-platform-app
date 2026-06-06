@@ -24,6 +24,7 @@ export type Database = {
           created_by: string | null
           due_at: string | null
           id: string
+          opportunity_id: string | null
           status: Database["public"]["Enums"]["activity_status"]
           subject: string
           tenant_id: string
@@ -39,6 +40,7 @@ export type Database = {
           created_by?: string | null
           due_at?: string | null
           id?: string
+          opportunity_id?: string | null
           status?: Database["public"]["Enums"]["activity_status"]
           subject: string
           tenant_id: string
@@ -54,6 +56,7 @@ export type Database = {
           created_by?: string | null
           due_at?: string | null
           id?: string
+          opportunity_id?: string | null
           status?: Database["public"]["Enums"]["activity_status"]
           subject?: string
           tenant_id?: string
@@ -73,6 +76,13 @@ export type Database = {
             columns: ["contact_id", "tenant_id"]
             isOneToOne: false
             referencedRelation: "contacts"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "activities_opportunity_id_tenant_id_fkey"
+            columns: ["opportunity_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
             referencedColumns: ["id", "tenant_id"]
           },
           {
@@ -366,6 +376,79 @@ export type Database = {
             columns: ["role_id"]
             isOneToOne: false
             referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opportunities: {
+        Row: {
+          business_type: Database["public"]["Enums"]["opportunity_business_type"]
+          company_id: string
+          contact_id: string
+          created_at: string
+          description: string | null
+          estimated_value: number | null
+          expected_close_date: string | null
+          id: string
+          name: string
+          owner_id: string | null
+          probability: number
+          status: Database["public"]["Enums"]["opportunity_status"]
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          business_type: Database["public"]["Enums"]["opportunity_business_type"]
+          company_id: string
+          contact_id: string
+          created_at?: string
+          description?: string | null
+          estimated_value?: number | null
+          expected_close_date?: string | null
+          id?: string
+          name: string
+          owner_id?: string | null
+          probability?: number
+          status?: Database["public"]["Enums"]["opportunity_status"]
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          business_type?: Database["public"]["Enums"]["opportunity_business_type"]
+          company_id?: string
+          contact_id?: string
+          created_at?: string
+          description?: string | null
+          estimated_value?: number | null
+          expected_close_date?: string | null
+          id?: string
+          name?: string
+          owner_id?: string | null
+          probability?: number
+          status?: Database["public"]["Enums"]["opportunity_status"]
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunities_company_id_tenant_id_fkey"
+            columns: ["company_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "opportunities_contact_id_tenant_id_fkey"
+            columns: ["contact_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "opportunities_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -738,6 +821,19 @@ export type Database = {
       audit_actor_type: "user" | "system" | "service"
       crm_record_status: "active" | "inactive"
       membership_status: "invited" | "active" | "suspended"
+      opportunity_business_type:
+        | "flexography"
+        | "inks"
+        | "consumables"
+        | "consulting"
+        | "machinery"
+      opportunity_status:
+        | "new"
+        | "discovery"
+        | "proposal"
+        | "negotiation"
+        | "won"
+        | "lost"
       tenant_status: "active" | "suspended" | "archived"
     }
     CompositeTypes: {
@@ -871,6 +967,21 @@ export const Constants = {
       audit_actor_type: ["user", "system", "service"],
       crm_record_status: ["active", "inactive"],
       membership_status: ["invited", "active", "suspended"],
+      opportunity_business_type: [
+        "flexography",
+        "inks",
+        "consumables",
+        "consulting",
+        "machinery",
+      ],
+      opportunity_status: [
+        "new",
+        "discovery",
+        "proposal",
+        "negotiation",
+        "won",
+        "lost",
+      ],
       tenant_status: ["active", "suspended", "archived"],
     },
   },

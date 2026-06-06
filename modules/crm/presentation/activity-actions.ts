@@ -40,19 +40,20 @@ function readActivityInput(formData: FormData): ParsedActivity {
   const subject = field(formData, "subject")
   if (!subject) return { ok: false, message: "Subject is required." }
 
-  const companyIdRaw = field(formData, "company_id")
-  const contactIdRaw = field(formData, "contact_id")
-  let companyId: string | null = null
-  let contactId: string | null = null
-  if (companyIdRaw) {
-    const parsed = idSchema.safeParse(companyIdRaw)
-    if (!parsed.success) return { ok: false, message: "Invalid company." }
-    companyId = parsed.data
+  const parseOptionalId = (raw: string | null) =>
+    raw ? idSchema.safeParse(raw) : null
+
+  const companyParsed = parseOptionalId(field(formData, "company_id"))
+  if (companyParsed && !companyParsed.success) {
+    return { ok: false, message: "Invalid company." }
   }
-  if (contactIdRaw) {
-    const parsed = idSchema.safeParse(contactIdRaw)
-    if (!parsed.success) return { ok: false, message: "Invalid contact." }
-    contactId = parsed.data
+  const contactParsed = parseOptionalId(field(formData, "contact_id"))
+  if (contactParsed && !contactParsed.success) {
+    return { ok: false, message: "Invalid contact." }
+  }
+  const opportunityParsed = parseOptionalId(field(formData, "opportunity_id"))
+  if (opportunityParsed && !opportunityParsed.success) {
+    return { ok: false, message: "Invalid opportunity." }
   }
 
   return {
@@ -62,8 +63,9 @@ function readActivityInput(formData: FormData): ParsedActivity {
       subject,
       body: field(formData, "body"),
       dueAt: field(formData, "due_at"),
-      companyId,
-      contactId,
+      companyId: companyParsed?.success ? companyParsed.data : null,
+      contactId: contactParsed?.success ? contactParsed.data : null,
+      opportunityId: opportunityParsed?.success ? opportunityParsed.data : null,
     },
   }
 }

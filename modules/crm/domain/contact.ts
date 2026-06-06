@@ -18,6 +18,12 @@ export type Contact = {
   updatedAt: string
 }
 
+export type ContactOption = {
+  id: UUID
+  name: string
+  companyId: UUID | null
+}
+
 /** Fields a user may set when creating or editing a contact. */
 export type ContactInput = {
   companyId: UUID | null

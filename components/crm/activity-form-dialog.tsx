@@ -38,6 +38,7 @@ export function ActivityFormDialog({
   returnPath,
   companyId,
   contactId,
+  opportunityId,
   activity,
   trigger,
 }: {
@@ -45,6 +46,7 @@ export function ActivityFormDialog({
   returnPath: string
   companyId?: string | null
   contactId?: string | null
+  opportunityId?: string | null
   activity?: Activity
   trigger: React.ReactNode
 }) {
@@ -63,6 +65,8 @@ export function ActivityFormDialog({
 
   const effectiveCompanyId = activity?.companyId ?? companyId ?? ""
   const effectiveContactId = activity?.contactId ?? contactId ?? ""
+  const effectiveOpportunityId =
+    activity?.opportunityId ?? opportunityId ?? ""
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -81,6 +85,11 @@ export function ActivityFormDialog({
           <input type="hidden" name="returnPath" value={returnPath} />
           <input type="hidden" name="company_id" value={effectiveCompanyId} />
           <input type="hidden" name="contact_id" value={effectiveContactId} />
+          <input
+            type="hidden"
+            name="opportunity_id"
+            value={effectiveOpportunityId}
+          />
           {activity ? (
             <input type="hidden" name="id" value={activity.id} />
           ) : null}

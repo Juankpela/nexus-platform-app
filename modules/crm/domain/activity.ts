@@ -35,6 +35,7 @@ export type Activity = {
   body: string | null
   companyId: UUID | null
   contactId: UUID | null
+  opportunityId: UUID | null
   status: ActivityStatus
   dueAt: string | null
   completedAt: string | null
@@ -51,6 +52,7 @@ export type ActivityInput = {
   dueAt: string | null
   companyId: UUID | null
   contactId: UUID | null
+  opportunityId: UUID | null
 }
 
 /** Optional timeline filters. */

@@ -3,6 +3,7 @@ import {
   Contact,
   LayoutDashboard,
   Settings,
+  Target,
   Users,
   type LucideIcon,
 } from "lucide-react"
@@ -52,6 +53,13 @@ export const workspaceNavigation: NavigationItem[] = [
     segment: "contacts",
     icon: Contact,
     permission: CRM_PERMISSIONS.contactsRead,
+    group: "CRM",
+  },
+  {
+    label: "Opportunities",
+    segment: "opportunities",
+    icon: Target,
+    permission: CRM_PERMISSIONS.opportunitiesRead,
     group: "CRM",
   },
 ]

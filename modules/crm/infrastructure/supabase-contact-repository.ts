@@ -157,6 +157,30 @@ export class SupabaseContactRepository implements ContactRepository {
     return toContact(data as unknown as ContactRowWithCompany)
   }
 
+  async listActiveOptions(tenantId: UUID) {
+    const client = await createServerSupabaseClient()
+    const { data, error } = await client
+      .from("contacts")
+      .select("id, first_name, last_name, company_id")
+      .eq("tenant_id", tenantId)
+      .eq("status", "active")
+      .order("last_name", { nullsFirst: false })
+      .order("first_name")
+
+    if (error) {
+      throw new ApplicationError(
+        "Unable to list contact options.",
+        "CONTACT_OPTIONS_FAILED",
+        error,
+      )
+    }
+    return data.map((row) => ({
+      id: row.id,
+      name: [row.first_name, row.last_name].filter(Boolean).join(" "),
+      companyId: row.company_id,
+    }))
+  }
+
   async setStatus(tenantId: UUID, id: UUID, status: CrmStatus): Promise<void> {
     const client = await createServerSupabaseClient()
     const { error } = await client

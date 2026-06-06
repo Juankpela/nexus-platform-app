@@ -13,12 +13,14 @@ export function Pagination({
   page,
   pageSize,
   total,
+  extraParams,
 }: {
   basePath: string
   search: string | null
   page: number
   pageSize: number
   total: number
+  extraParams?: Record<string, string | null>
 }) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
   if (totalPages <= 1) return null
@@ -26,6 +28,9 @@ export function Pagination({
   const hrefFor = (target: number) => {
     const params = new URLSearchParams()
     if (search) params.set("search", search)
+    for (const [key, value] of Object.entries(extraParams ?? {})) {
+      if (value) params.set(key, value)
+    }
     if (target > 1) params.set("page", String(target))
     const query = params.toString()
     return query ? `${basePath}?${query}` : basePath
