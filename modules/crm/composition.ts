@@ -2,6 +2,46 @@ import "server-only"
 
 import { SupabaseAuditRepository } from "@/modules/audit/infrastructure/supabase-audit-repository"
 import {
+  changeProductActive,
+  type ChangeProductActiveInput,
+} from "@/modules/crm/application/use-cases/change-product-active"
+import {
+  changePriceBookActive,
+  type ChangePriceBookActiveInput,
+} from "@/modules/crm/application/use-cases/change-price-book-active"
+import {
+  createPriceBook,
+  type CreatePriceBookInput,
+} from "@/modules/crm/application/use-cases/create-price-book"
+import {
+  createProduct,
+  type CreateProductInput,
+} from "@/modules/crm/application/use-cases/create-product"
+import {
+  importProducts,
+  type ImportProductsInput,
+} from "@/modules/crm/application/use-cases/import-products"
+import { listPriceBooks } from "@/modules/crm/application/use-cases/list-price-books"
+import { listProducts } from "@/modules/crm/application/use-cases/list-products"
+import {
+  deactivatePriceBookEntry,
+  type DeactivatePriceBookEntryInput,
+} from "@/modules/crm/application/use-cases/deactivate-price-book-entry"
+import {
+  updatePriceBook,
+  type UpdatePriceBookInput,
+} from "@/modules/crm/application/use-cases/update-price-book"
+import {
+  updateProduct,
+  type UpdateProductInput,
+} from "@/modules/crm/application/use-cases/update-product"
+import {
+  upsertPriceBookEntry,
+  type UpsertPriceBookEntryInput,
+} from "@/modules/crm/application/use-cases/upsert-price-book-entry"
+import { SupabasePriceBookRepository } from "@/modules/crm/infrastructure/supabase-price-book-repository"
+import { SupabaseProductRepository } from "@/modules/crm/infrastructure/supabase-product-repository"
+import {
   changeActivityStatus,
   type ChangeActivityStatusInput,
 } from "@/modules/crm/application/use-cases/change-activity-status"
@@ -67,7 +107,15 @@ import { SupabaseOpportunityRepository } from "@/modules/crm/infrastructure/supa
 import type { ActivityFilters } from "@/modules/crm/domain/activity"
 import type { OpportunityFilters } from "@/modules/crm/domain/opportunity"
 import type { ListQuery } from "@/modules/crm/domain/pagination"
+import type { ProductListQuery } from "@/modules/crm/domain/product"
 import type { UUID } from "@/types/shared"
+
+function productRepo() {
+  return new SupabaseProductRepository()
+}
+function priceBookRepo() {
+  return new SupabasePriceBookRepository()
+}
 
 function companyRepo() {
   return new SupabaseCompanyRepository()
@@ -219,4 +267,94 @@ export function assignOpportunityRecordOwner(
     { opportunities: opportunityRepo(), audit: audit() },
     input,
   )
+}
+
+// --- Products ---------------------------------------------------------------
+export function listTenantProducts(tenantId: UUID, query: ProductListQuery) {
+  return listProducts(productRepo(), tenantId, query)
+}
+
+export function getProductRecord(tenantId: UUID, id: UUID) {
+  return productRepo().getById(tenantId, id)
+}
+
+export function listProductOptions(tenantId: UUID) {
+  return productRepo().listActiveOptions(tenantId)
+}
+
+export function createProductRecord(input: CreateProductInput) {
+  return createProduct({ products: productRepo(), audit: audit() }, input)
+}
+
+export function updateProductRecord(input: UpdateProductInput) {
+  return updateProduct({ products: productRepo(), audit: audit() }, input)
+}
+
+export function changeProductRecordActive(input: ChangeProductActiveInput) {
+  return changeProductActive({ products: productRepo(), audit: audit() }, input)
+}
+
+export function importProductRecords(input: ImportProductsInput) {
+  return importProducts({ products: productRepo(), audit: audit() }, input)
+}
+
+export function exportTenantProducts(tenantId: UUID) {
+  return productRepo().exportAll(tenantId)
+}
+
+export function listProductPriceAssignments(tenantId: UUID, productId: UUID) {
+  return priceBookRepo().listEntriesForProduct(tenantId, productId)
+}
+
+// --- Price Books ------------------------------------------------------------
+export function listTenantPriceBooks(tenantId: UUID, query: ListQuery) {
+  return listPriceBooks(priceBookRepo(), tenantId, query)
+}
+
+export function getPriceBookRecord(tenantId: UUID, id: UUID) {
+  return priceBookRepo().getById(tenantId, id)
+}
+
+export function listPriceBookEntries(tenantId: UUID, priceBookId: UUID) {
+  return priceBookRepo().listEntries(tenantId, priceBookId)
+}
+
+export function createPriceBookRecord(input: CreatePriceBookInput) {
+  return createPriceBook({ priceBooks: priceBookRepo(), audit: audit() }, input)
+}
+
+export function updatePriceBookRecord(input: UpdatePriceBookInput) {
+  return updatePriceBook({ priceBooks: priceBookRepo(), audit: audit() }, input)
+}
+
+export function changePriceBookRecordActive(input: ChangePriceBookActiveInput) {
+  return changePriceBookActive(
+    { priceBooks: priceBookRepo(), audit: audit() },
+    input,
+  )
+}
+
+export function upsertPriceBookEntryRecord(input: UpsertPriceBookEntryInput) {
+  return upsertPriceBookEntry(
+    { priceBooks: priceBookRepo(), audit: audit() },
+    input,
+  )
+}
+
+export function deactivatePriceBookEntryRecord(
+  input: DeactivatePriceBookEntryInput,
+) {
+  return deactivatePriceBookEntry(
+    { priceBooks: priceBookRepo(), audit: audit() },
+    input,
+  )
+}
+
+// --- Audit -----------------------------------------------------------------
+export function listSubjectAuditEvents(
+  tenantId: UUID,
+  subjectId: string,
+  limit = 10,
+) {
+  return audit().listBySubject(tenantId, subjectId, limit)
 }

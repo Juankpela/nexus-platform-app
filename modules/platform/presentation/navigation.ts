@@ -1,7 +1,9 @@
 import {
+  BookOpen,
   Building2,
   Contact,
   LayoutDashboard,
+  Package,
   Settings,
   Target,
   Users,
@@ -60,6 +62,20 @@ export const workspaceNavigation: NavigationItem[] = [
     segment: "opportunities",
     icon: Target,
     permission: CRM_PERMISSIONS.opportunitiesRead,
+    group: "CRM",
+  },
+  {
+    label: "Products",
+    segment: "products",
+    icon: Package,
+    permission: CRM_PERMISSIONS.productsRead,
+    group: "CRM",
+  },
+  {
+    label: "Price Books",
+    segment: "price-books",
+    icon: BookOpen,
+    permission: CRM_PERMISSIONS.priceBooksRead,
     group: "CRM",
   },
 ]
