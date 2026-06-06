@@ -19,6 +19,8 @@ export const CRM_PERMISSIONS = {
   productsWrite: "crm.products.write",
   priceBooksRead: "crm.pricebooks.read",
   priceBooksWrite: "crm.pricebooks.write",
+  quotesRead: "crm.quotes.read",
+  quotesWrite: "crm.quotes.write",
 } as const
 
 export type FoundationPermission =

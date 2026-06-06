@@ -2,6 +2,7 @@ import {
   BookOpen,
   Building2,
   Contact,
+  FileText,
   LayoutDashboard,
   Package,
   Settings,
@@ -76,6 +77,13 @@ export const workspaceNavigation: NavigationItem[] = [
     segment: "price-books",
     icon: BookOpen,
     permission: CRM_PERMISSIONS.priceBooksRead,
+    group: "CRM",
+  },
+  {
+    label: "Quotes",
+    segment: "quotes",
+    icon: FileText,
+    permission: CRM_PERMISSIONS.quotesRead,
     group: "CRM",
   },
 ]

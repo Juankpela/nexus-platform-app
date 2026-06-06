@@ -104,6 +104,37 @@ import { SupabaseActivityRepository } from "@/modules/crm/infrastructure/supabas
 import { SupabaseCompanyRepository } from "@/modules/crm/infrastructure/supabase-company-repository"
 import { SupabaseContactRepository } from "@/modules/crm/infrastructure/supabase-contact-repository"
 import { SupabaseOpportunityRepository } from "@/modules/crm/infrastructure/supabase-opportunity-repository"
+import {
+  addQuoteLine,
+  type AddQuoteLineInput,
+} from "@/modules/crm/application/use-cases/add-quote-line"
+import {
+  changeQuoteStatus,
+  type ChangeQuoteStatusInput,
+} from "@/modules/crm/application/use-cases/change-quote-status"
+import {
+  createQuote,
+  type CreateQuoteInput,
+} from "@/modules/crm/application/use-cases/create-quote"
+import {
+  createQuoteRevision,
+  type CreateQuoteRevisionInput,
+} from "@/modules/crm/application/use-cases/create-quote-revision"
+import { listQuotes } from "@/modules/crm/application/use-cases/list-quotes"
+import {
+  removeQuoteLine,
+  type RemoveQuoteLineInput,
+} from "@/modules/crm/application/use-cases/remove-quote-line"
+import {
+  updateQuote,
+  type UpdateQuoteInput,
+} from "@/modules/crm/application/use-cases/update-quote"
+import {
+  updateQuoteLine,
+  type UpdateQuoteLineInput,
+} from "@/modules/crm/application/use-cases/update-quote-line"
+import { SupabaseQuoteRepository } from "@/modules/crm/infrastructure/supabase-quote-repository"
+import type { QuoteListQuery } from "@/modules/crm/domain/quote"
 import type { ActivityFilters } from "@/modules/crm/domain/activity"
 import type { OpportunityFilters } from "@/modules/crm/domain/opportunity"
 import type { ListQuery } from "@/modules/crm/domain/pagination"
@@ -348,6 +379,66 @@ export function deactivatePriceBookEntryRecord(
     { priceBooks: priceBookRepo(), audit: audit() },
     input,
   )
+}
+
+// --- Quotes ----------------------------------------------------------------
+function quoteRepo() {
+  return new SupabaseQuoteRepository()
+}
+
+export function listTenantQuotes(tenantId: UUID, query: QuoteListQuery) {
+  return listQuotes(quoteRepo(), tenantId, query)
+}
+
+export function getQuoteRecord(tenantId: UUID, id: UUID) {
+  return quoteRepo().getById(tenantId, id)
+}
+
+export function createQuoteRecord(input: CreateQuoteInput) {
+  return createQuote({ quotes: quoteRepo(), audit: audit() }, input)
+}
+
+export function updateQuoteRecord(input: UpdateQuoteInput) {
+  return updateQuote({ quotes: quoteRepo(), audit: audit() }, input)
+}
+
+export function changeQuoteRecordStatus(input: ChangeQuoteStatusInput) {
+  return changeQuoteStatus({ quotes: quoteRepo(), audit: audit() }, input)
+}
+
+export function addQuoteLineRecord(input: AddQuoteLineInput) {
+  return addQuoteLine({ quotes: quoteRepo(), audit: audit() }, input)
+}
+
+export function updateQuoteLineRecord(input: UpdateQuoteLineInput) {
+  return updateQuoteLine({ quotes: quoteRepo(), audit: audit() }, input)
+}
+
+export function removeQuoteLineRecord(input: RemoveQuoteLineInput) {
+  return removeQuoteLine({ quotes: quoteRepo(), audit: audit() }, input)
+}
+
+export function createQuoteRevisionRecord(input: CreateQuoteRevisionInput) {
+  return createQuoteRevision({ quotes: quoteRepo(), audit: audit() }, input)
+}
+
+export function listQuoteLines(tenantId: UUID, quoteId: UUID) {
+  return quoteRepo().listLines(tenantId, quoteId)
+}
+
+export function listQuoteOpportunityOptions(tenantId: UUID) {
+  return quoteRepo().listOpportunityOptions(tenantId)
+}
+
+export function listQuotePriceBookOptions(tenantId: UUID) {
+  return quoteRepo().listPriceBookOptions(tenantId)
+}
+
+export function listQuoteProductLineOptions(
+  tenantId: UUID,
+  priceBookId: UUID | null,
+) {
+  return quoteRepo().listProductLineOptions(tenantId, priceBookId)
 }
 
 // --- Audit -----------------------------------------------------------------

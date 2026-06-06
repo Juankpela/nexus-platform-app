@@ -546,6 +546,195 @@ export type Database = {
           },
         ]
       }
+      quote_lines: {
+        Row: {
+          id: string
+          created_at: string
+          discount_amount: number
+          line_total: number
+          notes: string | null
+          product_id: string
+          quantity: number
+          quote_id: string
+          sort_order: number
+          tenant_id: string
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          discount_amount?: number
+          line_total: number
+          notes?: string | null
+          product_id: string
+          quantity: number
+          quote_id: string
+          sort_order?: number
+          tenant_id: string
+          unit_price: number
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          discount_amount?: number
+          line_total?: number
+          notes?: string | null
+          product_id?: string
+          quantity?: number
+          quote_id?: string
+          sort_order?: number
+          tenant_id?: string
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_lines_quote_id_tenant_id_fkey"
+            columns: ["quote_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "quote_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_lines_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quote_sequences: {
+        Row: {
+          last_seq: number
+          tenant_id: string
+          year: number
+        }
+        Insert: {
+          last_seq?: number
+          tenant_id: string
+          year: number
+        }
+        Update: {
+          last_seq?: number
+          tenant_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_sequences_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotes: {
+        Row: {
+          id: string
+          company_id: string | null
+          contact_id: string | null
+          created_at: string
+          discount_amount: number
+          expiration_date: string | null
+          notes: string | null
+          opportunity_id: string | null
+          price_book_id: string | null
+          quote_number: string
+          status: Database["public"]["Enums"]["quote_status"]
+          subtotal: number
+          tax_amount: number
+          tenant_id: string
+          total_amount: number
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          id?: string
+          company_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          discount_amount?: number
+          expiration_date?: string | null
+          notes?: string | null
+          opportunity_id?: string | null
+          price_book_id?: string | null
+          quote_number: string
+          status?: Database["public"]["Enums"]["quote_status"]
+          subtotal?: number
+          tax_amount?: number
+          tenant_id: string
+          total_amount?: number
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          id?: string
+          company_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          discount_amount?: number
+          expiration_date?: string | null
+          notes?: string | null
+          opportunity_id?: string | null
+          price_book_id?: string | null
+          quote_number?: string
+          status?: Database["public"]["Enums"]["quote_status"]
+          subtotal?: number
+          tax_amount?: number
+          tenant_id?: string
+          total_amount?: number
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotes_company_id_tenant_id_fkey"
+            columns: ["company_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "quotes_contact_id_tenant_id_fkey"
+            columns: ["contact_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "quotes_opportunity_id_tenant_id_fkey"
+            columns: ["opportunity_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "quotes_price_book_id_tenant_id_fkey"
+            columns: ["price_book_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "price_books"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "quotes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           active: boolean
@@ -989,6 +1178,14 @@ export type Database = {
         | "service"
         | "machinery"
         | "spare_part"
+      quote_status:
+        | "draft"
+        | "pending_approval"
+        | "approved"
+        | "rejected"
+        | "sent"
+        | "accepted"
+        | "expired"
       tenant_status: "active" | "suspended" | "archived"
     }
     CompositeTypes: {
