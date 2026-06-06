@@ -6,6 +6,13 @@ export const FOUNDATION_PERMISSIONS = {
   auditRead: "tenant.audit.read",
 } as const
 
+export const CRM_PERMISSIONS = {
+  companiesRead: "crm.companies.read",
+  companiesWrite: "crm.companies.write",
+  contactsRead: "crm.contacts.read",
+  contactsWrite: "crm.contacts.write",
+} as const
+
 export type FoundationPermission =
   (typeof FOUNDATION_PERMISSIONS)[keyof typeof FOUNDATION_PERMISSIONS]
 

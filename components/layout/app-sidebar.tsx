@@ -21,6 +21,32 @@ export function AppSidebar({
   const items = workspaceNavigation.filter((item) =>
     hasPermission(permissions, item.permission),
   )
+  const ungrouped = items.filter((item) => !item.group)
+  const groups = items.reduce<Record<string, typeof items>>((acc, item) => {
+    if (!item.group) return acc
+    ;(acc[item.group] ??= []).push(item)
+    return acc
+  }, {})
+
+  const renderItem = (item: (typeof items)[number]) => {
+    const href = `/app/${tenantSlug}/${item.segment}`
+    const active = pathname === href
+    return (
+      <Link
+        key={item.segment}
+        href={href}
+        className={cn(
+          "flex h-9 items-center gap-3 rounded-lg px-3 text-sm font-medium text-sidebar-foreground transition-colors",
+          active
+            ? "bg-sidebar-accent text-sidebar-accent-foreground"
+            : "text-muted-foreground hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground",
+        )}
+      >
+        <item.icon className="size-4" />
+        {item.label}
+      </Link>
+    )
+  }
 
   return (
     <aside className="hidden w-64 shrink-0 border-r bg-sidebar md:flex md:flex-col">
@@ -36,25 +62,15 @@ export function AppSidebar({
         </p>
       </div>
       <nav className="flex-1 space-y-1 px-3">
-        {items.map((item) => {
-          const href = `/app/${tenantSlug}/${item.segment}`
-          const active = pathname === href
-          return (
-            <Link
-              key={item.segment}
-              href={href}
-              className={cn(
-                "flex h-9 items-center gap-3 rounded-lg px-3 text-sm font-medium text-sidebar-foreground transition-colors",
-                active
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "text-muted-foreground hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground",
-              )}
-            >
-              <item.icon className="size-4" />
-              {item.label}
-            </Link>
-          )
-        })}
+        {ungrouped.map(renderItem)}
+        {Object.entries(groups).map(([group, groupItems]) => (
+          <div key={group} className="pt-4">
+            <p className="px-3 pb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              {group}
+            </p>
+            <div className="space-y-1">{groupItems.map(renderItem)}</div>
+          </div>
+        ))}
       </nav>
       <div className="border-t px-5 py-4 text-xs text-muted-foreground">
         Enterprise workspace

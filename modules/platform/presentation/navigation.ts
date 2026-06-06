@@ -1,12 +1,24 @@
-import { LayoutDashboard, Settings, Users, type LucideIcon } from "lucide-react"
+import {
+  Building2,
+  Contact,
+  LayoutDashboard,
+  Settings,
+  Users,
+  type LucideIcon,
+} from "lucide-react"
 
-import { FOUNDATION_PERMISSIONS } from "@/modules/authorization/domain/permission"
+import {
+  CRM_PERMISSIONS,
+  FOUNDATION_PERMISSIONS,
+} from "@/modules/authorization/domain/permission"
 
 export type NavigationItem = {
   label: string
   segment: string
   icon: LucideIcon
   permission: string
+  /** Optional sidebar group heading. Ungrouped items render first. */
+  group?: string
 }
 
 export const workspaceNavigation: NavigationItem[] = [
@@ -27,5 +39,19 @@ export const workspaceNavigation: NavigationItem[] = [
     segment: "settings",
     icon: Settings,
     permission: FOUNDATION_PERMISSIONS.settingsRead,
+  },
+  {
+    label: "Companies",
+    segment: "companies",
+    icon: Building2,
+    permission: CRM_PERMISSIONS.companiesRead,
+    group: "CRM",
+  },
+  {
+    label: "Contacts",
+    segment: "contacts",
+    icon: Contact,
+    permission: CRM_PERMISSIONS.contactsRead,
+    group: "CRM",
   },
 ]

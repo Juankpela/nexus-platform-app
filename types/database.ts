@@ -73,6 +73,134 @@ export type Database = {
           },
         ]
       }
+      companies: {
+        Row: {
+          address: string | null
+          city: string | null
+          country: string | null
+          created_at: string
+          id: string
+          industry: string | null
+          name: string
+          notes: string | null
+          phone: string | null
+          state: string | null
+          status: Database["public"]["Enums"]["crm_record_status"]
+          tax_id: string | null
+          tenant_id: string
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          industry?: string | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          state?: string | null
+          status?: Database["public"]["Enums"]["crm_record_status"]
+          tax_id?: string | null
+          tenant_id: string
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          industry?: string | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          state?: string | null
+          status?: Database["public"]["Enums"]["crm_record_status"]
+          tax_id?: string | null
+          tenant_id?: string
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "companies_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contacts: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          department: string | null
+          email: string | null
+          first_name: string
+          id: string
+          last_name: string | null
+          mobile: string | null
+          notes: string | null
+          phone: string | null
+          status: Database["public"]["Enums"]["crm_record_status"]
+          tenant_id: string
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          department?: string | null
+          email?: string | null
+          first_name: string
+          id?: string
+          last_name?: string | null
+          mobile?: string | null
+          notes?: string | null
+          phone?: string | null
+          status?: Database["public"]["Enums"]["crm_record_status"]
+          tenant_id: string
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          department?: string | null
+          email?: string | null
+          first_name?: string
+          id?: string
+          last_name?: string | null
+          mobile?: string | null
+          notes?: string | null
+          phone?: string | null
+          status?: Database["public"]["Enums"]["crm_record_status"]
+          tenant_id?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contacts_company_id_tenant_id_fkey"
+            columns: ["company_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "contacts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       features: {
         Row: {
           created_at: string
@@ -536,6 +664,7 @@ export type Database = {
     }
     Enums: {
       audit_actor_type: "user" | "system" | "service"
+      crm_record_status: "active" | "inactive"
       membership_status: "invited" | "active" | "suspended"
       tenant_status: "active" | "suspended" | "archived"
     }
@@ -666,6 +795,7 @@ export const Constants = {
   public: {
     Enums: {
       audit_actor_type: ["user", "system", "service"],
+      crm_record_status: ["active", "inactive"],
       membership_status: ["invited", "active", "suspended"],
       tenant_status: ["active", "suspended", "archived"],
     },
