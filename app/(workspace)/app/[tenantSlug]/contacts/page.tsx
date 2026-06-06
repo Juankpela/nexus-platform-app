@@ -1,5 +1,6 @@
 import { Plus } from "lucide-react"
 import type { Metadata } from "next"
+import Link from "next/link"
 
 import { ContactFormDialog } from "@/components/crm/contact-form-dialog"
 import { CrmStatusToggle } from "@/components/crm/crm-status-toggle"
@@ -118,11 +119,14 @@ export default async function ContactsPage({
                 {result.items.map((contact) => (
                   <tr key={contact.id} className="align-top">
                     <td className="px-4 py-4">
-                      <p className="font-medium text-foreground">
+                      <Link
+                        href={`/app/${tenantSlug}/contacts/${contact.id}`}
+                        className="font-medium text-foreground hover:underline"
+                      >
                         {[contact.firstName, contact.lastName]
                           .filter(Boolean)
                           .join(" ")}
-                      </p>
+                      </Link>
                       {contact.title ? (
                         <p className="mt-0.5 text-xs text-muted-foreground">
                           {contact.title}

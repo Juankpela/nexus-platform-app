@@ -14,6 +14,76 @@ export type Database = {
   }
   public: {
     Tables: {
+      activities: {
+        Row: {
+          body: string | null
+          company_id: string | null
+          completed_at: string | null
+          contact_id: string | null
+          created_at: string
+          created_by: string | null
+          due_at: string | null
+          id: string
+          status: Database["public"]["Enums"]["activity_status"]
+          subject: string
+          tenant_id: string
+          type: Database["public"]["Enums"]["activity_type"]
+          updated_at: string
+        }
+        Insert: {
+          body?: string | null
+          company_id?: string | null
+          completed_at?: string | null
+          contact_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          due_at?: string | null
+          id?: string
+          status?: Database["public"]["Enums"]["activity_status"]
+          subject: string
+          tenant_id: string
+          type: Database["public"]["Enums"]["activity_type"]
+          updated_at?: string
+        }
+        Update: {
+          body?: string | null
+          company_id?: string | null
+          completed_at?: string | null
+          contact_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          due_at?: string | null
+          id?: string
+          status?: Database["public"]["Enums"]["activity_status"]
+          subject?: string
+          tenant_id?: string
+          type?: Database["public"]["Enums"]["activity_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activities_company_id_tenant_id_fkey"
+            columns: ["company_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "activities_contact_id_tenant_id_fkey"
+            columns: ["contact_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "activities_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_events: {
         Row: {
           action: string
@@ -663,6 +733,8 @@ export type Database = {
       }
     }
     Enums: {
+      activity_status: "open" | "completed"
+      activity_type: "call" | "email" | "meeting" | "task" | "note" | "whatsapp"
       audit_actor_type: "user" | "system" | "service"
       crm_record_status: "active" | "inactive"
       membership_status: "invited" | "active" | "suspended"
@@ -794,6 +866,8 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      activity_status: ["open", "completed"],
+      activity_type: ["call", "email", "meeting", "task", "note", "whatsapp"],
       audit_actor_type: ["user", "system", "service"],
       crm_record_status: ["active", "inactive"],
       membership_status: ["invited", "active", "suspended"],

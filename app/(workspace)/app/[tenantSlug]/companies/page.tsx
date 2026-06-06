@@ -1,5 +1,6 @@
 import { Plus } from "lucide-react"
 import type { Metadata } from "next"
+import Link from "next/link"
 
 import { CompanyFormDialog } from "@/components/crm/company-form-dialog"
 import { CrmStatusToggle } from "@/components/crm/crm-status-toggle"
@@ -112,7 +113,12 @@ export default async function CompaniesPage({
                 {result.items.map((company) => (
                   <tr key={company.id} className="align-top">
                     <td className="px-4 py-4">
-                      <p className="font-medium text-foreground">{company.name}</p>
+                      <Link
+                        href={`/app/${tenantSlug}/companies/${company.id}`}
+                        className="font-medium text-foreground hover:underline"
+                      >
+                        {company.name}
+                      </Link>
                       {company.taxId ? (
                         <p className="mt-0.5 text-xs text-muted-foreground">
                           {company.taxId}
