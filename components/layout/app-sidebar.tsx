@@ -80,9 +80,13 @@ export function AppSidebar({
       <Link
         href={`/app/${tenantSlug}/dashboard`}
         aria-label="Nexus — Where Operations Connect."
-        className="block border-b border-white/10"
+        className="flex h-[76px] items-center justify-center border-b border-white/10 bg-white px-4"
       >
-        <NexusLogo variant="full" theme="light" className="h-auto w-full" />
+        <NexusLogo
+          variant="full"
+          theme="light"
+          className="h-14 w-auto object-contain"
+        />
       </Link>
 
       <div className="px-4 pb-2 pt-4">
