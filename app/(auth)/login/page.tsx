@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 
 import { LoginForm } from "@/components/auth/login-form"
+import { NexusLogo } from "@/components/layout/nexus-logo"
 import { getCachedCurrentUser } from "@/modules/identity/composition"
 
 export const metadata: Metadata = { title: "Sign in" }
@@ -18,6 +19,9 @@ export default async function LoginPage({
 
   return (
     <div className="w-full">
+      <div className="mb-8 flex flex-col items-center text-center lg:hidden">
+        <NexusLogo variant="full" theme="light" className="h-14" />
+      </div>
       <div className="mb-8">
         <p className="text-sm font-medium text-muted-foreground">Welcome back</p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight">

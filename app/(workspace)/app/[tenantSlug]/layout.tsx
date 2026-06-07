@@ -17,7 +17,7 @@ export default async function WorkspaceLayout({
   ])
 
   return (
-    <div className="flex min-h-screen bg-muted/20">
+    <div className="workspace-bg flex min-h-screen">
       <AppSidebar
         tenantName={context.tenant.name}
         tenantSlug={context.tenant.slug}
@@ -26,6 +26,7 @@ export default async function WorkspaceLayout({
       <div className="flex min-w-0 flex-1 flex-col">
         <AppHeader
           tenantName={context.tenant.name}
+          tenantSlug={context.tenant.slug}
           userEmail={user?.email ?? null}
         />
         <main className="flex-1">{children}</main>

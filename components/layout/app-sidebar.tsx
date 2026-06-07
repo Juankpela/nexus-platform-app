@@ -1,12 +1,30 @@
 "use client"
 
-import { Boxes } from "lucide-react"
+import {
+  CalendarClock,
+  ClipboardList,
+  HardHat,
+  LifeBuoy,
+  Wrench,
+  type LucideIcon,
+} from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
+import { NexusLogo } from "@/components/layout/nexus-logo"
 import { cn } from "@/lib/utils"
 import { hasPermission } from "@/modules/authorization/domain/permission"
 import { workspaceNavigation } from "@/modules/platform/presentation/navigation"
+
+// Visual-only preview of the upcoming operational modules (Field Service line).
+// No routes yet — these communicate the product roadmap inside the UI.
+const FUTURE_MODULES: { label: string; icon: LucideIcon }[] = [
+  { label: "Assets", icon: Wrench },
+  { label: "Cases", icon: LifeBuoy },
+  { label: "Work Orders", icon: ClipboardList },
+  { label: "Technicians", icon: HardHat },
+  { label: "Scheduling", icon: CalendarClock },
+]
 
 export function AppSidebar({
   tenantName,
@@ -35,45 +53,80 @@ export function AppSidebar({
       <Link
         key={item.segment}
         href={href}
+        aria-current={active ? "page" : undefined}
         className={cn(
-          "flex h-9 items-center gap-3 rounded-lg px-3 text-sm font-medium text-sidebar-foreground transition-colors",
+          "group relative flex h-9 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors",
           active
             ? "bg-sidebar-accent text-sidebar-accent-foreground"
-            : "text-muted-foreground hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground",
+            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
         )}
       >
-        <item.icon className="size-4" />
+        {active ? (
+          <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-nexus-blue" />
+        ) : null}
+        <item.icon
+          className={cn(
+            "size-4 transition-colors",
+            active ? "text-nexus-blue" : "text-sidebar-foreground/60",
+          )}
+        />
         {item.label}
       </Link>
     )
   }
 
   return (
-    <aside className="hidden w-64 shrink-0 border-r bg-sidebar md:flex md:flex-col">
-      <div className="flex h-14 items-center gap-2 border-b px-4">
-        <span className="grid size-7 place-items-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground">
-          <Boxes className="size-4" />
-        </span>
-        <span className="font-semibold tracking-tight">Nexus</span>
-      </div>
-      <div className="px-3 py-4">
-        <p className="truncate px-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+    <aside className="sidebar-gradient hidden w-64 shrink-0 flex-col text-sidebar-foreground md:flex">
+      <Link
+        href={`/app/${tenantSlug}/dashboard`}
+        aria-label="Nexus — Where Operations Connect."
+        className="block border-b border-white/10"
+      >
+        <NexusLogo variant="full" theme="light" className="h-auto w-full" />
+      </Link>
+
+      <div className="px-4 pb-2 pt-4">
+        <p className="truncate text-[11px] font-semibold uppercase tracking-[0.12em] text-sidebar-foreground/50">
           {tenantName}
         </p>
       </div>
-      <nav className="flex-1 space-y-1 px-3">
+
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
         {ungrouped.map(renderItem)}
         {Object.entries(groups).map(([group, groupItems]) => (
-          <div key={group} className="pt-4">
-            <p className="px-3 pb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          <div key={group} className="pt-5">
+            <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-sidebar-foreground/50">
               {group}
             </p>
             <div className="space-y-1">{groupItems.map(renderItem)}</div>
           </div>
         ))}
+
+        <div className="pt-6">
+          <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-sidebar-foreground/50">
+            Operations
+          </p>
+          <div className="space-y-1">
+            {FUTURE_MODULES.map((mod) => (
+              <div
+                key={mod.label}
+                aria-disabled
+                title="Coming soon"
+                className="flex h-9 cursor-not-allowed items-center gap-3 rounded-lg px-3 text-sm font-medium text-sidebar-foreground/35"
+              >
+                <mod.icon className="size-4" />
+                <span className="flex-1">{mod.label}</span>
+                <span className="rounded-full bg-white/5 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-sidebar-foreground/50">
+                  Soon
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
       </nav>
-      <div className="border-t px-5 py-4 text-xs text-muted-foreground">
-        Enterprise workspace
+
+      <div className="border-t border-white/10 px-5 py-3.5 text-[11px] text-sidebar-foreground/50">
+        Where Operations Connect.
       </div>
     </aside>
   )

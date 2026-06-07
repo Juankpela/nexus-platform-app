@@ -7,11 +7,15 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "db:link": "supabase link --project-ref orueodkxqhtbqjddpkrr",
     "db:new": "supabase migration new",
     "db:push": "supabase db push",
     "db:types": "supabase gen types typescript --linked --schema public > types/database.ts",
-    "db:seed": "node scripts/seed-tenant.mjs"
+    "db:seed": "node scripts/seed-tenant.mjs",
+    "db:grant-admin": "node scripts/grant-platform-admin.mjs",
+    "brand:build": "node scripts/build-brand.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
@@ -40,6 +44,7 @@
     "eslint-config-next": "16.2.7",
     "supabase": "^2.105.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^2.1.9"
   }
 }

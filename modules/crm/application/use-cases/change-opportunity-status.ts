@@ -2,7 +2,10 @@ import { ApplicationError } from "@/lib/errors/application-error"
 import type { AuditRepository } from "@/modules/audit/application/ports/audit-repository"
 import type { AuditEvent } from "@/modules/audit/domain/audit-event"
 import type { OpportunityRepository } from "@/modules/crm/application/ports/opportunity-repository"
-import type { OpportunityStatus } from "@/modules/crm/domain/opportunity"
+import {
+  OPPORTUNITY_STATUS_TRANSITIONS,
+  type OpportunityStatus,
+} from "@/modules/crm/domain/opportunity"
 import type { UUID } from "@/types/shared"
 
 export type ChangeOpportunityStatusDeps = {
@@ -30,6 +33,14 @@ export async function changeOpportunityStatus(
     )
   }
   if (existing.status === input.status) return
+
+  const allowed = OPPORTUNITY_STATUS_TRANSITIONS[existing.status]
+  if (!allowed.includes(input.status)) {
+    throw new ApplicationError(
+      `Cannot move a ${existing.status} opportunity to ${input.status}.`,
+      "INVALID_STATUS_TRANSITION",
+    )
+  }
 
   await opportunities.setStatus(input.tenantId, input.id, input.status)
 

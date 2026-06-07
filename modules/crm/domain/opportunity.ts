@@ -52,6 +52,23 @@ export const OPPORTUNITY_STATUS_LABELS: Record<OpportunityStatus, string> = {
   lost: "Lost",
 }
 
+/**
+ * Valid next statuses for each current status. Open stages can move freely
+ * among themselves and close to won/lost. won and lost are terminal — a closed
+ * opportunity cannot be reopened (mirrors the quote state machine).
+ */
+export const OPPORTUNITY_STATUS_TRANSITIONS: Record<
+  OpportunityStatus,
+  OpportunityStatus[]
+> = {
+  new: ["discovery", "proposal", "negotiation", "won", "lost"],
+  discovery: ["new", "proposal", "negotiation", "won", "lost"],
+  proposal: ["new", "discovery", "negotiation", "won", "lost"],
+  negotiation: ["new", "discovery", "proposal", "won", "lost"],
+  won: [],
+  lost: [],
+}
+
 export type Opportunity = {
   id: UUID
   companyId: UUID

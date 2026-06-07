@@ -453,338 +453,6 @@ export type Database = {
           },
         ]
       }
-      price_book_entries: {
-        Row: {
-          id: string
-          active: boolean
-          created_at: string
-          price_book_id: string
-          product_id: string
-          tenant_id: string
-          unit_price: number
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          active?: boolean
-          created_at?: string
-          price_book_id: string
-          product_id: string
-          tenant_id: string
-          unit_price: number
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          active?: boolean
-          created_at?: string
-          price_book_id?: string
-          product_id?: string
-          tenant_id?: string
-          unit_price?: number
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "price_book_entries_price_book_id_tenant_id_fkey"
-            columns: ["price_book_id", "tenant_id"]
-            isOneToOne: false
-            referencedRelation: "price_books"
-            referencedColumns: ["id", "tenant_id"]
-          },
-          {
-            foreignKeyName: "price_book_entries_product_id_tenant_id_fkey"
-            columns: ["product_id", "tenant_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id", "tenant_id"]
-          },
-          {
-            foreignKeyName: "price_book_entries_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      price_books: {
-        Row: {
-          active: boolean
-          created_at: string
-          description: string | null
-          id: string
-          name: string
-          tenant_id: string
-          updated_at: string
-        }
-        Insert: {
-          active?: boolean
-          created_at?: string
-          description?: string | null
-          id?: string
-          name: string
-          tenant_id: string
-          updated_at?: string
-        }
-        Update: {
-          active?: boolean
-          created_at?: string
-          description?: string | null
-          id?: string
-          name?: string
-          tenant_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "price_books_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      quote_lines: {
-        Row: {
-          id: string
-          created_at: string
-          discount_amount: number
-          line_total: number
-          notes: string | null
-          product_id: string
-          quantity: number
-          quote_id: string
-          sort_order: number
-          tenant_id: string
-          unit_price: number
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          created_at?: string
-          discount_amount?: number
-          line_total: number
-          notes?: string | null
-          product_id: string
-          quantity: number
-          quote_id: string
-          sort_order?: number
-          tenant_id: string
-          unit_price: number
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          created_at?: string
-          discount_amount?: number
-          line_total?: number
-          notes?: string | null
-          product_id?: string
-          quantity?: number
-          quote_id?: string
-          sort_order?: number
-          tenant_id?: string
-          unit_price?: number
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "quote_lines_quote_id_tenant_id_fkey"
-            columns: ["quote_id", "tenant_id"]
-            isOneToOne: false
-            referencedRelation: "quotes"
-            referencedColumns: ["id", "tenant_id"]
-          },
-          {
-            foreignKeyName: "quote_lines_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quote_lines_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      quote_sequences: {
-        Row: {
-          last_seq: number
-          tenant_id: string
-          year: number
-        }
-        Insert: {
-          last_seq?: number
-          tenant_id: string
-          year: number
-        }
-        Update: {
-          last_seq?: number
-          tenant_id?: string
-          year?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "quote_sequences_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      quotes: {
-        Row: {
-          id: string
-          company_id: string | null
-          contact_id: string | null
-          created_at: string
-          discount_amount: number
-          expiration_date: string | null
-          notes: string | null
-          opportunity_id: string | null
-          price_book_id: string | null
-          quote_number: string
-          status: Database["public"]["Enums"]["quote_status"]
-          subtotal: number
-          tax_amount: number
-          tenant_id: string
-          total_amount: number
-          updated_at: string
-          version: number
-        }
-        Insert: {
-          id?: string
-          company_id?: string | null
-          contact_id?: string | null
-          created_at?: string
-          discount_amount?: number
-          expiration_date?: string | null
-          notes?: string | null
-          opportunity_id?: string | null
-          price_book_id?: string | null
-          quote_number: string
-          status?: Database["public"]["Enums"]["quote_status"]
-          subtotal?: number
-          tax_amount?: number
-          tenant_id: string
-          total_amount?: number
-          updated_at?: string
-          version?: number
-        }
-        Update: {
-          id?: string
-          company_id?: string | null
-          contact_id?: string | null
-          created_at?: string
-          discount_amount?: number
-          expiration_date?: string | null
-          notes?: string | null
-          opportunity_id?: string | null
-          price_book_id?: string | null
-          quote_number?: string
-          status?: Database["public"]["Enums"]["quote_status"]
-          subtotal?: number
-          tax_amount?: number
-          tenant_id?: string
-          total_amount?: number
-          updated_at?: string
-          version?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "quotes_company_id_tenant_id_fkey"
-            columns: ["company_id", "tenant_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id", "tenant_id"]
-          },
-          {
-            foreignKeyName: "quotes_contact_id_tenant_id_fkey"
-            columns: ["contact_id", "tenant_id"]
-            isOneToOne: false
-            referencedRelation: "contacts"
-            referencedColumns: ["id", "tenant_id"]
-          },
-          {
-            foreignKeyName: "quotes_opportunity_id_tenant_id_fkey"
-            columns: ["opportunity_id", "tenant_id"]
-            isOneToOne: false
-            referencedRelation: "opportunities"
-            referencedColumns: ["id", "tenant_id"]
-          },
-          {
-            foreignKeyName: "quotes_price_book_id_tenant_id_fkey"
-            columns: ["price_book_id", "tenant_id"]
-            isOneToOne: false
-            referencedRelation: "price_books"
-            referencedColumns: ["id", "tenant_id"]
-          },
-          {
-            foreignKeyName: "quotes_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      products: {
-        Row: {
-          active: boolean
-          created_at: string
-          description: string | null
-          id: string
-          name: string
-          product_family: Database["public"]["Enums"]["product_family"]
-          product_type: Database["public"]["Enums"]["product_type"]
-          sku: string | null
-          tenant_id: string
-          unit_of_measure: string | null
-          updated_at: string
-        }
-        Insert: {
-          active?: boolean
-          created_at?: string
-          description?: string | null
-          id?: string
-          name: string
-          product_family: Database["public"]["Enums"]["product_family"]
-          product_type: Database["public"]["Enums"]["product_type"]
-          sku?: string | null
-          tenant_id: string
-          unit_of_measure?: string | null
-          updated_at?: string
-        }
-        Update: {
-          active?: boolean
-          created_at?: string
-          description?: string | null
-          id?: string
-          name?: string
-          product_family?: Database["public"]["Enums"]["product_family"]
-          product_type?: Database["public"]["Enums"]["product_type"]
-          sku?: string | null
-          tenant_id?: string
-          unit_of_measure?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "products_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       permission_set_permissions: {
         Row: {
           permission_id: string
@@ -927,6 +595,149 @@ export type Database = {
           },
         ]
       }
+      price_book_entries: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          price_book_id: string
+          product_id: string
+          tenant_id: string
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          price_book_id: string
+          product_id: string
+          tenant_id: string
+          unit_price: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          price_book_id?: string
+          product_id?: string
+          tenant_id?: string
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_book_entries_price_book_id_tenant_id_fkey"
+            columns: ["price_book_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "price_books"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "price_book_entries_product_id_tenant_id_fkey"
+            columns: ["product_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "price_book_entries_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      price_books: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_books_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          product_family: Database["public"]["Enums"]["product_family"]
+          product_type: Database["public"]["Enums"]["product_type"]
+          sku: string | null
+          tenant_id: string
+          unit_of_measure: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          product_family: Database["public"]["Enums"]["product_family"]
+          product_type: Database["public"]["Enums"]["product_type"]
+          sku?: string | null
+          tenant_id: string
+          unit_of_measure?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          product_family?: Database["public"]["Enums"]["product_family"]
+          product_type?: Database["public"]["Enums"]["product_type"]
+          sku?: string | null
+          tenant_id?: string
+          unit_of_measure?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -950,6 +761,195 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      quote_lines: {
+        Row: {
+          created_at: string
+          discount_amount: number
+          id: string
+          line_total: number
+          notes: string | null
+          product_id: string
+          quantity: number
+          quote_id: string
+          sort_order: number
+          tenant_id: string
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          discount_amount?: number
+          id?: string
+          line_total?: number
+          notes?: string | null
+          product_id: string
+          quantity: number
+          quote_id: string
+          sort_order?: number
+          tenant_id: string
+          unit_price: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          discount_amount?: number
+          id?: string
+          line_total?: number
+          notes?: string | null
+          product_id?: string
+          quantity?: number
+          quote_id?: string
+          sort_order?: number
+          tenant_id?: string
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_lines_product_id_tenant_id_fkey"
+            columns: ["product_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "quote_lines_quote_id_tenant_id_fkey"
+            columns: ["quote_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "quote_lines_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quote_sequences: {
+        Row: {
+          last_seq: number
+          tenant_id: string
+          year: number
+        }
+        Insert: {
+          last_seq?: number
+          tenant_id: string
+          year: number
+        }
+        Update: {
+          last_seq?: number
+          tenant_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_sequences_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotes: {
+        Row: {
+          company_id: string | null
+          contact_id: string | null
+          created_at: string
+          discount_amount: number
+          expiration_date: string | null
+          id: string
+          notes: string | null
+          opportunity_id: string | null
+          price_book_id: string | null
+          quote_number: string
+          status: Database["public"]["Enums"]["quote_status"]
+          subtotal: number
+          tax_amount: number
+          tenant_id: string
+          total_amount: number
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          company_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          discount_amount?: number
+          expiration_date?: string | null
+          id?: string
+          notes?: string | null
+          opportunity_id?: string | null
+          price_book_id?: string | null
+          quote_number: string
+          status?: Database["public"]["Enums"]["quote_status"]
+          subtotal?: number
+          tax_amount?: number
+          tenant_id: string
+          total_amount?: number
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          company_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          discount_amount?: number
+          expiration_date?: string | null
+          id?: string
+          notes?: string | null
+          opportunity_id?: string | null
+          price_book_id?: string | null
+          quote_number?: string
+          status?: Database["public"]["Enums"]["quote_status"]
+          subtotal?: number
+          tax_amount?: number
+          tenant_id?: string
+          total_amount?: number
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotes_company_id_tenant_id_fkey"
+            columns: ["company_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "quotes_contact_id_tenant_id_fkey"
+            columns: ["contact_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "quotes_opportunity_id_tenant_id_fkey"
+            columns: ["opportunity_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "quotes_price_book_id_tenant_id_fkey"
+            columns: ["price_book_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "price_books"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "quotes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       role_permissions: {
         Row: {
@@ -1118,6 +1118,7 @@ export type Database = {
         Args: { target_profile_id: string }
         Returns: boolean
       }
+      grant_platform_admin: { Args: { p_user_id: string }; Returns: undefined }
       has_tenant_permission: {
         Args: { permission_key: string; target_tenant_id: string }
         Returns: boolean
@@ -1127,6 +1128,11 @@ export type Database = {
         Returns: boolean
       }
       is_platform_admin: { Args: never; Returns: boolean }
+      next_quote_number: { Args: { p_tenant_id: string }; Returns: string }
+      provision_organization: {
+        Args: { p_name: string; p_slug: string; p_user_id: string }
+        Returns: string
+      }
       replace_membership_roles: {
         Args: {
           p_membership_id: string
@@ -1145,6 +1151,13 @@ export type Database = {
           tenant_id: string
           tenant_name: string
         }[]
+      }
+      set_organization_status: {
+        Args: {
+          p_status: Database["public"]["Enums"]["tenant_status"]
+          p_tenant_id: string
+        }
+        Returns: undefined
       }
     }
     Enums: {
@@ -1173,11 +1186,7 @@ export type Database = {
         | "machinery"
         | "technical_services"
         | "consulting"
-      product_type:
-        | "physical_product"
-        | "service"
-        | "machinery"
-        | "spare_part"
+      product_type: "physical_product" | "service" | "machinery" | "spare_part"
       quote_status:
         | "draft"
         | "pending_approval"
@@ -1334,12 +1343,23 @@ export const Constants = {
         "won",
         "lost",
       ],
-      product_category: [
+      product_family: [
         "flexography",
         "inks",
         "consumables",
-        "consulting",
         "machinery",
+        "technical_services",
+        "consulting",
+      ],
+      product_type: ["physical_product", "service", "machinery", "spare_part"],
+      quote_status: [
+        "draft",
+        "pending_approval",
+        "approved",
+        "rejected",
+        "sent",
+        "accepted",
+        "expired",
       ],
       tenant_status: ["active", "suspended", "archived"],
     },
