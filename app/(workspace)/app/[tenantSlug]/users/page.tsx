@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 
 import { EmptyState } from "@/components/layout/empty-state"
 import { PageHeader } from "@/components/layout/page-header"
+import { CreateMemberDialog } from "@/components/members/create-member-dialog"
 import { MemberRolesEditor } from "@/components/members/member-roles-editor"
 import { MemberStatusToggle } from "@/components/members/member-status-toggle"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
@@ -16,7 +17,7 @@ import {
 } from "@/modules/tenancy/composition"
 import type { MembershipStatus } from "@/modules/tenancy/domain/member"
 
-export const metadata: Metadata = { title: "Users" }
+export const metadata: Metadata = { title: "Usuarios" }
 
 const statusStyles: Record<MembershipStatus, string> = {
   active: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
@@ -25,9 +26,9 @@ const statusStyles: Record<MembershipStatus, string> = {
 }
 
 const statusLabels: Record<MembershipStatus, string> = {
-  active: "Active",
-  invited: "Invited",
-  suspended: "Suspended",
+  active: "Activo",
+  invited: "Invitado",
+  suspended: "Suspendido",
 }
 
 export default async function UsersPage({
@@ -52,25 +53,36 @@ export default async function UsersPage({
   return (
     <>
       <PageHeader
-        title="Users"
-        description="Manage workspace access and membership."
+        title="Usuarios"
+        description="Gestiona el acceso y los miembros del workspace."
       />
       <div className="px-5 py-6 sm:px-8">
+        {canManage && (
+          <div className="mb-6 flex justify-end">
+            <CreateMemberDialog
+              tenantSlug={tenantSlug}
+              roleOptions={roleOptions.map((r) => ({ id: r.id, name: r.name }))}
+            />
+          </div>
+        )}
+
         {members.length === 0 ? (
           <EmptyState
-            title="No members yet"
-            description="Members will appear here once they are added to this workspace."
+            title="Sin miembros"
+            description="Agrega el primer usuario para dar acceso al workspace."
           />
         ) : (
           <div className="overflow-hidden rounded-xl border bg-card">
             <table className="w-full text-sm">
               <thead className="border-b bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Member</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium">Miembro</th>
+                  <th className="px-4 py-3 font-medium">Estado</th>
                   <th className="px-4 py-3 font-medium">Roles</th>
                   {canManage ? (
-                    <th className="px-4 py-3 text-right font-medium">Actions</th>
+                    <th className="px-4 py-3 text-right font-medium">
+                      Acciones
+                    </th>
                   ) : null}
                 </tr>
               </thead>
@@ -79,7 +91,7 @@ export default async function UsersPage({
                   <tr key={member.membershipId} className="align-top">
                     <td className="px-4 py-4">
                       <p className="font-medium text-foreground">
-                        {member.fullName ?? "Unnamed member"}
+                        {member.fullName ?? "Sin nombre"}
                       </p>
                       <p className="mt-0.5 text-xs text-muted-foreground">
                         {member.email ?? "—"}
@@ -116,7 +128,7 @@ export default async function UsersPage({
                         </div>
                       ) : (
                         <span className="text-xs text-muted-foreground">
-                          No roles
+                          Sin roles
                         </span>
                       )}
                     </td>

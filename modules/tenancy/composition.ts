@@ -8,6 +8,10 @@ import {
   changeMemberStatus,
   type ChangeMemberStatusInput,
 } from "@/modules/tenancy/application/use-cases/change-member-status"
+import {
+  createTenantMember,
+  type CreateTenantMemberInput,
+} from "@/modules/tenancy/application/use-cases/create-tenant-member"
 import { listAssignableRoles } from "@/modules/tenancy/application/use-cases/list-assignable-roles"
 import { listTenantMembers } from "@/modules/tenancy/application/use-cases/list-tenant-members"
 import { listUserTenants } from "@/modules/tenancy/application/use-cases/list-user-tenants"
@@ -54,6 +58,17 @@ export function changeTenantMemberStatus(input: ChangeMemberStatusInput) {
 export function replaceTenantMemberRoles(input: ReplaceMemberRolesInput) {
   return replaceMemberRoles(
     {
+      members: new SupabaseMemberRepository(),
+      audit: new SupabaseAuditRepository(),
+    },
+    input,
+  )
+}
+
+export function addTenantMember(input: CreateTenantMemberInput) {
+  return createTenantMember(
+    {
+      identity: new SupabaseIdentityAdminRepository(),
       members: new SupabaseMemberRepository(),
       audit: new SupabaseAuditRepository(),
     },

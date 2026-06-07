@@ -10,6 +10,7 @@ import {
 } from "@/modules/authorization/domain/permission"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 import {
+  addTenantMember,
   changeTenantMemberStatus,
   replaceTenantMemberRoles,
 } from "@/modules/tenancy/composition"
@@ -46,12 +47,26 @@ async function requireUserManagementContext(tenantSlug: string) {
   return context
 }
 
+const createMemberSchema = z.object({
+  tenantSlug: z.string().min(1),
+  fullName: z.string().min(1, "El nombre es requerido"),
+  email: z.string().email("Correo inválido"),
+  password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
+  roleIds: z.array(z.uuid()).default([]),
+})
+
 function describeError(error: unknown): string {
   if (error instanceof ApplicationError && error.code === "LAST_ADMIN") {
     return "A tenant must keep at least one active administrator."
   }
   if (error instanceof ApplicationError && error.code === "FORBIDDEN") {
     return "You do not have permission to manage users."
+  }
+  if (error instanceof ApplicationError && error.code === "EMAIL_TAKEN") {
+    return "Este correo ya está registrado en el sistema."
+  }
+  if (error instanceof ApplicationError && error.code === "WEAK_PASSWORD") {
+    return "La contraseña debe tener al menos 8 caracteres."
   }
   return "The change could not be completed."
 }
@@ -102,6 +117,41 @@ export async function updateMemberRolesAction(
       tenantId: context.tenantId,
       requestId: context.requestId,
       membershipId: parsed.data.membershipId,
+      roleIds: parsed.data.roleIds,
+    })
+  } catch (error) {
+    return initialError(describeError(error))
+  }
+
+  revalidatePath(`/app/${parsed.data.tenantSlug}/users`)
+  return { error: null, ok: true }
+}
+
+export async function createTenantMemberAction(
+  _state: MemberActionState,
+  formData: FormData,
+): Promise<MemberActionState> {
+  const parsed = createMemberSchema.safeParse({
+    tenantSlug: formData.get("tenantSlug"),
+    fullName: formData.get("fullName"),
+    email: formData.get("email"),
+    password: formData.get("password"),
+    roleIds: formData.getAll("roleIds"),
+  })
+  if (!parsed.success) {
+    const first = parsed.error.issues[0]
+    return initialError(first?.message ?? "Datos inválidos.")
+  }
+
+  try {
+    const context = await requireUserManagementContext(parsed.data.tenantSlug)
+    await addTenantMember({
+      actorId: context.userId,
+      tenantId: context.tenantId,
+      requestId: context.requestId,
+      email: parsed.data.email,
+      password: parsed.data.password,
+      fullName: parsed.data.fullName || null,
       roleIds: parsed.data.roleIds,
     })
   } catch (error) {

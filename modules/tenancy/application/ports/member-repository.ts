@@ -43,4 +43,10 @@ export interface MemberRepository {
     tenantId: UUID,
     roleIds: UUID[],
   ): Promise<void>
+
+  /**
+   * Inserts a new active membership for an existing auth user and optionally
+   * assigns initial roles. Returns the new membership id.
+   */
+  addMember(tenantId: UUID, userId: UUID, roleIds: UUID[]): Promise<UUID>
 }

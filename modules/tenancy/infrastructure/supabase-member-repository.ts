@@ -226,4 +226,28 @@ export class SupabaseMemberRepository implements MemberRepository {
       )
     }
   }
+
+  async addMember(tenantId: UUID, userId: UUID, roleIds: UUID[]): Promise<UUID> {
+    const client = await createServerSupabaseClient()
+
+    const { data, error } = await client
+      .from("tenant_memberships")
+      .insert({ tenant_id: tenantId, user_id: userId, status: "active" as MembershipStatus })
+      .select("id")
+      .single()
+
+    if (error || !data) {
+      throw new ApplicationError(
+        "Unable to add member to workspace.",
+        "MEMBER_ADD_FAILED",
+        error ?? undefined,
+      )
+    }
+
+    if (roleIds.length > 0) {
+      await this.replaceMemberRoles(data.id, tenantId, roleIds)
+    }
+
+    return data.id
+  }
 }

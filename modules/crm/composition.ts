@@ -134,6 +134,8 @@ import {
   type UpdateQuoteLineInput,
 } from "@/modules/crm/application/use-cases/update-quote-line"
 import { SupabaseQuoteRepository } from "@/modules/crm/infrastructure/supabase-quote-repository"
+import { SupabaseDashboardStatsRepository } from "@/modules/crm/infrastructure/supabase-dashboard-stats-repository"
+import { getDashboardStats } from "@/modules/crm/application/use-cases/get-dashboard-stats"
 import type { QuoteListQuery } from "@/modules/crm/domain/quote"
 import type { ActivityFilters } from "@/modules/crm/domain/activity"
 import type { OpportunityFilters } from "@/modules/crm/domain/opportunity"
@@ -439,6 +441,11 @@ export function listQuoteProductLineOptions(
   priceBookId: UUID | null,
 ) {
   return quoteRepo().listProductLineOptions(tenantId, priceBookId)
+}
+
+// --- Dashboard -------------------------------------------------------------
+export function getTenantDashboardStats(tenantId: UUID) {
+  return getDashboardStats(new SupabaseDashboardStatsRepository(), tenantId)
 }
 
 // --- Audit -----------------------------------------------------------------
