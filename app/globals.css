@@ -86,14 +86,14 @@
   --chart-5: var(--brand-midnight);
   --radius: 0.75rem;
 
-  /* Premium midnight sidebar rail (dark in both themes) */
-  --sidebar: var(--brand-midnight);
-  --sidebar-foreground: #cbd5e1;
+  /* Bright, approachable enterprise sidebar (HubSpot / Linear / Lightning). */
+  --sidebar: #fbfcff;
+  --sidebar-foreground: #475569;
   --sidebar-primary: var(--brand-blue);
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #18203a;
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #1b2440;
+  --sidebar-accent: #eef4ff;
+  --sidebar-accent-foreground: #1d4ed8;
+  --sidebar-border: #e7ecf4;
   --sidebar-ring: var(--brand-blue);
 }
 
@@ -128,13 +128,13 @@
   --chart-4: #94a3b8;
   --chart-5: #cbd5e1;
 
-  --sidebar: #080c18;
+  --sidebar: #0f172a;
   --sidebar-foreground: #cbd5e1;
   --sidebar-primary: var(--brand-blue);
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #18203a;
+  --sidebar-accent: #1e293b;
   --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #1b2440;
+  --sidebar-border: #1e293b;
   --sidebar-ring: var(--brand-blue);
 }
 

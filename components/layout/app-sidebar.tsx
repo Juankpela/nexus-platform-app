@@ -76,11 +76,11 @@ export function AppSidebar({
   }
 
   return (
-    <aside className="sidebar-gradient hidden w-64 shrink-0 flex-col text-sidebar-foreground md:flex">
+    <aside className="hidden w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground md:flex">
       <Link
         href={`/app/${tenantSlug}/dashboard`}
         aria-label="Nexus — Where Operations Connect."
-        className="flex h-[76px] items-center justify-center border-b border-white/10 bg-white px-4"
+        className="flex h-[76px] items-center justify-center border-b border-sidebar-border bg-white px-4"
       >
         <NexusLogo
           variant="full"
@@ -116,11 +116,11 @@ export function AppSidebar({
                 key={mod.label}
                 aria-disabled
                 title="Coming soon"
-                className="flex h-9 cursor-not-allowed items-center gap-3 rounded-lg px-3 text-sm font-medium text-sidebar-foreground/35"
+                className="flex h-9 cursor-not-allowed items-center gap-3 rounded-lg px-3 text-sm font-medium text-sidebar-foreground/45"
               >
                 <mod.icon className="size-4" />
                 <span className="flex-1">{mod.label}</span>
-                <span className="rounded-full bg-white/5 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-sidebar-foreground/50">
+                <span className="rounded-full bg-sidebar-foreground/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-sidebar-foreground/55">
                   Soon
                 </span>
               </div>
@@ -129,7 +129,7 @@ export function AppSidebar({
         </div>
       </nav>
 
-      <div className="border-t border-white/10 px-5 py-3.5 text-[11px] text-sidebar-foreground/50">
+      <div className="border-t border-sidebar-border px-5 py-3.5 text-[11px] text-sidebar-foreground/50">
         Where Operations Connect.
       </div>
     </aside>

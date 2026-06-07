@@ -7,7 +7,7 @@ export function PageHeader({
 }) {
   return (
     <div className="px-5 pb-5 pt-7 sm:px-8">
-      <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+      <h1 className="text-[1.7rem] font-bold leading-tight tracking-[-0.02em] text-foreground">
         {title}
       </h1>
       <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-muted-foreground">
