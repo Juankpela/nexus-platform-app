@@ -3,7 +3,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 
 import { OpportunityFormDialog } from "@/components/crm/opportunity-form-dialog"
-import { OpportunityKanban } from "@/components/crm/opportunity-kanban"
+import { OpportunityKanbanClient } from "@/components/crm/opportunity-kanban-client"
 import { Pagination } from "@/components/crm/pagination"
 import { EmptyState } from "@/components/layout/empty-state"
 import { PageHeader } from "@/components/layout/page-header"
@@ -223,9 +223,11 @@ export default async function OpportunitiesPage({
               }
             />
           ) : (
-            <OpportunityKanban
+            <OpportunityKanbanClient
               opportunities={result.items}
               basePath={basePath}
+              tenantSlug={tenantSlug}
+              canWrite={canWrite}
             />
           )
         ) : (
