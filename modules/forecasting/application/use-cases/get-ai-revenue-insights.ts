@@ -5,7 +5,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server"
 import type { AiInsight, AiRevenueInsights } from "@/modules/forecasting/domain/ai-insight"
 import type { UUID } from "@/types/shared"
 
-const client = new Anthropic()
+const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 export async function getAiRevenueInsights(tenantId: UUID): Promise<AiRevenueInsights> {
   const supabase = await createServerSupabaseClient()
@@ -105,9 +105,14 @@ Solo responde con el JSON, sin markdown, sin explicaciones.`
     })
 
     const content = message.content[0]
-    if (content.type !== "text") return fallbackInsights()
+    if (content.type !== "text") return fallbackInsights("Respuesta no textual del modelo")
 
-    const parsed = JSON.parse(content.text) as {
+    const cleaned = content.text
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/\s*```\s*$/i, "")
+      .trim()
+
+    const parsed = JSON.parse(cleaned) as {
       summary: string
       forecastScore: number
       riskScore: number
@@ -121,14 +126,18 @@ Solo responde con el JSON, sin markdown, sin explicaciones.`
       riskScore:     parsed.riskScore,
       generatedAt:   new Date().toISOString(),
     }
-  } catch {
-    return fallbackInsights()
+  } catch (e) {
+    const detail = e instanceof Error ? e.message : String(e)
+    console.error("[ai-revenue-insights] error:", detail)
+    return fallbackInsights(detail)
   }
 }
 
-function fallbackInsights(): AiRevenueInsights {
+function fallbackInsights(detail?: string): AiRevenueInsights {
   return {
-    summary: "No se pudo generar el análisis automático. Verifica la configuración de ANTHROPIC_API_KEY.",
+    summary: detail
+      ? `No se pudo generar el análisis automático. Detalle: ${detail}`
+      : "No se pudo generar el análisis automático. Verifica la configuración de ANTHROPIC_API_KEY.",
     insights: [],
     forecastScore: 0,
     riskScore: 0,
