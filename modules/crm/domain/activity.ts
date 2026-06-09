@@ -38,6 +38,7 @@ export type Activity = {
   opportunityId: UUID | null
   caseId: UUID | null
   assetId: UUID | null
+  workOrderId: UUID | null
   status: ActivityStatus
   dueAt: string | null
   completedAt: string | null
@@ -57,6 +58,7 @@ export type ActivityInput = {
   opportunityId: UUID | null
   caseId: UUID | null
   assetId: UUID | null
+  workOrderId: UUID | null
 }
 
 /** Optional timeline filters. */

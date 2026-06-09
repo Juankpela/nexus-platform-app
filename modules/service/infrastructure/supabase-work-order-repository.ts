@@ -1,0 +1,441 @@
+import "server-only"
+
+import { ApplicationError } from "@/lib/errors/application-error"
+import { createServerSupabaseClient } from "@/lib/supabase/server"
+import type { Paginated } from "@/modules/crm/domain/pagination"
+import type { WorkOrderRepository } from "@/modules/service/application/ports/work-order-repository"
+import {
+  WORK_ORDER_PRIORITIES,
+  WORK_ORDER_STATUSES,
+  type WorkOrder,
+  type WorkOrderFilters,
+  type WorkOrderInput,
+  type WorkOrderPriority,
+  type WorkOrderStatus,
+} from "@/modules/service/domain/work-order"
+import type {
+  AssetServiceSummary,
+  WorkOrderStats,
+} from "@/modules/service/domain/work-order-stats"
+import type { Database } from "@/types/database"
+import type { UUID } from "@/types/shared"
+
+type WorkOrderRow = Database["public"]["Tables"]["work_orders"]["Row"]
+type WorkOrderRowWithRefs = WorkOrderRow & {
+  companies: { name: string } | null
+  cases: { case_number: string } | null
+  assets: { name: string; asset_number: string } | null
+}
+
+const SELECT_WITH_REFS =
+  "*, companies(name), cases(case_number), assets(name, asset_number)"
+
+function toWorkOrder(row: WorkOrderRowWithRefs): WorkOrder {
+  return {
+    id: row.id,
+    workOrderNumber: row.work_order_number,
+    companyId: row.company_id,
+    companyName: row.companies?.name ?? null,
+    caseId: row.case_id,
+    caseNumber: row.cases?.case_number ?? null,
+    assetId: row.asset_id,
+    assetName: row.assets
+      ? `${row.assets.asset_number} · ${row.assets.name}`
+      : null,
+    assignedTechnicianId: row.assigned_technician_id,
+    subject: row.subject,
+    description: row.description,
+    priority: row.priority,
+    status: row.status,
+    scheduledStart: row.scheduled_start,
+    scheduledEnd: row.scheduled_end,
+    actualStart: row.actual_start,
+    actualEnd: row.actual_end,
+    laborHours: row.labor_hours,
+    resolutionSummary: row.resolution_summary,
+    completionNotes: row.completion_notes,
+    createdBy: row.created_by,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }
+}
+
+function toRow(input: WorkOrderInput) {
+  return {
+    subject: input.subject,
+    description: input.description,
+    priority: input.priority,
+    company_id: input.companyId,
+    case_id: input.caseId,
+    asset_id: input.assetId,
+    scheduled_start: input.scheduledStart,
+    scheduled_end: input.scheduledEnd,
+    labor_hours: input.laborHours,
+    resolution_summary: input.resolutionSummary,
+    completion_notes: input.completionNotes,
+  }
+}
+
+function sanitizeSearch(term: string): string {
+  return term.replace(/[%,()*]/g, " ").trim()
+}
+
+export class SupabaseWorkOrderRepository implements WorkOrderRepository {
+  async list(
+    tenantId: UUID,
+    filters: WorkOrderFilters,
+    page: number,
+    pageSize: number,
+  ): Promise<Paginated<WorkOrder>> {
+    const client = await createServerSupabaseClient()
+    const from = (page - 1) * pageSize
+    const to = from + pageSize - 1
+
+    let query = client
+      .from("work_orders")
+      .select(SELECT_WITH_REFS, { count: "exact" })
+      .eq("tenant_id", tenantId)
+
+    if (filters.status) query = query.eq("status", filters.status)
+    if (filters.priority) query = query.eq("priority", filters.priority)
+    if (filters.technicianId)
+      query = query.eq("assigned_technician_id", filters.technicianId)
+    if (filters.companyId) query = query.eq("company_id", filters.companyId)
+    if (filters.assetId) query = query.eq("asset_id", filters.assetId)
+    if (filters.dateFrom) query = query.gte("scheduled_start", filters.dateFrom)
+    if (filters.dateTo) query = query.lte("scheduled_start", filters.dateTo)
+    const term = filters.search ? sanitizeSearch(filters.search) : ""
+    if (term) {
+      query = query.or(
+        `subject.ilike.%${term}%,work_order_number.ilike.%${term}%`,
+      )
+    }
+
+    const { data, error, count } = await query
+      .order("created_at", { ascending: false })
+      .range(from, to)
+
+    if (error) {
+      throw new ApplicationError(
+        "Unable to list work orders.",
+        "WORK_ORDER_LIST_FAILED",
+        error,
+      )
+    }
+
+    return {
+      items: (data as unknown as WorkOrderRowWithRefs[]).map(toWorkOrder),
+      total: count ?? 0,
+      page,
+      pageSize,
+    }
+  }
+
+  async getById(tenantId: UUID, id: UUID): Promise<WorkOrder | null> {
+    const client = await createServerSupabaseClient()
+    const { data, error } = await client
+      .from("work_orders")
+      .select(SELECT_WITH_REFS)
+      .eq("tenant_id", tenantId)
+      .eq("id", id)
+      .maybeSingle()
+
+    if (error) {
+      throw new ApplicationError(
+        "Unable to load work order.",
+        "WORK_ORDER_LOAD_FAILED",
+        error,
+      )
+    }
+    return data ? toWorkOrder(data as unknown as WorkOrderRowWithRefs) : null
+  }
+
+  async listForCase(tenantId: UUID, caseId: UUID): Promise<WorkOrder[]> {
+    return this.listBy("case_id", tenantId, caseId)
+  }
+
+  async listForAsset(tenantId: UUID, assetId: UUID): Promise<WorkOrder[]> {
+    return this.listBy("asset_id", tenantId, assetId)
+  }
+
+  private async listBy(
+    column: "case_id" | "asset_id",
+    tenantId: UUID,
+    targetId: UUID,
+  ): Promise<WorkOrder[]> {
+    const client = await createServerSupabaseClient()
+    const { data, error } = await client
+      .from("work_orders")
+      .select(SELECT_WITH_REFS)
+      .eq("tenant_id", tenantId)
+      .eq(column, targetId)
+      .order("created_at", { ascending: false })
+
+    if (error) {
+      throw new ApplicationError(
+        "Unable to list work orders.",
+        "WORK_ORDER_LIST_FAILED",
+        error,
+      )
+    }
+    return (data as unknown as WorkOrderRowWithRefs[]).map(toWorkOrder)
+  }
+
+  async create(
+    tenantId: UUID,
+    params: { createdBy: UUID; workOrderNumber: string; input: WorkOrderInput },
+  ): Promise<WorkOrder> {
+    const client = await createServerSupabaseClient()
+    const { data, error } = await client
+      .from("work_orders")
+      .insert({
+        tenant_id: tenantId,
+        created_by: params.createdBy,
+        work_order_number: params.workOrderNumber,
+        ...toRow(params.input),
+      })
+      .select(SELECT_WITH_REFS)
+      .single()
+
+    if (error || !data) {
+      throw new ApplicationError(
+        "Unable to create work order.",
+        "WORK_ORDER_CREATE_FAILED",
+        error,
+      )
+    }
+    return toWorkOrder(data as unknown as WorkOrderRowWithRefs)
+  }
+
+  async update(
+    tenantId: UUID,
+    id: UUID,
+    input: WorkOrderInput,
+  ): Promise<WorkOrder> {
+    const client = await createServerSupabaseClient()
+    const { data, error } = await client
+      .from("work_orders")
+      .update(toRow(input))
+      .eq("tenant_id", tenantId)
+      .eq("id", id)
+      .select(SELECT_WITH_REFS)
+      .single()
+
+    if (error || !data) {
+      throw new ApplicationError(
+        "Unable to update work order.",
+        "WORK_ORDER_UPDATE_FAILED",
+        error,
+      )
+    }
+    return toWorkOrder(data as unknown as WorkOrderRowWithRefs)
+  }
+
+  async setStatus(
+    tenantId: UUID,
+    id: UUID,
+    status: WorkOrderStatus,
+    timestamps: { actualStart?: string | null; actualEnd?: string | null },
+  ): Promise<void> {
+    const client = await createServerSupabaseClient()
+    const patch: Database["public"]["Tables"]["work_orders"]["Update"] = { status }
+    if ("actualStart" in timestamps) patch.actual_start = timestamps.actualStart
+    if ("actualEnd" in timestamps) patch.actual_end = timestamps.actualEnd
+
+    const { error } = await client
+      .from("work_orders")
+      .update(patch)
+      .eq("tenant_id", tenantId)
+      .eq("id", id)
+
+    if (error) {
+      throw new ApplicationError(
+        "Unable to change work order status.",
+        "WORK_ORDER_STATUS_FAILED",
+        error,
+      )
+    }
+  }
+
+  async setTechnician(
+    tenantId: UUID,
+    id: UUID,
+    technicianId: UUID | null,
+  ): Promise<void> {
+    const client = await createServerSupabaseClient()
+    const { error } = await client
+      .from("work_orders")
+      .update({ assigned_technician_id: technicianId })
+      .eq("tenant_id", tenantId)
+      .eq("id", id)
+
+    if (error) {
+      throw new ApplicationError(
+        "Unable to assign technician.",
+        "WORK_ORDER_TECH_FAILED",
+        error,
+      )
+    }
+  }
+
+  async nextWorkOrderNumber(tenantId: UUID): Promise<string> {
+    const client = await createServerSupabaseClient()
+    const { data, error } = await client.rpc("next_work_order_number", {
+      p_tenant_id: tenantId,
+    })
+
+    if (error || !data) {
+      throw new ApplicationError(
+        "Unable to generate work order number.",
+        "WORK_ORDER_NUMBER_FAILED",
+        error,
+      )
+    }
+    return data as string
+  }
+
+  async getStats(tenantId: UUID): Promise<WorkOrderStats> {
+    const client = await createServerSupabaseClient()
+    const { data, error } = await client
+      .from("work_orders")
+      .select(
+        "status, priority, assigned_technician_id, actual_start, actual_end",
+      )
+      .eq("tenant_id", tenantId)
+
+    if (error) {
+      throw new ApplicationError(
+        "Unable to load work order stats.",
+        "WORK_ORDER_STATS_FAILED",
+        error,
+      )
+    }
+
+    const byStatus = Object.fromEntries(
+      WORK_ORDER_STATUSES.map((s) => [s, 0]),
+    ) as Record<WorkOrderStatus, number>
+    const byPriority = Object.fromEntries(
+      WORK_ORDER_PRIORITIES.map((p) => [p, 0]),
+    ) as Record<WorkOrderPriority, number>
+
+    const now = new Date()
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime()
+    let openCount = 0
+    let completedThisMonth = 0
+    let resolutionTotalMs = 0
+    let resolutionCount = 0
+    let openAssigned = 0
+
+    for (const row of data ?? []) {
+      const status = row.status as WorkOrderStatus
+      const priority = row.priority as WorkOrderPriority
+      byStatus[status] += 1
+      byPriority[priority] += 1
+
+      const isOpen = status !== "completed" && status !== "cancelled"
+      if (isOpen) {
+        openCount += 1
+        if (row.assigned_technician_id) openAssigned += 1
+      }
+      if (
+        status === "completed" &&
+        row.actual_end &&
+        new Date(row.actual_end).getTime() >= monthStart
+      ) {
+        completedThisMonth += 1
+      }
+      if (status === "completed" && row.actual_start && row.actual_end) {
+        resolutionTotalMs +=
+          new Date(row.actual_end).getTime() -
+          new Date(row.actual_start).getTime()
+        resolutionCount += 1
+      }
+    }
+
+    return {
+      openCount,
+      completedThisMonth,
+      totalCount: (data ?? []).length,
+      avgResolutionHours:
+        resolutionCount > 0
+          ? Math.round((resolutionTotalMs / resolutionCount / 3_600_000) * 10) / 10
+          : null,
+      byStatus,
+      byPriority,
+      // Demo proxy until a Technicians module provides real capacity:
+      // share of open work orders that already have a technician assigned.
+      technicianUtilizationPct:
+        openCount > 0 ? Math.round((openAssigned / openCount) * 100) : null,
+    }
+  }
+
+  async getAssetServiceSummary(
+    tenantId: UUID,
+    assetId: UUID,
+  ): Promise<AssetServiceSummary> {
+    const client = await createServerSupabaseClient()
+    const { data, error } = await client
+      .from("work_orders")
+      .select("status, scheduled_start, actual_end")
+      .eq("tenant_id", tenantId)
+      .eq("asset_id", assetId)
+
+    if (error) {
+      throw new ApplicationError(
+        "Unable to load asset service summary.",
+        "WORK_ORDER_SUMMARY_FAILED",
+        error,
+      )
+    }
+
+    const rows = data ?? []
+    const nowMs = Date.now()
+    let openCount = 0
+    let historicalCount = 0
+    let lastVisitAt: string | null = null
+    let nextScheduledAt: string | null = null
+    const completedDates: number[] = []
+
+    for (const row of rows) {
+      const status = row.status as WorkOrderStatus
+      if (status === "completed") {
+        historicalCount += 1
+        if (row.actual_end) {
+          completedDates.push(new Date(row.actual_end).getTime())
+          if (!lastVisitAt || row.actual_end > lastVisitAt) {
+            lastVisitAt = row.actual_end
+          }
+        }
+      } else if (status !== "cancelled") {
+        openCount += 1
+        if (
+          row.scheduled_start &&
+          new Date(row.scheduled_start).getTime() >= nowMs &&
+          (!nextScheduledAt || row.scheduled_start < nextScheduledAt)
+        ) {
+          nextScheduledAt = row.scheduled_start
+        }
+      }
+    }
+
+    let avgDaysBetweenInterventions: number | null = null
+    if (completedDates.length >= 2) {
+      completedDates.sort((a, b) => a - b)
+      let gapTotal = 0
+      for (let i = 1; i < completedDates.length; i++) {
+        gapTotal += completedDates[i] - completedDates[i - 1]
+      }
+      avgDaysBetweenInterventions = Math.round(
+        gapTotal / (completedDates.length - 1) / 86_400_000,
+      )
+    }
+
+    return {
+      openCount,
+      historicalCount,
+      lastVisitAt,
+      nextScheduledAt,
+      avgDaysBetweenInterventions,
+    }
+  }
+}

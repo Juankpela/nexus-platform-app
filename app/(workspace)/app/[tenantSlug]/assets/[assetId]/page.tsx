@@ -29,9 +29,12 @@ import {
 import type { CompanyOption } from "@/modules/crm/domain/company"
 import {
   getAssetRecord,
+  getAssetServiceSummary,
   listAssetOptions,
   listCasesForAsset,
+  listWorkOrdersForAsset,
 } from "@/modules/service/composition"
+import { WORK_ORDER_STATUS_LABELS } from "@/modules/service/domain/work-order"
 import {
   ASSET_CATEGORY_LABELS,
   ASSET_CRITICALITY_LABELS,
@@ -124,6 +127,11 @@ export default async function AssetDetailPage({
   const filters = parseActivityFilters(sp)
   const returnPath = `/app/${tenantSlug}/assets/${assetId}`
 
+  const canReadWorkOrders = hasPermission(
+    context.effectivePermissions,
+    SERVICE_PERMISSIONS.workOrdersRead,
+  )
+
   const [
     relatedCases,
     companyOptions,
@@ -131,6 +139,8 @@ export default async function AssetDetailPage({
     parentOptions,
     activities,
     auditEvents,
+    workOrders,
+    serviceSummary,
   ] = await Promise.all([
     listCasesForAsset(context.tenantId, assetId),
     canWrite
@@ -146,6 +156,12 @@ export default async function AssetDetailPage({
     canReadAudit
       ? listSubjectAuditEvents(context.tenantId, assetId, 20)
       : Promise.resolve([]),
+    canReadWorkOrders
+      ? listWorkOrdersForAsset(context.tenantId, assetId)
+      : Promise.resolve([]),
+    canReadWorkOrders
+      ? getAssetServiceSummary(context.tenantId, assetId)
+      : Promise.resolve(null),
   ])
 
   const productSelect = productOptions.map((p) => ({ id: p.id, name: p.name }))
@@ -298,18 +314,84 @@ export default async function AssetDetailPage({
           )}
         </div>
 
-        {/* Work Orders — readiness placeholder */}
-        <div className="rounded-xl border border-dashed bg-muted/20 p-5">
-          <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-            <Wrench className="size-4 text-muted-foreground" />
-            Órdenes de trabajo
+        {/* Work Orders — service history */}
+        {canReadWorkOrders ? (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+              <Wrench className="size-4 text-muted-foreground" />
+              Órdenes de trabajo
+            </div>
+            {serviceSummary ? (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <Metric label="Abiertas">{serviceSummary.openCount}</Metric>
+                <Metric label="Históricas">
+                  {serviceSummary.historicalCount}
+                </Metric>
+                <Metric label="Última visita">
+                  {serviceSummary.lastVisitAt
+                    ? new Date(serviceSummary.lastVisitAt).toLocaleDateString()
+                    : "—"}
+                </Metric>
+                <Metric label="Próxima programada">
+                  {serviceSummary.nextScheduledAt
+                    ? new Date(
+                        serviceSummary.nextScheduledAt,
+                      ).toLocaleDateString()
+                    : "—"}
+                </Metric>
+              </div>
+            ) : null}
+            {serviceSummary?.avgDaysBetweenInterventions != null ? (
+              <p className="text-xs text-muted-foreground">
+                Tiempo promedio entre intervenciones:{" "}
+                <span className="font-medium text-foreground">
+                  {serviceSummary.avgDaysBetweenInterventions} días
+                </span>
+              </p>
+            ) : null}
+            {workOrders.length === 0 ? (
+              <div className="rounded-xl border border-dashed bg-card p-6 text-center text-sm text-muted-foreground">
+                Este activo no tiene órdenes de trabajo.
+              </div>
+            ) : (
+              <div className="overflow-hidden rounded-xl border bg-card">
+                <table className="w-full text-sm">
+                  <thead className="border-b bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
+                    <tr>
+                      <th className="px-4 py-3 font-medium">Número</th>
+                      <th className="px-4 py-3 font-medium">Asunto</th>
+                      <th className="px-4 py-3 font-medium">Estado</th>
+                      <th className="px-4 py-3 font-medium">Programada</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {workOrders.map((wo) => (
+                      <tr key={wo.id}>
+                        <td className="px-4 py-3">
+                          <Link
+                            href={`/app/${tenantSlug}/work-orders/${wo.id}`}
+                            className="font-medium text-foreground hover:underline"
+                          >
+                            {wo.workOrderNumber}
+                          </Link>
+                        </td>
+                        <td className="px-4 py-3">{wo.subject}</td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          {WORK_ORDER_STATUS_LABELS[wo.status]}
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          {wo.scheduledStart
+                            ? new Date(wo.scheduledStart).toLocaleDateString()
+                            : "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Próximamente: cada caso de este activo podrá derivar en una o varias
-            órdenes de trabajo (Field Service) asignadas a técnicos y
-            programadas en calendario.
-          </p>
-        </div>
+        ) : null}
 
         {/* Activity timeline (service history) */}
         {canReadActivities ? (

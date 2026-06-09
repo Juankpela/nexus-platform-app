@@ -257,6 +257,14 @@ export function listAssetActivityTimeline(
   return activityRepo().listForAsset(tenantId, assetId, filters)
 }
 
+export function listWorkOrderActivityTimeline(
+  tenantId: UUID,
+  workOrderId: UUID,
+  filters: ActivityFilters,
+) {
+  return activityRepo().listForWorkOrder(tenantId, workOrderId, filters)
+}
+
 export function createActivityRecord(input: CreateActivityInput) {
   return createActivity({ activities: activityRepo(), audit: audit() }, input)
 }

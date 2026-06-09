@@ -1,0 +1,318 @@
+import { ArrowLeft, ArrowRight, Building2, Cpu, LifeBuoy, Wrench } from "lucide-react"
+import type { Metadata } from "next"
+import Link from "next/link"
+import { notFound } from "next/navigation"
+
+import { ActivityTimeline } from "@/components/crm/activity-timeline"
+import { PageHeader } from "@/components/layout/page-header"
+import { WorkOrderFormDialog } from "@/components/service/work-order-form-dialog"
+import { WorkOrderStatusControl } from "@/components/service/work-order-status-control"
+import { WorkOrderTechnicianAssign } from "@/components/service/work-order-technician-assign"
+import { Button } from "@/components/ui/button"
+import { requirePermission } from "@/modules/authorization/application/require-permission"
+import {
+  CRM_PERMISSIONS,
+  SERVICE_PERMISSIONS,
+  hasPermission,
+} from "@/modules/authorization/domain/permission"
+import {
+  listCompanyOptions,
+  listSubjectAuditEvents,
+  listWorkOrderActivityTimeline,
+} from "@/modules/crm/composition"
+import {
+  ACTIVITY_TYPES,
+  type ActivityFilters,
+  type ActivityType,
+} from "@/modules/crm/domain/activity"
+import type { CompanyOption } from "@/modules/crm/domain/company"
+import {
+  getWorkOrderRecord,
+  listAssetOptions,
+  listTenantCases,
+} from "@/modules/service/composition"
+import {
+  WORK_ORDER_PRIORITY_LABELS,
+  WORK_ORDER_STATUS_LABELS,
+} from "@/modules/service/domain/work-order"
+import { getRequestContext } from "@/modules/request-context/application/get-request-context"
+import { listCachedTenantMembers } from "@/modules/tenancy/composition"
+
+export const metadata: Metadata = { title: "Work Order" }
+
+function parseActivityFilters(sp: {
+  type?: string
+  status?: string
+}): ActivityFilters {
+  const type = (ACTIVITY_TYPES as string[]).includes(sp.type ?? "")
+    ? (sp.type as ActivityType)
+    : null
+  const status =
+    sp.status === "open" || sp.status === "completed" ? sp.status : null
+  return { type, status }
+}
+
+function fmt(iso: string | null): string | null {
+  return iso ? new Date(iso).toLocaleString() : null
+}
+
+function Detail({ label, value }: { label: string; value: string | null }) {
+  return (
+    <div>
+      <dt className="text-xs uppercase tracking-wider text-muted-foreground">
+        {label}
+      </dt>
+      <dd className="mt-0.5 text-sm text-foreground">{value ?? "—"}</dd>
+    </div>
+  )
+}
+
+export default async function WorkOrderDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ tenantSlug: string; workOrderId: string }>
+  searchParams: Promise<{ type?: string; status?: string }>
+}) {
+  const { tenantSlug, workOrderId } = await params
+  const sp = await searchParams
+  const context = await getRequestContext(tenantSlug)
+  requirePermission(
+    context.effectivePermissions,
+    SERVICE_PERMISSIONS.workOrdersRead,
+  )
+
+  const workOrder = await getWorkOrderRecord(context.tenantId, workOrderId)
+  if (!workOrder) notFound()
+
+  const canWrite = hasPermission(
+    context.effectivePermissions,
+    SERVICE_PERMISSIONS.workOrdersWrite,
+  )
+  const canReadAudit = hasPermission(
+    context.effectivePermissions,
+    "tenant.audit.read",
+  )
+  const canReadActivities = hasPermission(
+    context.effectivePermissions,
+    CRM_PERMISSIONS.activitiesRead,
+  )
+  const canWriteActivities = hasPermission(
+    context.effectivePermissions,
+    CRM_PERMISSIONS.activitiesWrite,
+  )
+
+  const filters = parseActivityFilters(sp)
+  const returnPath = `/app/${tenantSlug}/work-orders/${workOrderId}`
+
+  const [members, companyOptions, assetOptions, caseResult, activities, auditEvents] =
+    await Promise.all([
+      listCachedTenantMembers(context.tenantId),
+      canWrite
+        ? listCompanyOptions(context.tenantId)
+        : Promise.resolve([] as CompanyOption[]),
+      canWrite ? listAssetOptions(context.tenantId) : Promise.resolve([]),
+      canWrite
+        ? listTenantCases(
+            context.tenantId,
+            { search: null, status: null, priority: null, ownerId: null },
+            1,
+            100,
+          )
+        : Promise.resolve({ items: [], total: 0, page: 1, pageSize: 0 }),
+      canReadActivities
+        ? listWorkOrderActivityTimeline(context.tenantId, workOrderId, filters)
+        : Promise.resolve([]),
+      canReadAudit
+        ? listSubjectAuditEvents(context.tenantId, workOrderId, 20)
+        : Promise.resolve([]),
+    ])
+
+  const technicianOptions = members.map((m) => ({
+    id: m.userId,
+    label: m.fullName ?? m.email ?? m.userId,
+  }))
+  const technicianLabel = workOrder.assignedTechnicianId
+    ? (technicianOptions.find((t) => t.id === workOrder.assignedTechnicianId)
+        ?.label ?? "Asignado")
+    : "Sin asignar"
+  const caseOptions = caseResult.items.map((c) => ({
+    id: c.id,
+    label: `${c.caseNumber} · ${c.subject}`,
+  }))
+
+  return (
+    <>
+      <PageHeader
+        title={`${workOrder.workOrderNumber} · ${workOrder.subject}`}
+        description="Orden de trabajo — trazabilidad operacional completa."
+      />
+      <div className="space-y-6 px-5 py-6 sm:px-8">
+        <div className="flex items-center justify-between gap-3">
+          <Link
+            href={`/app/${tenantSlug}/work-orders`}
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="size-4" />
+            Órdenes de trabajo
+          </Link>
+          {canWrite ? (
+            <WorkOrderFormDialog
+              tenantSlug={tenantSlug}
+              companyOptions={companyOptions}
+              caseOptions={caseOptions}
+              assetOptions={assetOptions}
+              workOrder={workOrder}
+              trigger={
+                <Button variant="outline" size="sm">
+                  Editar
+                </Button>
+              }
+            />
+          ) : null}
+        </div>
+
+        {/* Traceability chain: Cliente -> Activo -> Caso -> Intervención */}
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-card p-4 text-sm">
+          <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+            <Building2 className="size-4" />
+            {workOrder.companyName ?? "—"}
+          </span>
+          <ArrowRight className="size-4 text-muted-foreground/50" />
+          {workOrder.assetId ? (
+            <Link
+              href={`/app/${tenantSlug}/assets/${workOrder.assetId}`}
+              className="inline-flex items-center gap-1.5 font-medium text-foreground hover:underline"
+            >
+              <Cpu className="size-4" />
+              {workOrder.assetName}
+            </Link>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+              <Cpu className="size-4" />
+              Sin activo
+            </span>
+          )}
+          <ArrowRight className="size-4 text-muted-foreground/50" />
+          {workOrder.caseId ? (
+            <Link
+              href={`/app/${tenantSlug}/cases/${workOrder.caseId}`}
+              className="inline-flex items-center gap-1.5 font-medium text-foreground hover:underline"
+            >
+              <LifeBuoy className="size-4" />
+              {workOrder.caseNumber}
+            </Link>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+              <LifeBuoy className="size-4" />
+              Sin caso
+            </span>
+          )}
+          <ArrowRight className="size-4 text-muted-foreground/50" />
+          <span className="inline-flex items-center gap-1.5 font-semibold text-foreground">
+            <Wrench className="size-4" />
+            {workOrder.workOrderNumber}
+          </span>
+        </div>
+
+        <div className="rounded-xl border bg-card p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span className="text-sm font-semibold">
+              {WORK_ORDER_STATUS_LABELS[workOrder.status]}
+            </span>
+            {canWrite ? (
+              <div className="flex flex-wrap items-center gap-3">
+                <WorkOrderStatusControl
+                  tenantSlug={tenantSlug}
+                  id={workOrder.id}
+                  status={workOrder.status}
+                />
+                <WorkOrderTechnicianAssign
+                  tenantSlug={tenantSlug}
+                  id={workOrder.id}
+                  technicianId={workOrder.assignedTechnicianId}
+                  technicianOptions={technicianOptions}
+                />
+              </div>
+            ) : null}
+          </div>
+          <dl className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <Detail
+              label="Prioridad"
+              value={WORK_ORDER_PRIORITY_LABELS[workOrder.priority]}
+            />
+            <Detail label="Empresa" value={workOrder.companyName} />
+            <Detail label="Activo" value={workOrder.assetName} />
+            <Detail label="Caso origen" value={workOrder.caseNumber} />
+            <Detail label="Técnico asignado" value={technicianLabel} />
+            <Detail label="Inicio programado" value={fmt(workOrder.scheduledStart)} />
+            <Detail label="Fin programado" value={fmt(workOrder.scheduledEnd)} />
+            <Detail label="Inicio real" value={fmt(workOrder.actualStart)} />
+            <Detail label="Fin real" value={fmt(workOrder.actualEnd)} />
+            <Detail
+              label="Horas de trabajo"
+              value={
+                workOrder.laborHours != null
+                  ? `${workOrder.laborHours} h`
+                  : null
+              }
+            />
+          </dl>
+          {workOrder.description ? (
+            <p className="mt-4 whitespace-pre-wrap text-sm text-muted-foreground">
+              {workOrder.description}
+            </p>
+          ) : null}
+          {workOrder.resolutionSummary ? (
+            <div className="mt-4">
+              <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                Resumen técnico
+              </p>
+              <p className="mt-0.5 whitespace-pre-wrap text-sm text-foreground">
+                {workOrder.resolutionSummary}
+              </p>
+            </div>
+          ) : null}
+        </div>
+
+        {canReadActivities ? (
+          <ActivityTimeline
+            tenantSlug={tenantSlug}
+            returnPath={returnPath}
+            workOrderId={workOrderId}
+            companyId={workOrder.companyId}
+            activities={activities}
+            filters={filters}
+            canWrite={canWriteActivities}
+          />
+        ) : null}
+
+        {canReadAudit && auditEvents.length > 0 ? (
+          <div className="space-y-3">
+            <h2 className="text-sm font-semibold">Historial de auditoría</h2>
+            <div className="overflow-hidden rounded-xl border bg-card">
+              <table className="w-full text-sm">
+                <thead className="border-b bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-3 font-medium">Evento</th>
+                    <th className="px-4 py-3 font-medium">Cuándo</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {auditEvents.map((ev) => (
+                    <tr key={ev.id} className="align-top">
+                      <td className="px-4 py-3 font-medium">{ev.action}</td>
+                      <td className="px-4 py-3 text-muted-foreground">
+                        {new Date(ev.occurredAt).toLocaleString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </>
+  )
+}

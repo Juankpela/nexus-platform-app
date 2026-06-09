@@ -41,6 +41,7 @@ export function ActivityFormDialog({
   opportunityId,
   caseId,
   assetId,
+  workOrderId,
   activity,
   trigger,
 }: {
@@ -51,6 +52,7 @@ export function ActivityFormDialog({
   opportunityId?: string | null
   caseId?: string | null
   assetId?: string | null
+  workOrderId?: string | null
   activity?: Activity
   trigger: React.ReactNode
 }) {
@@ -73,6 +75,7 @@ export function ActivityFormDialog({
     activity?.opportunityId ?? opportunityId ?? ""
   const effectiveCaseId = activity?.caseId ?? caseId ?? ""
   const effectiveAssetId = activity?.assetId ?? assetId ?? ""
+  const effectiveWorkOrderId = activity?.workOrderId ?? workOrderId ?? ""
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -98,6 +101,11 @@ export function ActivityFormDialog({
           />
           <input type="hidden" name="case_id" value={effectiveCaseId} />
           <input type="hidden" name="asset_id" value={effectiveAssetId} />
+          <input
+            type="hidden"
+            name="work_order_id"
+            value={effectiveWorkOrderId}
+          />
           {activity ? (
             <input type="hidden" name="id" value={activity.id} />
           ) : null}

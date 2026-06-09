@@ -32,6 +32,7 @@ export type Database = {
           tenant_id: string
           type: Database["public"]["Enums"]["activity_type"]
           updated_at: string
+          work_order_id: string | null
         }
         Insert: {
           asset_id?: string | null
@@ -50,6 +51,7 @@ export type Database = {
           tenant_id: string
           type: Database["public"]["Enums"]["activity_type"]
           updated_at?: string
+          work_order_id?: string | null
         }
         Update: {
           asset_id?: string | null
@@ -68,6 +70,7 @@ export type Database = {
           tenant_id?: string
           type?: Database["public"]["Enums"]["activity_type"]
           updated_at?: string
+          work_order_id?: string | null
         }
         Relationships: [
           {
@@ -111,6 +114,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "tenants"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activities_work_order_id_tenant_id_fkey"
+            columns: ["work_order_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id", "tenant_id"]
           },
         ]
       }
@@ -1498,6 +1508,133 @@ export type Database = {
         }
         Relationships: []
       }
+      work_order_sequences: {
+        Row: {
+          last_seq: number
+          tenant_id: string
+          year: number
+        }
+        Insert: {
+          last_seq?: number
+          tenant_id: string
+          year: number
+        }
+        Update: {
+          last_seq?: number
+          tenant_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_order_sequences_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_orders: {
+        Row: {
+          actual_end: string | null
+          actual_start: string | null
+          asset_id: string | null
+          assigned_technician_id: string | null
+          case_id: string | null
+          company_id: string | null
+          completion_notes: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          labor_hours: number | null
+          priority: Database["public"]["Enums"]["work_order_priority"]
+          resolution_summary: string | null
+          scheduled_end: string | null
+          scheduled_start: string | null
+          status: Database["public"]["Enums"]["work_order_status"]
+          subject: string
+          tenant_id: string
+          updated_at: string
+          work_order_number: string
+        }
+        Insert: {
+          actual_end?: string | null
+          actual_start?: string | null
+          asset_id?: string | null
+          assigned_technician_id?: string | null
+          case_id?: string | null
+          company_id?: string | null
+          completion_notes?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          labor_hours?: number | null
+          priority?: Database["public"]["Enums"]["work_order_priority"]
+          resolution_summary?: string | null
+          scheduled_end?: string | null
+          scheduled_start?: string | null
+          status?: Database["public"]["Enums"]["work_order_status"]
+          subject: string
+          tenant_id: string
+          updated_at?: string
+          work_order_number: string
+        }
+        Update: {
+          actual_end?: string | null
+          actual_start?: string | null
+          asset_id?: string | null
+          assigned_technician_id?: string | null
+          case_id?: string | null
+          company_id?: string | null
+          completion_notes?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          labor_hours?: number | null
+          priority?: Database["public"]["Enums"]["work_order_priority"]
+          resolution_summary?: string | null
+          scheduled_end?: string | null
+          scheduled_start?: string | null
+          status?: Database["public"]["Enums"]["work_order_status"]
+          subject?: string
+          tenant_id?: string
+          updated_at?: string
+          work_order_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_orders_asset_id_tenant_id_fkey"
+            columns: ["asset_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "work_orders_case_id_tenant_id_fkey"
+            columns: ["case_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "work_orders_company_id_tenant_id_fkey"
+            columns: ["company_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "work_orders_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -1520,6 +1657,7 @@ export type Database = {
       next_asset_number: { Args: { p_tenant_id: string }; Returns: string }
       next_case_number: { Args: { p_tenant_id: string }; Returns: string }
       next_quote_number: { Args: { p_tenant_id: string }; Returns: string }
+      next_work_order_number: { Args: { p_tenant_id: string }; Returns: string }
       provision_organization: {
         Args: { p_name: string; p_slug: string; p_user_id: string }
         Returns: string
@@ -1608,6 +1746,15 @@ export type Database = {
         | "accepted"
         | "expired"
       tenant_status: "active" | "suspended" | "archived"
+      work_order_priority: "low" | "medium" | "high" | "critical"
+      work_order_status:
+        | "new"
+        | "scheduled"
+        | "dispatched"
+        | "in_progress"
+        | "on_hold"
+        | "completed"
+        | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1797,6 +1944,16 @@ export const Constants = {
         "expired",
       ],
       tenant_status: ["active", "suspended", "archived"],
+      work_order_priority: ["low", "medium", "high", "critical"],
+      work_order_status: [
+        "new",
+        "scheduled",
+        "dispatched",
+        "in_progress",
+        "on_hold",
+        "completed",
+        "cancelled",
+      ],
     },
   },
 } as const

@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   LifeBuoy,
   Package,
+  Wrench,
   Settings,
   Target,
   TrendingUp,
@@ -103,6 +104,13 @@ export const workspaceNavigation: NavigationItem[] = [
     segment: "cases",
     icon: LifeBuoy,
     permission: SERVICE_PERMISSIONS.casesRead,
+    group: "Operaciones",
+  },
+  {
+    label: "Work Orders",
+    segment: "work-orders",
+    icon: Wrench,
+    permission: SERVICE_PERMISSIONS.workOrdersRead,
     group: "Operaciones",
   },
   {

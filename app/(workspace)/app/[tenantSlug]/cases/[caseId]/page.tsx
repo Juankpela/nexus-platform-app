@@ -1,4 +1,4 @@
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, Plus } from "lucide-react"
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
@@ -29,8 +29,14 @@ import {
 } from "@/modules/crm/domain/activity"
 import type { CompanyOption } from "@/modules/crm/domain/company"
 import type { ContactOption } from "@/modules/crm/domain/contact"
-import { getCaseRecord, listAssetOptions } from "@/modules/service/composition"
+import { WorkOrderFormDialog } from "@/components/service/work-order-form-dialog"
+import {
+  getCaseRecord,
+  listAssetOptions,
+  listWorkOrdersForCase,
+} from "@/modules/service/composition"
 import type { AssetOption } from "@/modules/service/domain/asset"
+import { WORK_ORDER_STATUS_LABELS } from "@/modules/service/domain/work-order"
 import {
   CASE_ORIGIN_LABELS,
   CASE_PRIORITY_LABELS,
@@ -103,6 +109,15 @@ export default async function CaseDetailPage({
   const filters = parseActivityFilters(sp)
   const returnPath = `/app/${tenantSlug}/cases/${caseId}`
 
+  const canWriteWorkOrders = hasPermission(
+    context.effectivePermissions,
+    SERVICE_PERMISSIONS.workOrdersWrite,
+  )
+  const canReadWorkOrders = hasPermission(
+    context.effectivePermissions,
+    SERVICE_PERMISSIONS.workOrdersRead,
+  )
+
   const [
     members,
     companyOptions,
@@ -110,6 +125,7 @@ export default async function CaseDetailPage({
     assetOptions,
     activities,
     auditEvents,
+    relatedWorkOrders,
   ] = await Promise.all([
     listCachedTenantMembers(context.tenantId),
     canWrite
@@ -126,6 +142,9 @@ export default async function CaseDetailPage({
       : Promise.resolve([]),
     canReadAudit
       ? listSubjectAuditEvents(context.tenantId, caseId, 20)
+      : Promise.resolve([]),
+    canReadWorkOrders
+      ? listWorkOrdersForCase(context.tenantId, caseId)
       : Promise.resolve([]),
   ])
 
@@ -220,6 +239,83 @@ export default async function CaseDetailPage({
             </p>
           ) : null}
         </div>
+
+        {/* Work Orders relacionadas */}
+        {canReadWorkOrders ? (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-sm font-semibold">
+                Órdenes de trabajo{" "}
+                <span className="font-normal text-muted-foreground">
+                  ({relatedWorkOrders.length})
+                </span>
+              </h2>
+              {canWriteWorkOrders ? (
+                <WorkOrderFormDialog
+                  tenantSlug={tenantSlug}
+                  companyOptions={companyOptions}
+                  caseOptions={[
+                    {
+                      id: serviceCase.id,
+                      label: `${serviceCase.caseNumber} · ${serviceCase.subject}`,
+                    },
+                  ]}
+                  assetOptions={assetOptions}
+                  defaults={{
+                    caseId: serviceCase.id,
+                    companyId: serviceCase.companyId,
+                    assetId: serviceCase.assetId,
+                  }}
+                  trigger={
+                    <Button size="sm" variant="outline">
+                      <Plus className="size-3.5" />
+                      Crear Work Order
+                    </Button>
+                  }
+                />
+              ) : null}
+            </div>
+            {relatedWorkOrders.length === 0 ? (
+              <div className="rounded-xl border border-dashed bg-card p-6 text-center text-sm text-muted-foreground">
+                Este caso no tiene órdenes de trabajo.
+              </div>
+            ) : (
+              <div className="overflow-hidden rounded-xl border bg-card">
+                <table className="w-full text-sm">
+                  <thead className="border-b bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
+                    <tr>
+                      <th className="px-4 py-3 font-medium">Número</th>
+                      <th className="px-4 py-3 font-medium">Asunto</th>
+                      <th className="px-4 py-3 font-medium">Estado</th>
+                      <th className="px-4 py-3 font-medium">Actualizada</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {relatedWorkOrders.map((wo) => (
+                      <tr key={wo.id}>
+                        <td className="px-4 py-3">
+                          <Link
+                            href={`/app/${tenantSlug}/work-orders/${wo.id}`}
+                            className="font-medium text-foreground hover:underline"
+                          >
+                            {wo.workOrderNumber}
+                          </Link>
+                        </td>
+                        <td className="px-4 py-3">{wo.subject}</td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          {WORK_ORDER_STATUS_LABELS[wo.status]}
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          {new Date(wo.updatedAt).toLocaleDateString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        ) : null}
 
         {canReadActivities ? (
           <ActivityTimeline

@@ -1,13 +1,17 @@
 import {
   AlertTriangle,
   Building2,
+  ClipboardCheck,
   Contact,
   DollarSign,
   FileText,
   LifeBuoy,
   ShieldCheck,
   Target,
+  Timer,
   TrendingUp,
+  UserCog,
+  Wrench,
 } from "lucide-react"
 import type { Metadata } from "next"
 
@@ -23,13 +27,22 @@ import {
   hasPermission,
 } from "@/modules/authorization/domain/permission"
 import { getTenantDashboardStats } from "@/modules/crm/composition"
-import { getTenantCaseStats } from "@/modules/service/composition"
+import {
+  getTenantCaseStats,
+  getTenantWorkOrderStats,
+} from "@/modules/service/composition"
 import {
   CASE_PRIORITIES,
   CASE_PRIORITY_LABELS,
   CASE_STATUSES,
   CASE_STATUS_LABELS,
 } from "@/modules/service/domain/case"
+import {
+  WORK_ORDER_PRIORITIES,
+  WORK_ORDER_PRIORITY_LABELS,
+  WORK_ORDER_STATUSES,
+  WORK_ORDER_STATUS_LABELS,
+} from "@/modules/service/domain/work-order"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 
 export const metadata: Metadata = { title: "Dashboard" }
@@ -69,6 +82,14 @@ export default async function DashboardPage({
   )
   const caseStats = canReadCases
     ? await getTenantCaseStats(context.tenantId)
+    : null
+
+  const canReadWorkOrders = hasPermission(
+    context.effectivePermissions,
+    SERVICE_PERMISSIONS.workOrdersRead,
+  )
+  const woStats = canReadWorkOrders
+    ? await getTenantWorkOrderStats(context.tenantId)
     : null
 
   return (
@@ -184,6 +205,65 @@ export default async function DashboardPage({
                 rows={CASE_PRIORITIES.map((p) => ({
                   label: CASE_PRIORITY_LABELS[p],
                   value: caseStats.byPriority[p],
+                }))}
+              />
+            </div>
+          </div>
+        ) : null}
+
+        {/* Field Service / Work Orders */}
+        {woStats ? (
+          <div className="space-y-4">
+            <h2 className="text-base font-semibold">Field Service — Órdenes de trabajo</h2>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <KpiCard
+                label="Órdenes abiertas"
+                value={woStats.openCount}
+                icon={Wrench}
+                accent="orange"
+                hint={`${woStats.totalCount} en total`}
+              />
+              <KpiCard
+                label="Completadas (mes)"
+                value={woStats.completedThisMonth}
+                icon={ClipboardCheck}
+                accent="emerald"
+              />
+              <KpiCard
+                label="Tiempo prom. resolución"
+                value={
+                  woStats.avgResolutionHours != null
+                    ? `${woStats.avgResolutionHours} h`
+                    : "—"
+                }
+                icon={Timer}
+                accent="blue"
+              />
+              <KpiCard
+                label="Utilización técnicos"
+                value={
+                  woStats.technicianUtilizationPct != null
+                    ? `${woStats.technicianUtilizationPct}%`
+                    : "—"
+                }
+                icon={UserCog}
+                accent="silver"
+                hint="Órdenes abiertas con técnico"
+              />
+            </div>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <SummaryWidget
+                title="Órdenes por estado"
+                rows={WORK_ORDER_STATUSES.map((s) => ({
+                  label: WORK_ORDER_STATUS_LABELS[s],
+                  value: woStats.byStatus[s],
+                }))}
+              />
+              <SummaryWidget
+                title="Órdenes por prioridad"
+                rows={WORK_ORDER_PRIORITIES.map((p) => ({
+                  label: WORK_ORDER_PRIORITY_LABELS[p],
+                  value: woStats.byPriority[p],
                 }))}
               />
             </div>

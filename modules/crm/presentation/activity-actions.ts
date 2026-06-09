@@ -63,6 +63,10 @@ function readActivityInput(formData: FormData): ParsedActivity {
   if (assetParsed && !assetParsed.success) {
     return { ok: false, message: "Invalid asset." }
   }
+  const workOrderParsed = parseOptionalId(field(formData, "work_order_id"))
+  if (workOrderParsed && !workOrderParsed.success) {
+    return { ok: false, message: "Invalid work order." }
+  }
 
   return {
     ok: true,
@@ -76,6 +80,7 @@ function readActivityInput(formData: FormData): ParsedActivity {
       opportunityId: opportunityParsed?.success ? opportunityParsed.data : null,
       caseId: caseParsed?.success ? caseParsed.data : null,
       assetId: assetParsed?.success ? assetParsed.data : null,
+      workOrderId: workOrderParsed?.success ? workOrderParsed.data : null,
     },
   }
 }

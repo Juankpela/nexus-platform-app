@@ -25,6 +25,7 @@ function toActivity(row: ActivityRow): Activity {
     opportunityId: row.opportunity_id,
     caseId: row.case_id,
     assetId: row.asset_id,
+    workOrderId: row.work_order_id,
     status: row.status,
     dueAt: row.due_at,
     completedAt: row.completed_at,
@@ -36,7 +37,13 @@ function toActivity(row: ActivityRow): Activity {
 
 export class SupabaseActivityRepository implements ActivityRepository {
   private async listBy(
-    column: "company_id" | "contact_id" | "opportunity_id" | "case_id" | "asset_id",
+    column:
+      | "company_id"
+      | "contact_id"
+      | "opportunity_id"
+      | "case_id"
+      | "asset_id"
+      | "work_order_id",
     tenantId: UUID,
     targetId: UUID,
     filters: ActivityFilters,
@@ -105,6 +112,14 @@ export class SupabaseActivityRepository implements ActivityRepository {
     return this.listBy("asset_id", tenantId, assetId, filters)
   }
 
+  listForWorkOrder(
+    tenantId: UUID,
+    workOrderId: UUID,
+    filters: ActivityFilters,
+  ): Promise<Activity[]> {
+    return this.listBy("work_order_id", tenantId, workOrderId, filters)
+  }
+
   async getById(tenantId: UUID, id: UUID): Promise<Activity | null> {
     const client = await createServerSupabaseClient()
     const { data, error } = await client
@@ -144,6 +159,7 @@ export class SupabaseActivityRepository implements ActivityRepository {
         opportunity_id: input.opportunityId,
         case_id: input.caseId,
         asset_id: input.assetId,
+        work_order_id: input.workOrderId,
       })
       .select("*")
       .single()
