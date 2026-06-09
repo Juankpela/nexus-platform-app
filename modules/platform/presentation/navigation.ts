@@ -3,6 +3,7 @@ import {
   Building2,
   CalendarClock,
   Contact,
+  Radar,
   Cpu,
   FileText,
   LayoutDashboard,
@@ -127,6 +128,13 @@ export const workspaceNavigation: NavigationItem[] = [
     segment: "schedule",
     icon: CalendarClock,
     permission: SERVICE_PERMISSIONS.schedulingRead,
+    group: "Operaciones",
+  },
+  {
+    label: "Dispatch",
+    segment: "dispatch",
+    icon: Radar,
+    permission: SERVICE_PERMISSIONS.dispatchRead,
     group: "Operaciones",
   },
   {

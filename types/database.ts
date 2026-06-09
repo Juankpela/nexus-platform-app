@@ -1755,6 +1755,17 @@ export type Database = {
         Args: { target_profile_id: string }
         Returns: boolean
       }
+      dispatch_technician_workload: {
+        Args: { p_from: string; p_tenant_id: string; p_to: string }
+        Returns: {
+          assignment_count: number
+          first_name: string
+          last_name: string
+          scheduled_minutes: number
+          status: Database["public"]["Enums"]["technician_status"]
+          technician_id: string
+        }[]
+      }
       grant_platform_admin: { Args: { p_user_id: string }; Returns: undefined }
       has_tenant_permission: {
         Args: { permission_key: string; target_tenant_id: string }
