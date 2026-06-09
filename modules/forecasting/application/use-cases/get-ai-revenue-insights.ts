@@ -5,7 +5,15 @@ import { createServerSupabaseClient } from "@/lib/supabase/server"
 import type { AiInsight, AiRevenueInsights } from "@/modules/forecasting/domain/ai-insight"
 import type { UUID } from "@/types/shared"
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+function buildClient(): Anthropic {
+  const apiKey = process.env.ANTHROPIC_API_KEY?.trim()
+  if (!apiKey) {
+    throw new Error(
+      "ANTHROPIC_API_KEY no está disponible en el runtime. Verifica que esté configurada en Vercel (Production) y vuelve a desplegar.",
+    )
+  }
+  return new Anthropic({ apiKey })
+}
 
 export async function getAiRevenueInsights(tenantId: UUID): Promise<AiRevenueInsights> {
   const supabase = await createServerSupabaseClient()
@@ -98,6 +106,7 @@ Genera entre 4 y 7 insights. Prioriza:
 Solo responde con el JSON, sin markdown, sin explicaciones.`
 
   try {
+    const client = buildClient()
     const message = await client.messages.create({
       model: "claude-sonnet-4-20250514",
       max_tokens: 1024,
