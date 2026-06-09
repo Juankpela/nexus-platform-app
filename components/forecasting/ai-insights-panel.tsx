@@ -1,6 +1,7 @@
 "use client"
 
-import { AlertTriangle, CheckCircle, Info, Lightbulb, Loader2, Sparkles, TrendingDown, XCircle } from "lucide-react"
+import { AlertTriangle, ArrowRight, CheckCircle, Info, Lightbulb, Loader2, Sparkles, XCircle } from "lucide-react"
+import Link from "next/link"
 import { useState } from "react"
 import type { AiInsight, AiRevenueInsights } from "@/modules/forecasting/domain/ai-insight"
 import { Button } from "@/components/ui/button"
@@ -61,9 +62,12 @@ function ScoreGauge({ label, value, color }: { label: string; value: number; col
   )
 }
 
-function InsightCard({ insight }: { insight: AiInsight }) {
+function InsightCard({ insight, tenantSlug }: { insight: AiInsight; tenantSlug: string }) {
   const cfg = SEVERITY_CONFIG[insight.severity]
   const Icon = cfg.icon
+  const oppHref = insight.opportunityId
+    ? `/app/${tenantSlug}/opportunities/${insight.opportunityId}`
+    : null
 
   return (
     <div className={`rounded-lg border p-4 ${cfg.bg} ${cfg.border}`}>
@@ -85,9 +89,12 @@ function InsightCard({ insight }: { insight: AiInsight }) {
               Impacto estimado: <span className="font-semibold text-foreground">${insight.estimatedImpact.toLocaleString("es-CO")} COP</span>
             </p>
           )}
-          {insight.actionLabel && (
-            <Button variant="outline" size="sm" className="mt-2 h-7 text-xs">
-              {insight.actionLabel}
+          {oppHref && (
+            <Button asChild variant="outline" size="sm" className="mt-2 h-7 text-xs gap-1">
+              <Link href={oppHref}>
+                {insight.actionLabel ?? "Ver oportunidad"}
+                <ArrowRight className="size-3" />
+              </Link>
             </Button>
           )}
         </div>
@@ -197,7 +204,7 @@ export function AiInsightsPanel({ tenantSlug, initialInsights }: Props) {
             {/* Insights */}
             <div className="space-y-2">
               {insights.insights.map(insight => (
-                <InsightCard key={insight.id} insight={insight} />
+                <InsightCard key={insight.id} insight={insight} tenantSlug={tenantSlug} />
               ))}
             </div>
           </div>
