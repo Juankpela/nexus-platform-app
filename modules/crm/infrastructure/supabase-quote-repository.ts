@@ -573,15 +573,21 @@ export class SupabaseQuoteRepository implements QuoteRepository {
           error,
         )
       }
-      return data.map((r) => {
-        const p = Array.isArray(r.products) ? r.products[0] : r.products
-        return {
-          id: (p?.id as string) ?? r.product_id,
-          name: (p?.name as string) ?? "Unknown product",
-          sku: (p?.sku as string | null) ?? null,
-          defaultUnitPrice: Number(r.unit_price),
-        }
-      })
+
+      // If the price book has entries, use them (with their prices).
+      if (data.length > 0) {
+        return data.map((r) => {
+          const p = Array.isArray(r.products) ? r.products[0] : r.products
+          return {
+            id: (p?.id as string) ?? r.product_id,
+            name: (p?.name as string) ?? "Unknown product",
+            sku: (p?.sku as string | null) ?? null,
+            defaultUnitPrice: Number(r.unit_price),
+          }
+        })
+      }
+      // Empty price book → fall back to all active products (manual pricing)
+      // so the user can still add lines.
     }
 
     // All active products, no default price
