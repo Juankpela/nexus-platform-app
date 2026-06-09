@@ -1407,6 +1407,56 @@ export type Database = {
           },
         ]
       }
+      technicians: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          email: string
+          employee_id: string | null
+          first_name: string
+          id: string
+          last_name: string
+          phone: string | null
+          status: Database["public"]["Enums"]["technician_status"]
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          email: string
+          employee_id?: string | null
+          first_name: string
+          id?: string
+          last_name: string
+          phone?: string | null
+          status?: Database["public"]["Enums"]["technician_status"]
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          email?: string
+          employee_id?: string | null
+          first_name?: string
+          id?: string
+          last_name?: string
+          phone?: string | null
+          status?: Database["public"]["Enums"]["technician_status"]
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "technicians_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_features: {
         Row: {
           configuration: Json
@@ -1745,6 +1795,7 @@ export type Database = {
         | "sent"
         | "accepted"
         | "expired"
+      technician_status: "active" | "inactive" | "on_leave"
       tenant_status: "active" | "suspended" | "archived"
       work_order_priority: "low" | "medium" | "high" | "critical"
       work_order_status:
@@ -1943,6 +1994,7 @@ export const Constants = {
         "accepted",
         "expired",
       ],
+      technician_status: ["active", "inactive", "on_leave"],
       tenant_status: ["active", "suspended", "archived"],
       work_order_priority: ["low", "medium", "high", "critical"],
       work_order_status: [

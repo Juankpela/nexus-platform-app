@@ -48,11 +48,30 @@ import {
   updateWorkOrder,
   type UpdateWorkOrderInput,
 } from "@/modules/service/application/use-cases/update-work-order"
+import {
+  createTechnician,
+  type CreateTechnicianInput,
+} from "@/modules/service/application/use-cases/create-technician"
+import {
+  deactivateTechnician,
+  type DeactivateTechnicianInput,
+} from "@/modules/service/application/use-cases/deactivate-technician"
+import { getTechnicianStats } from "@/modules/service/application/use-cases/get-technician-stats"
+import { listTechnicians } from "@/modules/service/application/use-cases/list-technicians"
+import {
+  updateTechnician,
+  type UpdateTechnicianInput,
+} from "@/modules/service/application/use-cases/update-technician"
 import { SupabaseAssetRepository } from "@/modules/service/infrastructure/supabase-asset-repository"
 import { SupabaseCaseRepository } from "@/modules/service/infrastructure/supabase-case-repository"
+import { SupabaseTechnicianRepository } from "@/modules/service/infrastructure/supabase-technician-repository"
 import { SupabaseWorkOrderRepository } from "@/modules/service/infrastructure/supabase-work-order-repository"
 import type { AssetFilters } from "@/modules/service/domain/asset"
 import type { CaseFilters } from "@/modules/service/domain/case"
+import type {
+  TechnicianFilters,
+  TechnicianSort,
+} from "@/modules/service/domain/technician"
 import type { WorkOrderFilters } from "@/modules/service/domain/work-order"
 import type { UUID } from "@/types/shared"
 
@@ -66,6 +85,10 @@ function assetRepo() {
 
 function workOrderRepo() {
   return new SupabaseWorkOrderRepository()
+}
+
+function technicianRepo() {
+  return new SupabaseTechnicianRepository()
 }
 
 function audit() {
@@ -189,6 +212,40 @@ export function assignWorkOrderRecordTechnician(
 ) {
   return assignWorkOrderTechnician(
     { workOrders: workOrderRepo(), audit: audit() },
+    input,
+  )
+}
+
+// --- Technicians -----------------------------------------------------------
+export function listTenantTechnicians(
+  tenantId: UUID,
+  filters: TechnicianFilters,
+  sort: TechnicianSort,
+  page: number,
+  pageSize: number,
+) {
+  return listTechnicians(technicianRepo(), tenantId, filters, sort, page, pageSize)
+}
+
+export function getTechnicianRecord(tenantId: UUID, id: UUID) {
+  return technicianRepo().getById(tenantId, id)
+}
+
+export function getTenantTechnicianStats(tenantId: UUID) {
+  return getTechnicianStats(technicianRepo(), tenantId)
+}
+
+export function createTechnicianRecord(input: CreateTechnicianInput) {
+  return createTechnician({ technicians: technicianRepo(), audit: audit() }, input)
+}
+
+export function updateTechnicianRecord(input: UpdateTechnicianInput) {
+  return updateTechnician({ technicians: technicianRepo(), audit: audit() }, input)
+}
+
+export function deactivateTechnicianRecord(input: DeactivateTechnicianInput) {
+  return deactivateTechnician(
+    { technicians: technicianRepo(), audit: audit() },
     input,
   )
 }
