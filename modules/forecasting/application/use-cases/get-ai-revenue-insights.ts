@@ -109,17 +109,28 @@ Solo responde con el JSON, sin markdown, sin explicaciones.`
     const client = buildClient()
     const message = await client.messages.create({
       model: "claude-sonnet-4-20250514",
-      max_tokens: 1024,
+      max_tokens: 4096,
       messages: [{ role: "user", content: prompt }],
     })
 
     const content = message.content[0]
     if (content.type !== "text") return fallbackInsights("Respuesta no textual del modelo")
 
-    const cleaned = content.text
+    if (message.stop_reason === "max_tokens") {
+      return fallbackInsights("La respuesta del modelo se truncó (max_tokens). Intenta de nuevo.")
+    }
+
+    let cleaned = content.text
       .replace(/^```(?:json)?\s*/i, "")
       .replace(/\s*```\s*$/i, "")
       .trim()
+
+    // Aislar el primer objeto JSON por si el modelo agrega texto extra
+    const start = cleaned.indexOf("{")
+    const end = cleaned.lastIndexOf("}")
+    if (start !== -1 && end !== -1 && end > start) {
+      cleaned = cleaned.slice(start, end + 1)
+    }
 
     const parsed = JSON.parse(cleaned) as {
       summary: string
