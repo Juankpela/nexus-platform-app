@@ -29,7 +29,8 @@ import {
 } from "@/modules/crm/domain/activity"
 import type { CompanyOption } from "@/modules/crm/domain/company"
 import type { ContactOption } from "@/modules/crm/domain/contact"
-import { getCaseRecord } from "@/modules/service/composition"
+import { getCaseRecord, listAssetOptions } from "@/modules/service/composition"
+import type { AssetOption } from "@/modules/service/domain/asset"
 import {
   CASE_ORIGIN_LABELS,
   CASE_PRIORITY_LABELS,
@@ -102,22 +103,31 @@ export default async function CaseDetailPage({
   const filters = parseActivityFilters(sp)
   const returnPath = `/app/${tenantSlug}/cases/${caseId}`
 
-  const [members, companyOptions, contactOptions, activities, auditEvents] =
-    await Promise.all([
-      listCachedTenantMembers(context.tenantId),
-      canWrite
-        ? listCompanyOptions(context.tenantId)
-        : Promise.resolve([] as CompanyOption[]),
-      canWrite
-        ? listContactOptions(context.tenantId)
-        : Promise.resolve([] as ContactOption[]),
-      canReadActivities
-        ? listCaseActivityTimeline(context.tenantId, caseId, filters)
-        : Promise.resolve([]),
-      canReadAudit
-        ? listSubjectAuditEvents(context.tenantId, caseId, 20)
-        : Promise.resolve([]),
-    ])
+  const [
+    members,
+    companyOptions,
+    contactOptions,
+    assetOptions,
+    activities,
+    auditEvents,
+  ] = await Promise.all([
+    listCachedTenantMembers(context.tenantId),
+    canWrite
+      ? listCompanyOptions(context.tenantId)
+      : Promise.resolve([] as CompanyOption[]),
+    canWrite
+      ? listContactOptions(context.tenantId)
+      : Promise.resolve([] as ContactOption[]),
+    canWrite
+      ? listAssetOptions(context.tenantId)
+      : Promise.resolve([] as AssetOption[]),
+    canReadActivities
+      ? listCaseActivityTimeline(context.tenantId, caseId, filters)
+      : Promise.resolve([]),
+    canReadAudit
+      ? listSubjectAuditEvents(context.tenantId, caseId, 20)
+      : Promise.resolve([]),
+  ])
 
   const ownerOptions = members.map((m) => ({
     id: m.userId,
@@ -149,6 +159,7 @@ export default async function CaseDetailPage({
               companyOptions={companyOptions}
               contactOptions={contactOptions}
               ownerOptions={ownerOptions}
+              assetOptions={assetOptions}
               serviceCase={serviceCase}
               trigger={
                 <Button variant="outline" size="sm">
@@ -191,6 +202,7 @@ export default async function CaseDetailPage({
           <dl className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <Detail label="Empresa" value={serviceCase.companyName} />
             <Detail label="Contacto" value={serviceCase.contactName} />
+            <Detail label="Activo" value={serviceCase.assetName} />
             <Detail
               label="Prioridad"
               value={CASE_PRIORITY_LABELS[serviceCase.priority]}

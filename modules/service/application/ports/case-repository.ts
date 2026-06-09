@@ -16,6 +16,7 @@ export interface CaseRepository {
     pageSize: number,
   ): Promise<Paginated<Case>>
   getById(tenantId: UUID, id: UUID): Promise<Case | null>
+  listForAsset(tenantId: UUID, assetId: UUID): Promise<Case[]>
   create(
     tenantId: UUID,
     params: {

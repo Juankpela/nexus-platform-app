@@ -59,6 +59,10 @@ function readActivityInput(formData: FormData): ParsedActivity {
   if (caseParsed && !caseParsed.success) {
     return { ok: false, message: "Invalid case." }
   }
+  const assetParsed = parseOptionalId(field(formData, "asset_id"))
+  if (assetParsed && !assetParsed.success) {
+    return { ok: false, message: "Invalid asset." }
+  }
 
   return {
     ok: true,
@@ -71,6 +75,7 @@ function readActivityInput(formData: FormData): ParsedActivity {
       contactId: contactParsed?.success ? contactParsed.data : null,
       opportunityId: opportunityParsed?.success ? opportunityParsed.data : null,
       caseId: caseParsed?.success ? caseParsed.data : null,
+      assetId: assetParsed?.success ? assetParsed.data : null,
     },
   }
 }

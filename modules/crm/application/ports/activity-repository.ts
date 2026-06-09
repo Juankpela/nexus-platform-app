@@ -27,6 +27,11 @@ export interface ActivityRepository {
     caseId: UUID,
     filters: ActivityFilters,
   ): Promise<Activity[]>
+  listForAsset(
+    tenantId: UUID,
+    assetId: UUID,
+    filters: ActivityFilters,
+  ): Promise<Activity[]>
   getById(tenantId: UUID, id: UUID): Promise<Activity | null>
   create(tenantId: UUID, createdBy: UUID, input: ActivityInput): Promise<Activity>
   update(tenantId: UUID, id: UUID, input: ActivityInput): Promise<Activity>

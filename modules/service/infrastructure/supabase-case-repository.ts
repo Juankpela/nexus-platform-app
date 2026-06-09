@@ -22,9 +22,11 @@ type CaseRow = Database["public"]["Tables"]["cases"]["Row"]
 type CaseRowWithRefs = CaseRow & {
   companies: { name: string } | null
   contacts: { first_name: string; last_name: string | null } | null
+  assets: { name: string; asset_number: string } | null
 }
 
-const SELECT_WITH_REFS = "*, companies(name), contacts(first_name, last_name)"
+const SELECT_WITH_REFS =
+  "*, companies(name), contacts(first_name, last_name), assets(name, asset_number)"
 
 function toCase(row: CaseRowWithRefs): Case {
   const contactName = row.contacts
@@ -42,6 +44,10 @@ function toCase(row: CaseRowWithRefs): Case {
     companyName: row.companies?.name ?? null,
     contactId: row.contact_id,
     contactName,
+    assetId: row.asset_id,
+    assetName: row.assets
+      ? `${row.assets.asset_number} · ${row.assets.name}`
+      : null,
     ownerId: row.owner_id,
     workOrderId: row.work_order_id,
     slaDueAt: row.sla_due_at,
@@ -61,6 +67,7 @@ function toRow(input: CaseInput) {
     origin: input.origin,
     company_id: input.companyId,
     contact_id: input.contactId,
+    asset_id: input.assetId,
   }
 }
 
@@ -106,6 +113,25 @@ export class SupabaseCaseRepository implements CaseRepository {
       page,
       pageSize,
     }
+  }
+
+  async listForAsset(tenantId: UUID, assetId: UUID): Promise<Case[]> {
+    const client = await createServerSupabaseClient()
+    const { data, error } = await client
+      .from("cases")
+      .select(SELECT_WITH_REFS)
+      .eq("tenant_id", tenantId)
+      .eq("asset_id", assetId)
+      .order("created_at", { ascending: false })
+
+    if (error) {
+      throw new ApplicationError(
+        "Unable to list cases for asset.",
+        "CASE_LIST_FAILED",
+        error,
+      )
+    }
+    return (data as unknown as CaseRowWithRefs[]).map(toCase)
   }
 
   async getById(tenantId: UUID, id: UUID): Promise<Case | null> {

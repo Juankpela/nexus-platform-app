@@ -54,6 +54,10 @@ function readCaseInput(formData: FormData): ParsedCase {
   if (contactParsed && !contactParsed.success) {
     return { ok: false, message: "Contacto inválido." }
   }
+  const assetParsed = parseOptionalId(field(formData, "asset_id"))
+  if (assetParsed && !assetParsed.success) {
+    return { ok: false, message: "Activo inválido." }
+  }
 
   return {
     ok: true,
@@ -64,6 +68,7 @@ function readCaseInput(formData: FormData): ParsedCase {
       origin: origin.data,
       companyId: companyParsed?.success ? companyParsed.data : null,
       contactId: contactParsed?.success ? contactParsed.data : null,
+      assetId: assetParsed?.success ? assetParsed.data : null,
     },
   }
 }

@@ -18,12 +18,31 @@ import {
   updateCase,
   type UpdateCaseInput,
 } from "@/modules/service/application/use-cases/update-case"
+import {
+  changeAssetStatus,
+  type ChangeAssetStatusInput,
+} from "@/modules/service/application/use-cases/change-asset-status"
+import {
+  createAsset,
+  type CreateAssetInput,
+} from "@/modules/service/application/use-cases/create-asset"
+import { listAssets } from "@/modules/service/application/use-cases/list-assets"
+import {
+  updateAsset,
+  type UpdateAssetInput,
+} from "@/modules/service/application/use-cases/update-asset"
+import { SupabaseAssetRepository } from "@/modules/service/infrastructure/supabase-asset-repository"
 import { SupabaseCaseRepository } from "@/modules/service/infrastructure/supabase-case-repository"
+import type { AssetFilters } from "@/modules/service/domain/asset"
 import type { CaseFilters } from "@/modules/service/domain/case"
 import type { UUID } from "@/types/shared"
 
 function caseRepo() {
   return new SupabaseCaseRepository()
+}
+
+function assetRepo() {
+  return new SupabaseAssetRepository()
 }
 
 function audit() {
@@ -61,4 +80,38 @@ export function changeCaseRecordStatus(input: ChangeCaseStatusInput) {
 
 export function assignCaseRecordOwner(input: AssignCaseOwnerInput) {
   return assignCaseOwner({ cases: caseRepo(), audit: audit() }, input)
+}
+
+export function listCasesForAsset(tenantId: UUID, assetId: UUID) {
+  return caseRepo().listForAsset(tenantId, assetId)
+}
+
+// --- Assets ----------------------------------------------------------------
+export function listTenantAssets(
+  tenantId: UUID,
+  filters: AssetFilters,
+  page: number,
+  pageSize: number,
+) {
+  return listAssets(assetRepo(), tenantId, filters, page, pageSize)
+}
+
+export function getAssetRecord(tenantId: UUID, id: UUID) {
+  return assetRepo().getById(tenantId, id)
+}
+
+export function listAssetOptions(tenantId: UUID) {
+  return assetRepo().listOptions(tenantId)
+}
+
+export function createAssetRecord(input: CreateAssetInput) {
+  return createAsset({ assets: assetRepo(), audit: audit() }, input)
+}
+
+export function updateAssetRecord(input: UpdateAssetInput) {
+  return updateAsset({ assets: assetRepo(), audit: audit() }, input)
+}
+
+export function changeAssetRecordStatus(input: ChangeAssetStatusInput) {
+  return changeAssetStatus({ assets: assetRepo(), audit: audit() }, input)
 }

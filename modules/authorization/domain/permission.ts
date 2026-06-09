@@ -24,8 +24,10 @@ export const CRM_PERMISSIONS = {
 } as const
 
 export const SERVICE_PERMISSIONS = {
-  casesRead:  "service.cases.read",
-  casesWrite: "service.cases.write",
+  casesRead:   "service.cases.read",
+  casesWrite:  "service.cases.write",
+  assetsRead:  "service.assets.read",
+  assetsWrite: "service.assets.write",
 } as const
 
 export const FORECASTING_PERMISSIONS = {

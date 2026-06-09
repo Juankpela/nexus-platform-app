@@ -24,7 +24,8 @@ export async function createActivity(
     !input.data.companyId &&
     !input.data.contactId &&
     !input.data.opportunityId &&
-    !input.data.caseId
+    !input.data.caseId &&
+    !input.data.assetId
   ) {
     throw new ApplicationError(
       "An activity must reference a company, contact, opportunity, or case.",

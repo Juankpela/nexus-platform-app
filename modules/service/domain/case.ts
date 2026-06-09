@@ -86,6 +86,8 @@ export type Case = {
   companyName: string | null
   contactId: UUID | null
   contactName: string | null
+  assetId: UUID | null
+  assetName: string | null
   ownerId: UUID | null
   workOrderId: UUID | null
   slaDueAt: string | null
@@ -104,6 +106,7 @@ export type CaseInput = {
   origin: CaseOrigin
   companyId: UUID | null
   contactId: UUID | null
+  assetId: UUID | null
 }
 
 export type CaseFilters = {

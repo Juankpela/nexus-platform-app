@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import type { CompanyOption } from "@/modules/crm/domain/company"
 import type { ContactOption } from "@/modules/crm/domain/contact"
+import type { AssetOption } from "@/modules/service/domain/asset"
 import {
   CASE_ORIGINS,
   CASE_ORIGIN_LABELS,
@@ -65,6 +66,7 @@ export function CaseFormDialog({
   companyOptions,
   contactOptions,
   ownerOptions,
+  assetOptions = [],
   serviceCase,
   trigger,
 }: {
@@ -72,6 +74,7 @@ export function CaseFormDialog({
   companyOptions: CompanyOption[]
   contactOptions: ContactOption[]
   ownerOptions: OwnerOption[]
+  assetOptions?: AssetOption[]
   serviceCase?: Case
   trigger: React.ReactNode
 }) {
@@ -171,6 +174,21 @@ export function CaseFormDialog({
                 {CASE_ORIGINS.map((o) => (
                   <option key={o} value={o}>
                     {CASE_ORIGIN_LABELS[o]}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Activo" htmlFor="asset_id">
+              <select
+                id="asset_id"
+                name="asset_id"
+                defaultValue={serviceCase?.assetId ?? ""}
+                className={selectClass}
+              >
+                <option value="">Sin activo</option>
+                {assetOptions.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.assetNumber} · {a.name}
                   </option>
                 ))}
               </select>

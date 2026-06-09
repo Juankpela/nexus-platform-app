@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       activities: {
         Row: {
+          asset_id: string | null
           body: string | null
           case_id: string | null
           company_id: string | null
@@ -33,6 +34,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          asset_id?: string | null
           body?: string | null
           case_id?: string | null
           company_id?: string | null
@@ -50,6 +52,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          asset_id?: string | null
           body?: string | null
           case_id?: string | null
           company_id?: string | null
@@ -67,6 +70,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "activities_asset_id_tenant_id_fkey"
+            columns: ["asset_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id", "tenant_id"]
+          },
           {
             foreignKeyName: "activities_case_id_tenant_id_fkey"
             columns: ["case_id", "tenant_id"]
@@ -97,6 +107,145 @@ export type Database = {
           },
           {
             foreignKeyName: "activities_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      asset_sequences: {
+        Row: {
+          last_seq: number
+          tenant_id: string
+          year: number
+        }
+        Insert: {
+          last_seq?: number
+          tenant_id: string
+          year: number
+        }
+        Update: {
+          last_seq?: number
+          tenant_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_sequences_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assets: {
+        Row: {
+          asset_category: Database["public"]["Enums"]["asset_category"]
+          asset_number: string
+          asset_type: Database["public"]["Enums"]["asset_type"]
+          company_id: string | null
+          created_at: string
+          created_by: string | null
+          criticality: Database["public"]["Enums"]["asset_criticality"]
+          health_score: number | null
+          id: string
+          installed_at: string | null
+          last_service_at: string | null
+          location: string | null
+          manufacturer: string | null
+          model: string | null
+          name: string
+          next_service_due_at: string | null
+          notes: string | null
+          parent_asset_id: string | null
+          product_id: string | null
+          purchase_cost: number | null
+          serial_number: string | null
+          status: Database["public"]["Enums"]["asset_status"]
+          tenant_id: string
+          updated_at: string
+          warranty_until: string | null
+        }
+        Insert: {
+          asset_category?: Database["public"]["Enums"]["asset_category"]
+          asset_number: string
+          asset_type?: Database["public"]["Enums"]["asset_type"]
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          criticality?: Database["public"]["Enums"]["asset_criticality"]
+          health_score?: number | null
+          id?: string
+          installed_at?: string | null
+          last_service_at?: string | null
+          location?: string | null
+          manufacturer?: string | null
+          model?: string | null
+          name: string
+          next_service_due_at?: string | null
+          notes?: string | null
+          parent_asset_id?: string | null
+          product_id?: string | null
+          purchase_cost?: number | null
+          serial_number?: string | null
+          status?: Database["public"]["Enums"]["asset_status"]
+          tenant_id: string
+          updated_at?: string
+          warranty_until?: string | null
+        }
+        Update: {
+          asset_category?: Database["public"]["Enums"]["asset_category"]
+          asset_number?: string
+          asset_type?: Database["public"]["Enums"]["asset_type"]
+          company_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          criticality?: Database["public"]["Enums"]["asset_criticality"]
+          health_score?: number | null
+          id?: string
+          installed_at?: string | null
+          last_service_at?: string | null
+          location?: string | null
+          manufacturer?: string | null
+          model?: string | null
+          name?: string
+          next_service_due_at?: string | null
+          notes?: string | null
+          parent_asset_id?: string | null
+          product_id?: string | null
+          purchase_cost?: number | null
+          serial_number?: string | null
+          status?: Database["public"]["Enums"]["asset_status"]
+          tenant_id?: string
+          updated_at?: string
+          warranty_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assets_company_id_tenant_id_fkey"
+            columns: ["company_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "assets_parent_asset_id_tenant_id_fkey"
+            columns: ["parent_asset_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "assets_product_id_tenant_id_fkey"
+            columns: ["product_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "assets_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -191,6 +340,7 @@ export type Database = {
       }
       cases: {
         Row: {
+          asset_id: string | null
           case_number: string
           closed_at: string | null
           company_id: string | null
@@ -211,6 +361,7 @@ export type Database = {
           work_order_id: string | null
         }
         Insert: {
+          asset_id?: string | null
           case_number: string
           closed_at?: string | null
           company_id?: string | null
@@ -231,6 +382,7 @@ export type Database = {
           work_order_id?: string | null
         }
         Update: {
+          asset_id?: string | null
           case_number?: string
           closed_at?: string | null
           company_id?: string | null
@@ -251,6 +403,13 @@ export type Database = {
           work_order_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "cases_asset_id_tenant_id_fkey"
+            columns: ["asset_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id", "tenant_id"]
+          },
           {
             foreignKeyName: "cases_company_id_tenant_id_fkey"
             columns: ["company_id", "tenant_id"]
@@ -1358,6 +1517,7 @@ export type Database = {
         Returns: boolean
       }
       is_platform_admin: { Args: never; Returns: boolean }
+      next_asset_number: { Args: { p_tenant_id: string }; Returns: string }
       next_case_number: { Args: { p_tenant_id: string }; Returns: string }
       next_quote_number: { Args: { p_tenant_id: string }; Returns: string }
       provision_organization: {
@@ -1394,6 +1554,17 @@ export type Database = {
     Enums: {
       activity_status: "open" | "completed"
       activity_type: "call" | "email" | "meeting" | "task" | "note" | "whatsapp"
+      asset_category:
+        | "printing"
+        | "lamination"
+        | "finishing"
+        | "prepress"
+        | "tooling"
+        | "auxiliary"
+        | "other"
+      asset_criticality: "low" | "medium" | "high" | "critical"
+      asset_status: "active" | "in_maintenance" | "down" | "retired"
+      asset_type: "machinery" | "equipment" | "component" | "tool" | "other"
       audit_actor_type: "user" | "system" | "service"
       case_origin: "phone" | "email" | "whatsapp" | "web" | "manual"
       case_priority: "low" | "medium" | "high" | "critical"
@@ -1566,6 +1737,18 @@ export const Constants = {
     Enums: {
       activity_status: ["open", "completed"],
       activity_type: ["call", "email", "meeting", "task", "note", "whatsapp"],
+      asset_category: [
+        "printing",
+        "lamination",
+        "finishing",
+        "prepress",
+        "tooling",
+        "auxiliary",
+        "other",
+      ],
+      asset_criticality: ["low", "medium", "high", "critical"],
+      asset_status: ["active", "in_maintenance", "down", "retired"],
+      asset_type: ["machinery", "equipment", "component", "tool", "other"],
       audit_actor_type: ["user", "system", "service"],
       case_origin: ["phone", "email", "whatsapp", "web", "manual"],
       case_priority: ["low", "medium", "high", "critical"],

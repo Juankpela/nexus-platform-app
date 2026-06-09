@@ -18,7 +18,8 @@ import {
 import { listCompanyOptions, listContactOptions } from "@/modules/crm/composition"
 import type { CompanyOption } from "@/modules/crm/domain/company"
 import type { ContactOption } from "@/modules/crm/domain/contact"
-import { listTenantCases } from "@/modules/service/composition"
+import { listAssetOptions, listTenantCases } from "@/modules/service/composition"
+import type { AssetOption } from "@/modules/service/domain/asset"
 import {
   CASE_PRIORITIES,
   CASE_PRIORITY_LABELS,
@@ -97,21 +98,25 @@ export default async function CasesPage({
   const page = Number.isFinite(pageRaw) && pageRaw > 0 ? pageRaw : 1
   const basePath = `/app/${tenantSlug}/cases`
 
-  const [result, members, companyOptions, contactOptions] = await Promise.all([
-    listTenantCases(
-      context.tenantId,
-      { search, status, priority, ownerId },
-      isKanban ? 1 : page,
-      isKanban ? KANBAN_PAGE_SIZE : PAGE_SIZE,
-    ),
-    listCachedTenantMembers(context.tenantId),
-    canWrite
-      ? listCompanyOptions(context.tenantId)
-      : Promise.resolve([] as CompanyOption[]),
-    canWrite
-      ? listContactOptions(context.tenantId)
-      : Promise.resolve([] as ContactOption[]),
-  ])
+  const [result, members, companyOptions, contactOptions, assetOptions] =
+    await Promise.all([
+      listTenantCases(
+        context.tenantId,
+        { search, status, priority, ownerId },
+        isKanban ? 1 : page,
+        isKanban ? KANBAN_PAGE_SIZE : PAGE_SIZE,
+      ),
+      listCachedTenantMembers(context.tenantId),
+      canWrite
+        ? listCompanyOptions(context.tenantId)
+        : Promise.resolve([] as CompanyOption[]),
+      canWrite
+        ? listContactOptions(context.tenantId)
+        : Promise.resolve([] as ContactOption[]),
+      canWrite
+        ? listAssetOptions(context.tenantId)
+        : Promise.resolve([] as AssetOption[]),
+    ])
 
   const ownerLabels = new Map(
     members.map((m) => [m.userId, m.fullName ?? m.email ?? m.userId]),
@@ -227,6 +232,7 @@ export default async function CasesPage({
               companyOptions={companyOptions}
               contactOptions={contactOptions}
               ownerOptions={ownerOptions}
+              assetOptions={assetOptions}
               trigger={
                 <Button>
                   <Plus />

@@ -2,6 +2,7 @@ import {
   BookOpen,
   Building2,
   Contact,
+  Cpu,
   FileText,
   LayoutDashboard,
   LifeBuoy,
@@ -89,6 +90,13 @@ export const workspaceNavigation: NavigationItem[] = [
     icon: FileText,
     permission: CRM_PERMISSIONS.quotesRead,
     group: "CRM",
+  },
+  {
+    label: "Assets",
+    segment: "assets",
+    icon: Cpu,
+    permission: SERVICE_PERMISSIONS.assetsRead,
+    group: "Operaciones",
   },
   {
     label: "Cases",

@@ -249,6 +249,14 @@ export function listCaseActivityTimeline(
   return activityRepo().listForCase(tenantId, caseId, filters)
 }
 
+export function listAssetActivityTimeline(
+  tenantId: UUID,
+  assetId: UUID,
+  filters: ActivityFilters,
+) {
+  return activityRepo().listForAsset(tenantId, assetId, filters)
+}
+
 export function createActivityRecord(input: CreateActivityInput) {
   return createActivity({ activities: activityRepo(), audit: audit() }, input)
 }
