@@ -7,12 +7,14 @@ import {
   Package,
   Settings,
   Target,
+  TrendingUp,
   Users,
   type LucideIcon,
 } from "lucide-react"
 
 import {
   CRM_PERMISSIONS,
+  FORECASTING_PERMISSIONS,
   FOUNDATION_PERMISSIONS,
 } from "@/modules/authorization/domain/permission"
 
@@ -85,5 +87,12 @@ export const workspaceNavigation: NavigationItem[] = [
     icon: FileText,
     permission: CRM_PERMISSIONS.quotesRead,
     group: "CRM",
+  },
+  {
+    label: "Forecasting",
+    segment: "forecasting",
+    icon: TrendingUp,
+    permission: FORECASTING_PERMISSIONS.read,
+    group: "Analytics",
   },
 ]

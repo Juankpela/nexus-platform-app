@@ -23,6 +23,13 @@ export const CRM_PERMISSIONS = {
   quotesWrite: "crm.quotes.write",
 } as const
 
+export const FORECASTING_PERMISSIONS = {
+  read:              "forecasting.read",
+  write:             "forecasting.write",
+  snapshotsRead:     "forecasting.snapshots.read",
+  snapshotsWrite:    "forecasting.snapshots.write",
+} as const
+
 export type FoundationPermission =
   (typeof FOUNDATION_PERMISSIONS)[keyof typeof FOUNDATION_PERMISSIONS]
 

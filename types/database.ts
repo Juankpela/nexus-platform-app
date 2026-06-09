@@ -308,6 +308,74 @@ export type Database = {
         }
         Relationships: []
       }
+      forecast_snapshots: {
+        Row: {
+          avg_deal_size: number | null
+          closed_lost_revenue: number
+          closed_won_revenue: number
+          created_at: string
+          created_by: string | null
+          expected_revenue: number
+          id: string
+          lost_count: number
+          open_count: number
+          period_label: string
+          period_type: Database["public"]["Enums"]["forecast_period_type"]
+          pipeline_coverage: number | null
+          snapshot_date: string
+          tenant_id: string
+          weighted_revenue: number
+          win_rate: number
+          won_count: number
+        }
+        Insert: {
+          avg_deal_size?: number | null
+          closed_lost_revenue?: number
+          closed_won_revenue?: number
+          created_at?: string
+          created_by?: string | null
+          expected_revenue?: number
+          id?: string
+          lost_count?: number
+          open_count?: number
+          period_label: string
+          period_type: Database["public"]["Enums"]["forecast_period_type"]
+          pipeline_coverage?: number | null
+          snapshot_date?: string
+          tenant_id: string
+          weighted_revenue?: number
+          win_rate?: number
+          won_count?: number
+        }
+        Update: {
+          avg_deal_size?: number | null
+          closed_lost_revenue?: number
+          closed_won_revenue?: number
+          created_at?: string
+          created_by?: string | null
+          expected_revenue?: number
+          id?: string
+          lost_count?: number
+          open_count?: number
+          period_label?: string
+          period_type?: Database["public"]["Enums"]["forecast_period_type"]
+          pipeline_coverage?: number | null
+          snapshot_date?: string
+          tenant_id?: string
+          weighted_revenue?: number
+          win_rate?: number
+          won_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forecast_snapshots_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       membership_permission_sets: {
         Row: {
           created_at: string
@@ -1008,6 +1076,47 @@ export type Database = {
         }
         Relationships: []
       }
+      sales_quotas: {
+        Row: {
+          created_at: string
+          id: string
+          owner_id: string | null
+          period_label: string
+          period_type: Database["public"]["Enums"]["forecast_period_type"]
+          quota_amount: number
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          owner_id?: string | null
+          period_label: string
+          period_type: Database["public"]["Enums"]["forecast_period_type"]
+          quota_amount: number
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          owner_id?: string | null
+          period_label?: string
+          period_type?: Database["public"]["Enums"]["forecast_period_type"]
+          quota_amount?: number
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_quotas_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_features: {
         Row: {
           configuration: Json
@@ -1165,6 +1274,7 @@ export type Database = {
       activity_type: "call" | "email" | "meeting" | "task" | "note" | "whatsapp"
       audit_actor_type: "user" | "system" | "service"
       crm_record_status: "active" | "inactive"
+      forecast_period_type: "month" | "quarter" | "year"
       membership_status: "invited" | "active" | "suspended"
       opportunity_business_type:
         | "flexography"
@@ -1327,6 +1437,7 @@ export const Constants = {
       activity_type: ["call", "email", "meeting", "task", "note", "whatsapp"],
       audit_actor_type: ["user", "system", "service"],
       crm_record_status: ["active", "inactive"],
+      forecast_period_type: ["month", "quarter", "year"],
       membership_status: ["invited", "active", "suspended"],
       opportunity_business_type: [
         "flexography",
