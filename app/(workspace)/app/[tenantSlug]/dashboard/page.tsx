@@ -1,38 +1,55 @@
 import {
-  ArrowRight,
   Building2,
-  Contact,
-  DollarSign,
+  Cpu,
+  Gauge,
   LifeBuoy,
   Target,
   TrendingUp,
-  Users2,
+  Users,
   Wrench,
 } from "lucide-react"
 import type { Metadata } from "next"
 import Link from "next/link"
 
-import { KpiCard } from "@/components/dashboard/kpi-card"
-import { PageHeader } from "@/components/layout/page-header"
+import { MissionAlertCard, MissionAllClear } from "@/components/dashboard/mission/mission-alert-card"
+import { MissionMetricCard } from "@/components/dashboard/mission/mission-metric-card"
+import { MissionQuickAction } from "@/components/dashboard/mission/mission-quick-action"
+import { MissionSection } from "@/components/dashboard/mission/mission-section"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
 import {
+  CRM_PERMISSIONS,
+  FORECASTING_PERMISSIONS,
   FOUNDATION_PERMISSIONS,
   SERVICE_PERMISSIONS,
   hasPermission,
 } from "@/modules/authorization/domain/permission"
-import { getTenantDashboardStats } from "@/modules/crm/composition"
+import {
+  getTenantDashboardStats,
+  listTenantOpportunities,
+} from "@/modules/crm/composition"
+import { getTenantDispatchStats } from "@/modules/dispatch/composition"
+import { getTenantRevenueMetrics } from "@/modules/forecasting/composition"
+import { getCachedCurrentUser } from "@/modules/identity/composition"
+import {
+  buildAttentionItems,
+  greetingFor,
+} from "@/modules/platform/presentation/mission-control"
+import {
+  getTenantCaseStats,
+  getTenantWorkOrderStats,
+} from "@/modules/service/composition"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 
-export const metadata: Metadata = { title: "Dashboard" }
+export const metadata: Metadata = { title: "Mission Control" }
 
-function formatCurrency(value: number): string {
+function fmt(value: number): string {
   if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`
   if (value >= 1_000) return `$${Math.round(value / 1_000)}K`
   if (value === 0) return "$0"
   return `$${value.toLocaleString()}`
 }
 
-export default async function DashboardHomePage({
+export default async function MissionControlPage({
   params,
 }: {
   params: Promise<{ tenantSlug: string }>
@@ -41,82 +58,197 @@ export default async function DashboardHomePage({
   const context = await getRequestContext(tenantSlug)
   requirePermission(context.effectivePermissions, FOUNDATION_PERMISSIONS.dashboardRead)
 
-  const stats = await getTenantDashboardStats(context.tenantId)
-  const base = `/app/${tenantSlug}/dashboard`
+  const can = (p: string) => hasPermission(context.effectivePermissions, p)
+  const base = `/app/${tenantSlug}`
 
-  const areas = [
-    {
-      href: `${base}/crm`,
-      title: "CRM",
-      description: "Pipeline, oportunidades y conversión.",
-      icon: Target,
-      show: hasPermission(context.effectivePermissions, "crm.opportunities.read"),
-    },
-    {
-      href: `${base}/service`,
-      title: "Service",
-      description: "Casos, SLA y activos.",
-      icon: LifeBuoy,
-      show: hasPermission(context.effectivePermissions, SERVICE_PERMISSIONS.casesRead),
-    },
-    {
-      href: `${base}/field-service`,
-      title: "Field Service",
-      description: "Asignaciones, técnicos y utilización.",
-      icon: Wrench,
-      show: hasPermission(
-        context.effectivePermissions,
-        SERVICE_PERMISSIONS.dispatchRead,
-      ),
-    },
+  const canCrm = can(CRM_PERMISSIONS.opportunitiesRead)
+  const canCases = can(SERVICE_PERMISSIONS.casesRead)
+  const canWorkOrders = can(SERVICE_PERMISSIONS.workOrdersRead)
+  const canDispatch = can(SERVICE_PERMISSIONS.dispatchRead)
+  const canForecast = can(FORECASTING_PERMISSIONS.read)
+
+  const [
+    user,
+    stats,
+    revenue,
+    caseStats,
+    woStats,
+    dispatch,
+    topOpps,
+  ] = await Promise.all([
+    getCachedCurrentUser(),
+    getTenantDashboardStats(context.tenantId),
+    canForecast
+      ? getTenantRevenueMetrics(context.tenantId, "all_time")
+      : Promise.resolve(null),
+    canCases ? getTenantCaseStats(context.tenantId) : Promise.resolve(null),
+    canWorkOrders ? getTenantWorkOrderStats(context.tenantId) : Promise.resolve(null),
+    canDispatch ? getTenantDispatchStats(context.tenantId, new Date().toISOString().slice(0, 10)) : Promise.resolve(null),
+    canCrm
+      ? listTenantOpportunities(context.tenantId, { search: null, status: null }, 1, 5)
+      : Promise.resolve(null),
+  ])
+
+  const name = (user?.email?.split("@")[0] ?? "").replace(/[._-]/g, " ")
+  const greeting = greetingFor(new Date().getUTCHours())
+  const today = new Date().toLocaleDateString("es-CO", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  })
+
+  const attention = buildAttentionItems({
+    breachedCases: caseStats?.breachedCount ?? 0,
+    criticalCases: caseStats?.byPriority.critical ?? 0,
+    overloadedTechnicians: dispatch?.overloadedTechnicians ?? 0,
+    unscheduledWorkOrders: woStats?.byStatus.new ?? 0,
+  })
+
+  const quickActions = [
+    { label: "Empresa", icon: Building2, href: `${base}/companies`, show: can(CRM_PERMISSIONS.companiesWrite) },
+    { label: "Oportunidad", icon: Target, href: `${base}/opportunities`, show: can(CRM_PERMISSIONS.opportunitiesWrite) },
+    { label: "Caso", icon: LifeBuoy, href: `${base}/cases`, show: can(SERVICE_PERMISSIONS.casesWrite) },
+    { label: "Orden de trabajo", icon: Wrench, href: `${base}/work-orders`, show: can(SERVICE_PERMISSIONS.workOrdersWrite) },
+    { label: "Técnico", icon: Users, href: `${base}/technicians`, show: can(SERVICE_PERMISSIONS.techniciansWrite) },
   ].filter((a) => a.show)
 
   return (
-    <>
-      <PageHeader
-        title="Dashboard"
-        description="Centro de operaciones — resumen ejecutivo de Nexus."
-      />
-      <div className="space-y-6 px-5 pb-10 sm:px-8">
-        {/* Global executive KPIs */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <KpiCard label="Empresas" value={stats.companiesCount} icon={Building2} accent="blue" />
-          <KpiCard label="Contactos" value={stats.contactsCount} icon={Contact} accent="silver" />
-          <KpiCard label="Oportunidades abiertas" value={stats.openOpportunitiesCount} icon={Target} accent="blue" />
-          <KpiCard label="Pipeline" value={formatCurrency(stats.pipelineValue)} icon={TrendingUp} accent="emerald" hint="Oportunidades activas" />
-          <KpiCard label="Cotizaciones" value={stats.quotesCount} icon={Users2} accent="orange" />
-          <KpiCard label="Ingresos (ganados)" value={formatCurrency(stats.wonRevenue)} icon={DollarSign} accent="emerald" />
+    <div className="space-y-7 px-5 py-6 sm:px-8">
+      {/* 1 — Welcome header */}
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            {greeting}
+            {name ? `, ${name}` : ""}
+          </h1>
+          <p className="mt-1 text-sm capitalize text-muted-foreground">
+            {today} · {context.tenant.name}
+          </p>
         </div>
-
-        {/* Quick access to specialized dashboards */}
-        {areas.length > 0 ? (
-          <div>
-            <h2 className="mb-3 text-base font-semibold">Dashboards por área</h2>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {areas.map((a) => (
-                <Link
-                  key={a.href}
-                  href={a.href}
-                  className="group flex items-start gap-3 rounded-xl border bg-card p-5 transition-colors hover:border-primary/40"
-                >
-                  <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-                    <a.icon className="size-5" />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="font-semibold text-foreground">{a.title}</p>
-                      <ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
-                    </div>
-                    <p className="mt-0.5 text-sm text-muted-foreground">
-                      {a.description}
-                    </p>
-                  </div>
-                </Link>
-              ))}
-            </div>
+        {quickActions.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {quickActions.map((a) => (
+              <MissionQuickAction key={a.href} {...a} />
+            ))}
           </div>
         ) : null}
-      </div>
-    </>
+      </header>
+
+      {/* 3 — Attention Center (urgent first) */}
+      <MissionSection
+        title="Requiere atención"
+        description="Lo que necesita acción inmediata hoy."
+      >
+        {attention.length === 0 ? (
+          <MissionAllClear />
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {attention.map((item) => (
+              <MissionAlertCard
+                key={item.key}
+                label={item.label}
+                count={item.count}
+                severity={item.severity}
+                href={`${base}/${item.segment}`}
+              />
+            ))}
+          </div>
+        )}
+      </MissionSection>
+
+      {/* 2 — Executive KPIs */}
+      <MissionSection title="Estado del negocio y la operación">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          <MissionMetricCard label="Pipeline" value={fmt(stats.pipelineValue)} icon={TrendingUp} accent="emerald" href={`${base}/opportunities`} />
+          <MissionMetricCard label="Oportunidades abiertas" value={stats.openOpportunitiesCount} icon={Target} accent="blue" href={`${base}/opportunities`} />
+          <MissionMetricCard label="Casos abiertos" value={caseStats?.openCount ?? "—"} icon={LifeBuoy} accent="orange" href={`${base}/cases`} />
+          <MissionMetricCard label="Órdenes abiertas" value={woStats?.openCount ?? "—"} icon={Wrench} accent="orange" href={`${base}/work-orders`} />
+          <MissionMetricCard label="Técnicos disponibles" value={dispatch?.availableTechnicians ?? "—"} icon={Users} accent="blue" href={`${base}/dispatch`} />
+          <MissionMetricCard label="Utilización" value={dispatch?.averageUtilization != null ? `${dispatch.averageUtilization}%` : "—"} icon={Gauge} accent="silver" href={`${base}/dispatch`} />
+        </div>
+      </MissionSection>
+
+      {/* 6 — Field Service snapshot */}
+      {dispatch ? (
+        <MissionSection
+          title="Field Service"
+          description="Operación de campo del día."
+          href={`${base}/dashboard/field-service`}
+        >
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            <MissionMetricCard label="Asignaciones hoy" value={dispatch.assignmentsToday} icon={Gauge} accent="blue" />
+            <MissionMetricCard label="Disponibles" value={dispatch.availableTechnicians} icon={Users} accent="emerald" />
+            <MissionMetricCard label="Ocupados" value={dispatch.busyTechnicians} icon={Users} accent="orange" />
+            <MissionMetricCard label="Sobrecargados" value={dispatch.overloadedTechnicians} icon={Users} accent="orange" />
+            <MissionMetricCard label="Utilización prom." value={dispatch.averageUtilization != null ? `${dispatch.averageUtilization}%` : "—"} icon={Gauge} accent="silver" />
+          </div>
+        </MissionSection>
+      ) : null}
+
+      {/* 4 — CRM snapshot */}
+      {canCrm ? (
+        <MissionSection title="CRM" description="Pipeline comercial." href={`${base}/dashboard/crm`}>
+          <div className="grid gap-4 lg:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:col-span-1 lg:grid-cols-1">
+              <MissionMetricCard label="Pipeline" value={fmt(stats.pipelineValue)} icon={TrendingUp} accent="emerald" />
+              <MissionMetricCard
+                label="Conversión"
+                value={revenue != null ? `${Math.round(revenue.winRate)}%` : "—"}
+                icon={Target}
+                accent="blue"
+                hint="Won / (Won + Lost)"
+              />
+            </div>
+            <div className="rounded-xl border bg-card p-4 lg:col-span-2">
+              <p className="mb-2 text-sm font-medium text-foreground">Oportunidades recientes</p>
+              {topOpps && topOpps.items.length > 0 ? (
+                <ul className="divide-y">
+                  {topOpps.items.map((o) => (
+                    <li key={o.id}>
+                      <Link
+                        href={`${base}/opportunities/${o.id}`}
+                        className="flex items-center justify-between gap-3 py-2 text-sm hover:underline"
+                      >
+                        <span className="min-w-0 truncate font-medium text-foreground">
+                          {o.name}
+                          <span className="ml-2 font-normal text-muted-foreground">
+                            {o.companyName ?? "—"}
+                          </span>
+                        </span>
+                        <span className="shrink-0 tabular-nums text-muted-foreground">
+                          {o.estimatedValue != null ? fmt(o.estimatedValue) : "—"}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="py-6 text-center text-sm text-muted-foreground/60">
+                  Sin oportunidades.
+                </p>
+              )}
+            </div>
+          </div>
+        </MissionSection>
+      ) : null}
+
+      {/* 5 — Service snapshot */}
+      {caseStats ? (
+        <MissionSection title="Service" description="Servicio al cliente." href={`${base}/dashboard/service`}>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <MissionMetricCard label="Casos abiertos" value={caseStats.openCount} icon={LifeBuoy} accent="orange" />
+            <MissionMetricCard label="Resueltos" value={caseStats.byStatus.resolved} icon={LifeBuoy} accent="emerald" />
+            <MissionMetricCard label="Cerrados" value={caseStats.byStatus.closed} icon={Cpu} accent="silver" />
+            <MissionMetricCard
+              label="SLA cumplido"
+              value={caseStats.slaCompliancePct != null ? `${caseStats.slaCompliancePct}%` : "—"}
+              icon={Gauge}
+              accent="emerald"
+            />
+          </div>
+        </MissionSection>
+      ) : null}
+    </div>
   )
 }
