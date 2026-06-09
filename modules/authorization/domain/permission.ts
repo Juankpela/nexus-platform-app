@@ -23,6 +23,11 @@ export const CRM_PERMISSIONS = {
   quotesWrite: "crm.quotes.write",
 } as const
 
+export const SERVICE_PERMISSIONS = {
+  casesRead:  "service.cases.read",
+  casesWrite: "service.cases.write",
+} as const
+
 export const FORECASTING_PERMISSIONS = {
   read:              "forecasting.read",
   write:             "forecasting.write",

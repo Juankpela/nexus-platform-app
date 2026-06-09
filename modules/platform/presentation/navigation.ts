@@ -4,6 +4,7 @@ import {
   Contact,
   FileText,
   LayoutDashboard,
+  LifeBuoy,
   Package,
   Settings,
   Target,
@@ -16,6 +17,7 @@ import {
   CRM_PERMISSIONS,
   FORECASTING_PERMISSIONS,
   FOUNDATION_PERMISSIONS,
+  SERVICE_PERMISSIONS,
 } from "@/modules/authorization/domain/permission"
 
 export type NavigationItem = {
@@ -87,6 +89,13 @@ export const workspaceNavigation: NavigationItem[] = [
     icon: FileText,
     permission: CRM_PERMISSIONS.quotesRead,
     group: "CRM",
+  },
+  {
+    label: "Cases",
+    segment: "cases",
+    icon: LifeBuoy,
+    permission: SERVICE_PERMISSIONS.casesRead,
+    group: "Operaciones",
   },
   {
     label: "Forecasting",

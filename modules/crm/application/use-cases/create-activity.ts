@@ -20,9 +20,14 @@ export async function createActivity(
   { activities, audit }: CreateActivityDeps,
   input: CreateActivityInput,
 ): Promise<Activity> {
-  if (!input.data.companyId && !input.data.contactId) {
+  if (
+    !input.data.companyId &&
+    !input.data.contactId &&
+    !input.data.opportunityId &&
+    !input.data.caseId
+  ) {
     throw new ApplicationError(
-      "An activity must reference a company or a contact.",
+      "An activity must reference a company, contact, opportunity, or case.",
       "ACTIVITY_TARGET_REQUIRED",
     )
   }

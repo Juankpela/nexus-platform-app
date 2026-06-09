@@ -17,6 +17,7 @@ export type Database = {
       activities: {
         Row: {
           body: string | null
+          case_id: string | null
           company_id: string | null
           completed_at: string | null
           contact_id: string | null
@@ -33,6 +34,7 @@ export type Database = {
         }
         Insert: {
           body?: string | null
+          case_id?: string | null
           company_id?: string | null
           completed_at?: string | null
           contact_id?: string | null
@@ -49,6 +51,7 @@ export type Database = {
         }
         Update: {
           body?: string | null
+          case_id?: string | null
           company_id?: string | null
           completed_at?: string | null
           contact_id?: string | null
@@ -64,6 +67,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "activities_case_id_tenant_id_fkey"
+            columns: ["case_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id", "tenant_id"]
+          },
           {
             foreignKeyName: "activities_company_id_tenant_id_fkey"
             columns: ["company_id", "tenant_id"]
@@ -146,6 +156,117 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "audit_events_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      case_sequences: {
+        Row: {
+          last_seq: number
+          tenant_id: string
+          year: number
+        }
+        Insert: {
+          last_seq?: number
+          tenant_id: string
+          year: number
+        }
+        Update: {
+          last_seq?: number
+          tenant_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_sequences_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cases: {
+        Row: {
+          case_number: string
+          closed_at: string | null
+          company_id: string | null
+          contact_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          origin: Database["public"]["Enums"]["case_origin"]
+          owner_id: string | null
+          priority: Database["public"]["Enums"]["case_priority"]
+          resolved_at: string | null
+          sla_due_at: string | null
+          status: Database["public"]["Enums"]["case_status"]
+          subject: string
+          tenant_id: string
+          updated_at: string
+          work_order_id: string | null
+        }
+        Insert: {
+          case_number: string
+          closed_at?: string | null
+          company_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          origin?: Database["public"]["Enums"]["case_origin"]
+          owner_id?: string | null
+          priority?: Database["public"]["Enums"]["case_priority"]
+          resolved_at?: string | null
+          sla_due_at?: string | null
+          status?: Database["public"]["Enums"]["case_status"]
+          subject: string
+          tenant_id: string
+          updated_at?: string
+          work_order_id?: string | null
+        }
+        Update: {
+          case_number?: string
+          closed_at?: string | null
+          company_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          origin?: Database["public"]["Enums"]["case_origin"]
+          owner_id?: string | null
+          priority?: Database["public"]["Enums"]["case_priority"]
+          resolved_at?: string | null
+          sla_due_at?: string | null
+          status?: Database["public"]["Enums"]["case_status"]
+          subject?: string
+          tenant_id?: string
+          updated_at?: string
+          work_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cases_company_id_tenant_id_fkey"
+            columns: ["company_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "cases_contact_id_tenant_id_fkey"
+            columns: ["contact_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "cases_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -1237,6 +1358,7 @@ export type Database = {
         Returns: boolean
       }
       is_platform_admin: { Args: never; Returns: boolean }
+      next_case_number: { Args: { p_tenant_id: string }; Returns: string }
       next_quote_number: { Args: { p_tenant_id: string }; Returns: string }
       provision_organization: {
         Args: { p_name: string; p_slug: string; p_user_id: string }
@@ -1273,6 +1395,15 @@ export type Database = {
       activity_status: "open" | "completed"
       activity_type: "call" | "email" | "meeting" | "task" | "note" | "whatsapp"
       audit_actor_type: "user" | "system" | "service"
+      case_origin: "phone" | "email" | "whatsapp" | "web" | "manual"
+      case_priority: "low" | "medium" | "high" | "critical"
+      case_status:
+        | "new"
+        | "working"
+        | "waiting_customer"
+        | "escalated"
+        | "resolved"
+        | "closed"
       crm_record_status: "active" | "inactive"
       forecast_period_type: "month" | "quarter" | "year"
       membership_status: "invited" | "active" | "suspended"
@@ -1436,6 +1567,16 @@ export const Constants = {
       activity_status: ["open", "completed"],
       activity_type: ["call", "email", "meeting", "task", "note", "whatsapp"],
       audit_actor_type: ["user", "system", "service"],
+      case_origin: ["phone", "email", "whatsapp", "web", "manual"],
+      case_priority: ["low", "medium", "high", "critical"],
+      case_status: [
+        "new",
+        "working",
+        "waiting_customer",
+        "escalated",
+        "resolved",
+        "closed",
+      ],
       crm_record_status: ["active", "inactive"],
       forecast_period_type: ["month", "quarter", "year"],
       membership_status: ["invited", "active", "suspended"],

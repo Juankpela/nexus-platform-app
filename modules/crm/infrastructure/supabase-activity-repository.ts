@@ -23,6 +23,7 @@ function toActivity(row: ActivityRow): Activity {
     companyId: row.company_id,
     contactId: row.contact_id,
     opportunityId: row.opportunity_id,
+    caseId: row.case_id,
     status: row.status,
     dueAt: row.due_at,
     completedAt: row.completed_at,
@@ -34,7 +35,7 @@ function toActivity(row: ActivityRow): Activity {
 
 export class SupabaseActivityRepository implements ActivityRepository {
   private async listBy(
-    column: "company_id" | "contact_id" | "opportunity_id",
+    column: "company_id" | "contact_id" | "opportunity_id" | "case_id",
     tenantId: UUID,
     targetId: UUID,
     filters: ActivityFilters,
@@ -87,6 +88,14 @@ export class SupabaseActivityRepository implements ActivityRepository {
     return this.listBy("opportunity_id", tenantId, opportunityId, filters)
   }
 
+  listForCase(
+    tenantId: UUID,
+    caseId: UUID,
+    filters: ActivityFilters,
+  ): Promise<Activity[]> {
+    return this.listBy("case_id", tenantId, caseId, filters)
+  }
+
   async getById(tenantId: UUID, id: UUID): Promise<Activity | null> {
     const client = await createServerSupabaseClient()
     const { data, error } = await client
@@ -124,6 +133,7 @@ export class SupabaseActivityRepository implements ActivityRepository {
         company_id: input.companyId,
         contact_id: input.contactId,
         opportunity_id: input.opportunityId,
+        case_id: input.caseId,
       })
       .select("*")
       .single()

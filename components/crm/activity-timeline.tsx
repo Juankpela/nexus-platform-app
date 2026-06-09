@@ -42,6 +42,7 @@ export function ActivityTimeline({
   companyId,
   contactId,
   opportunityId,
+  caseId,
   activities,
   filters,
   canWrite,
@@ -51,6 +52,7 @@ export function ActivityTimeline({
   companyId?: string | null
   contactId?: string | null
   opportunityId?: string | null
+  caseId?: string | null
   activities: Activity[]
   filters: ActivityFilters
   canWrite: boolean
@@ -96,6 +98,7 @@ export function ActivityTimeline({
               companyId={companyId}
               contactId={contactId}
               opportunityId={opportunityId}
+              caseId={caseId}
               trigger={
                 <Button size="sm">
                   <Plus />

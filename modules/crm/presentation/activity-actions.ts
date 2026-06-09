@@ -55,6 +55,10 @@ function readActivityInput(formData: FormData): ParsedActivity {
   if (opportunityParsed && !opportunityParsed.success) {
     return { ok: false, message: "Invalid opportunity." }
   }
+  const caseParsed = parseOptionalId(field(formData, "case_id"))
+  if (caseParsed && !caseParsed.success) {
+    return { ok: false, message: "Invalid case." }
+  }
 
   return {
     ok: true,
@@ -66,6 +70,7 @@ function readActivityInput(formData: FormData): ParsedActivity {
       companyId: companyParsed?.success ? companyParsed.data : null,
       contactId: contactParsed?.success ? contactParsed.data : null,
       opportunityId: opportunityParsed?.success ? opportunityParsed.data : null,
+      caseId: caseParsed?.success ? caseParsed.data : null,
     },
   }
 }
