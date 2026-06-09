@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react"
+import { Columns3, LayoutList, Plus } from "lucide-react"
 import type { Metadata } from "next"
 import Link from "next/link"
 
@@ -6,6 +6,7 @@ import { Pagination } from "@/components/crm/pagination"
 import { EmptyState } from "@/components/layout/empty-state"
 import { PageHeader } from "@/components/layout/page-header"
 import { CaseFormDialog } from "@/components/service/case-form-dialog"
+import { CaseKanbanClient } from "@/components/service/case-kanban-client"
 import { SlaBadge } from "@/components/service/sla-badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -28,10 +29,12 @@ import {
 } from "@/modules/service/domain/case"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 import { listCachedTenantMembers } from "@/modules/tenancy/composition"
+import { cn } from "@/lib/utils"
 
 export const metadata: Metadata = { title: "Cases" }
 
 const PAGE_SIZE = 10
+const KANBAN_PAGE_SIZE = 200
 
 const statusStyles: Record<CaseStatus, string> = {
   new: "bg-muted text-muted-foreground",
@@ -72,6 +75,7 @@ export default async function CasesPage({
     priority?: string
     owner?: string
     page?: string
+    view?: string
   }>
 }) {
   const { tenantSlug } = await params
@@ -84,8 +88,9 @@ export default async function CasesPage({
     SERVICE_PERMISSIONS.casesWrite,
   )
 
+  const isKanban = sp.view === "kanban"
   const search = sp.search?.trim() ? sp.search.trim() : null
-  const status = parseStatus(sp.status)
+  const status = isKanban ? null : parseStatus(sp.status)
   const priority = parsePriority(sp.priority)
   const ownerId = sp.owner?.trim() ? sp.owner.trim() : null
   const pageRaw = sp.page ? Number.parseInt(sp.page, 10) : 1
@@ -96,8 +101,8 @@ export default async function CasesPage({
     listTenantCases(
       context.tenantId,
       { search, status, priority, ownerId },
-      page,
-      PAGE_SIZE,
+      isKanban ? 1 : page,
+      isKanban ? KANBAN_PAGE_SIZE : PAGE_SIZE,
     ),
     listCachedTenantMembers(context.tenantId),
     canWrite
@@ -119,6 +124,16 @@ export default async function CasesPage({
   const selectClass =
     "h-9 rounded-lg border border-input bg-background px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30"
 
+  function viewHref(v: "list" | "kanban") {
+    const p = new URLSearchParams()
+    if (search) p.set("search", search)
+    if (priority) p.set("priority", priority)
+    if (ownerId) p.set("owner", ownerId)
+    if (v === "kanban") p.set("view", "kanban")
+    const qs = p.toString()
+    return qs ? `${basePath}?${qs}` : basePath
+  }
+
   return (
     <>
       <PageHeader
@@ -128,46 +143,83 @@ export default async function CasesPage({
       <div className="space-y-4 px-5 py-6 sm:px-8">
         {/* Toolbar */}
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <form action={basePath} className="flex flex-wrap items-center gap-2">
-            <Input
-              type="search"
-              name="search"
-              defaultValue={search ?? ""}
-              placeholder="Buscar por asunto o número..."
-              className="w-56"
-            />
-            <select name="status" defaultValue={status ?? ""} className={selectClass}>
-              <option value="">Todos los estados</option>
-              {CASE_STATUSES.map((value) => (
-                <option key={value} value={value}>
-                  {CASE_STATUS_LABELS[value]}
-                </option>
-              ))}
-            </select>
-            <select
-              name="priority"
-              defaultValue={priority ?? ""}
-              className={selectClass}
-            >
-              <option value="">Todas las prioridades</option>
-              {CASE_PRIORITIES.map((value) => (
-                <option key={value} value={value}>
-                  {CASE_PRIORITY_LABELS[value]}
-                </option>
-              ))}
-            </select>
-            <select name="owner" defaultValue={ownerId ?? ""} className={selectClass}>
-              <option value="">Todos los responsables</option>
-              {ownerOptions.map((o) => (
-                <option key={o.id} value={o.id}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-            <Button type="submit" variant="outline" size="sm">
-              Filtrar
-            </Button>
-          </form>
+          <div className="flex flex-wrap items-center gap-2">
+            <form action={basePath} className="flex flex-wrap items-center gap-2">
+              <Input
+                type="search"
+                name="search"
+                defaultValue={search ?? ""}
+                placeholder="Buscar por asunto o número..."
+                className="w-56"
+              />
+              {!isKanban && (
+                <select
+                  name="status"
+                  defaultValue={status ?? ""}
+                  className={selectClass}
+                >
+                  <option value="">Todos los estados</option>
+                  {CASE_STATUSES.map((value) => (
+                    <option key={value} value={value}>
+                      {CASE_STATUS_LABELS[value]}
+                    </option>
+                  ))}
+                </select>
+              )}
+              <select
+                name="priority"
+                defaultValue={priority ?? ""}
+                className={selectClass}
+              >
+                <option value="">Todas las prioridades</option>
+                {CASE_PRIORITIES.map((value) => (
+                  <option key={value} value={value}>
+                    {CASE_PRIORITY_LABELS[value]}
+                  </option>
+                ))}
+              </select>
+              <select name="owner" defaultValue={ownerId ?? ""} className={selectClass}>
+                <option value="">Todos los responsables</option>
+                {ownerOptions.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+              {isKanban && <input type="hidden" name="view" value="kanban" />}
+              <Button type="submit" variant="outline" size="sm">
+                Filtrar
+              </Button>
+            </form>
+
+            {/* View toggle */}
+            <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/40 p-0.5">
+              <Link
+                href={viewHref("list")}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
+                  !isKanban
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <LayoutList className="size-3.5" />
+                Lista
+              </Link>
+              <Link
+                href={viewHref("kanban")}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
+                  isKanban
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <Columns3 className="size-3.5" />
+                Kanban
+              </Link>
+            </div>
+          </div>
 
           {canWrite ? (
             <CaseFormDialog
@@ -194,6 +246,13 @@ export default async function CasesPage({
                 ? "Ningún caso coincide con los filtros."
                 : "Crea tu primer caso de servicio."
             }
+          />
+        ) : isKanban ? (
+          <CaseKanbanClient
+            cases={result.items}
+            basePath={basePath}
+            tenantSlug={tenantSlug}
+            canWrite={canWrite}
           />
         ) : (
           <>
