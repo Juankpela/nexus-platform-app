@@ -110,8 +110,11 @@ export function AiInsightsPanel({ tenantSlug, initialInsights }: Props) {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`/api/${tenantSlug}/forecasting/ai-insights`, { method: "POST" })
-      if (!res.ok) throw new Error("Error generando insights")
+      const res = await fetch(`/app/${tenantSlug}/api/forecasting/ai-insights`, { method: "POST" })
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        throw new Error(body?.error ?? `Error generando insights (${res.status})`)
+      }
       const data = await res.json() as AiRevenueInsights
       setInsights(data)
     } catch (e) {

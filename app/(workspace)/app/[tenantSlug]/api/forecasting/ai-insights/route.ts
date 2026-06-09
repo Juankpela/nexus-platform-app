@@ -8,10 +8,15 @@ export async function POST(
   _req: NextRequest,
   { params }: { params: Promise<{ tenantSlug: string }> },
 ) {
-  const { tenantSlug } = await params
-  const context = await getRequestContext(tenantSlug)
-  requirePermission(context.effectivePermissions, FORECASTING_PERMISSIONS.read)
+  try {
+    const { tenantSlug } = await params
+    const context = await getRequestContext(tenantSlug)
+    requirePermission(context.effectivePermissions, FORECASTING_PERMISSIONS.read)
 
-  const insights = await getTenantAiInsights(context.tenantId)
-  return NextResponse.json(insights)
+    const insights = await getTenantAiInsights(context.tenantId)
+    return NextResponse.json(insights)
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Error desconocido generando insights"
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
 }

@@ -22,6 +22,7 @@ import {
 import type { ForecastPeriod } from "@/modules/forecasting/domain/revenue-metrics"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 import { cn } from "@/lib/utils"
+import { createSnapshotAction } from "./actions"
 
 export const metadata: Metadata = { title: "Forecasting" }
 
@@ -139,7 +140,7 @@ export default async function ForecastingPage({
 
             {/* Snapshot button */}
             {canWrite && (
-              <form action={`/api/${tenantSlug}/forecasting/snapshot`} method="POST">
+              <form action={createSnapshotAction.bind(null, tenantSlug)}>
                 <input type="hidden" name="period" value={period} />
                 <Button type="submit" variant="outline" size="sm" className="gap-1.5">
                   <Camera className="size-3.5" /> Guardar snapshot
