@@ -1558,6 +1558,67 @@ export type Database = {
         }
         Relationships: []
       }
+      work_order_assignments: {
+        Row: {
+          created_at: string
+          estimated_duration_minutes: number
+          id: string
+          scheduled_end: string
+          scheduled_start: string
+          status: Database["public"]["Enums"]["assignment_status"]
+          technician_id: string
+          tenant_id: string
+          updated_at: string
+          work_order_id: string
+        }
+        Insert: {
+          created_at?: string
+          estimated_duration_minutes: number
+          id?: string
+          scheduled_end: string
+          scheduled_start: string
+          status?: Database["public"]["Enums"]["assignment_status"]
+          technician_id: string
+          tenant_id: string
+          updated_at?: string
+          work_order_id: string
+        }
+        Update: {
+          created_at?: string
+          estimated_duration_minutes?: number
+          id?: string
+          scheduled_end?: string
+          scheduled_start?: string
+          status?: Database["public"]["Enums"]["assignment_status"]
+          technician_id?: string
+          tenant_id?: string
+          updated_at?: string
+          work_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_order_assignments_technician_id_tenant_id_fkey"
+            columns: ["technician_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "technicians"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "work_order_assignments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_order_assignments_work_order_id_tenant_id_fkey"
+            columns: ["work_order_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id", "tenant_id"]
+          },
+        ]
+      }
       work_order_sequences: {
         Row: {
           last_seq: number
@@ -1753,6 +1814,7 @@ export type Database = {
       asset_criticality: "low" | "medium" | "high" | "critical"
       asset_status: "active" | "in_maintenance" | "down" | "retired"
       asset_type: "machinery" | "equipment" | "component" | "tool" | "other"
+      assignment_status: "scheduled" | "in_progress" | "completed" | "cancelled"
       audit_actor_type: "user" | "system" | "service"
       case_origin: "phone" | "email" | "whatsapp" | "web" | "manual"
       case_priority: "low" | "medium" | "high" | "critical"
@@ -1947,6 +2009,7 @@ export const Constants = {
       asset_criticality: ["low", "medium", "high", "critical"],
       asset_status: ["active", "in_maintenance", "down", "retired"],
       asset_type: ["machinery", "equipment", "component", "tool", "other"],
+      assignment_status: ["scheduled", "in_progress", "completed", "cancelled"],
       audit_actor_type: ["user", "system", "service"],
       case_origin: ["phone", "email", "whatsapp", "web", "manual"],
       case_priority: ["low", "medium", "high", "critical"],

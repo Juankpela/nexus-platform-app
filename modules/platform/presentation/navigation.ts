@@ -1,6 +1,7 @@
 import {
   BookOpen,
   Building2,
+  CalendarClock,
   Contact,
   Cpu,
   FileText,
@@ -119,6 +120,13 @@ export const workspaceNavigation: NavigationItem[] = [
     segment: "technicians",
     icon: HardHat,
     permission: SERVICE_PERMISSIONS.techniciansRead,
+    group: "Operaciones",
+  },
+  {
+    label: "Schedule",
+    segment: "schedule",
+    icon: CalendarClock,
+    permission: SERVICE_PERMISSIONS.schedulingRead,
     group: "Operaciones",
   },
   {

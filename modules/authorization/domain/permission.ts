@@ -32,6 +32,8 @@ export const SERVICE_PERMISSIONS = {
   workOrdersWrite: "service.work_orders.write",
   techniciansRead:  "service.technicians.read",
   techniciansWrite: "service.technicians.write",
+  schedulingRead:  "service.scheduling.read",
+  schedulingWrite: "service.scheduling.write",
 } as const
 
 export const FORECASTING_PERMISSIONS = {
