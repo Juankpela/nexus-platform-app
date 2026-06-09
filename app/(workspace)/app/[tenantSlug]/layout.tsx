@@ -1,5 +1,6 @@
 import { AppHeader } from "@/components/layout/app-header"
 import { AppSidebar } from "@/components/layout/app-sidebar"
+import { Breadcrumbs } from "@/components/layout/breadcrumbs"
 import { getCachedCurrentUser } from "@/modules/identity/composition"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 
@@ -29,6 +30,7 @@ export default async function WorkspaceLayout({
           tenantSlug={context.tenant.slug}
           userEmail={user?.email ?? null}
         />
+        <Breadcrumbs tenantSlug={context.tenant.slug} />
         <main className="flex-1">{children}</main>
       </div>
     </div>

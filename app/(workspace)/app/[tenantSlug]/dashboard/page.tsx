@@ -1,24 +1,18 @@
 import {
-  AlertTriangle,
+  ArrowRight,
   Building2,
-  ClipboardCheck,
   Contact,
   DollarSign,
-  FileText,
   LifeBuoy,
-  ShieldCheck,
   Target,
-  Timer,
   TrendingUp,
-  UserCog,
+  Users2,
   Wrench,
 } from "lucide-react"
 import type { Metadata } from "next"
+import Link from "next/link"
 
-import { ActivityFeed } from "@/components/dashboard/activity-feed"
-import { ChartContainer } from "@/components/dashboard/chart-container"
 import { KpiCard } from "@/components/dashboard/kpi-card"
-import { SummaryWidget } from "@/components/dashboard/summary-widget"
 import { PageHeader } from "@/components/layout/page-header"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
 import {
@@ -27,27 +21,10 @@ import {
   hasPermission,
 } from "@/modules/authorization/domain/permission"
 import { getTenantDashboardStats } from "@/modules/crm/composition"
-import {
-  getTenantCaseStats,
-  getTenantWorkOrderStats,
-} from "@/modules/service/composition"
-import {
-  CASE_PRIORITIES,
-  CASE_PRIORITY_LABELS,
-  CASE_STATUSES,
-  CASE_STATUS_LABELS,
-} from "@/modules/service/domain/case"
-import {
-  WORK_ORDER_PRIORITIES,
-  WORK_ORDER_PRIORITY_LABELS,
-  WORK_ORDER_STATUSES,
-  WORK_ORDER_STATUS_LABELS,
-} from "@/modules/service/domain/work-order"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 
 export const metadata: Metadata = { title: "Dashboard" }
 
-/** Format a monetary value as $XK / $XM for KPI display. */
 function formatCurrency(value: number): string {
   if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`
   if (value >= 1_000) return `$${Math.round(value / 1_000)}K`
@@ -55,223 +32,90 @@ function formatCurrency(value: number): string {
   return `$${value.toLocaleString()}`
 }
 
-const PIPELINE_STAGE_LABELS: Record<string, string> = {
-  new: "Nuevas",
-  discovery: "Discovery",
-  proposal: "Propuesta",
-  negotiation: "Negociación",
-}
-
-export default async function DashboardPage({
+export default async function DashboardHomePage({
   params,
 }: {
   params: Promise<{ tenantSlug: string }>
 }) {
   const { tenantSlug } = await params
   const context = await getRequestContext(tenantSlug)
-  requirePermission(
-    context.effectivePermissions,
-    FOUNDATION_PERMISSIONS.dashboardRead,
-  )
+  requirePermission(context.effectivePermissions, FOUNDATION_PERMISSIONS.dashboardRead)
 
   const stats = await getTenantDashboardStats(context.tenantId)
+  const base = `/app/${tenantSlug}/dashboard`
 
-  const canReadCases = hasPermission(
-    context.effectivePermissions,
-    SERVICE_PERMISSIONS.casesRead,
-  )
-  const caseStats = canReadCases
-    ? await getTenantCaseStats(context.tenantId)
-    : null
-
-  const canReadWorkOrders = hasPermission(
-    context.effectivePermissions,
-    SERVICE_PERMISSIONS.workOrdersRead,
-  )
-  const woStats = canReadWorkOrders
-    ? await getTenantWorkOrderStats(context.tenantId)
-    : null
+  const areas = [
+    {
+      href: `${base}/crm`,
+      title: "CRM",
+      description: "Pipeline, oportunidades y conversión.",
+      icon: Target,
+      show: hasPermission(context.effectivePermissions, "crm.opportunities.read"),
+    },
+    {
+      href: `${base}/service`,
+      title: "Service",
+      description: "Casos, SLA y activos.",
+      icon: LifeBuoy,
+      show: hasPermission(context.effectivePermissions, SERVICE_PERMISSIONS.casesRead),
+    },
+    {
+      href: `${base}/field-service`,
+      title: "Field Service",
+      description: "Asignaciones, técnicos y utilización.",
+      icon: Wrench,
+      show: hasPermission(
+        context.effectivePermissions,
+        SERVICE_PERMISSIONS.dispatchRead,
+      ),
+    },
+  ].filter((a) => a.show)
 
   return (
     <>
       <PageHeader
         title="Dashboard"
-        description="Centro de operaciones — tu vista en tiempo real de ventas y servicio."
+        description="Centro de operaciones — resumen ejecutivo de Nexus."
       />
-
       <div className="space-y-6 px-5 pb-10 sm:px-8">
-        {/* KPI grid */}
+        {/* Global executive KPIs */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <KpiCard
-            label="Empresas"
-            value={stats.companiesCount}
-            icon={Building2}
-            accent="blue"
-          />
-          <KpiCard
-            label="Contactos"
-            value={stats.contactsCount}
-            icon={Contact}
-            accent="silver"
-          />
-          <KpiCard
-            label="Oportunidades abiertas"
-            value={stats.openOpportunitiesCount}
-            icon={Target}
-            accent="blue"
-          />
-          <KpiCard
-            label="Pipeline"
-            value={formatCurrency(stats.pipelineValue)}
-            icon={TrendingUp}
-            accent="emerald"
-            hint="Valor de oportunidades activas"
-          />
-          <KpiCard
-            label="Cotizaciones"
-            value={stats.quotesCount}
-            icon={FileText}
-            accent="orange"
-          />
-          <KpiCard
-            label="Ingresos (ganadas)"
-            value={formatCurrency(stats.wonRevenue)}
-            icon={DollarSign}
-            accent="emerald"
-            hint="Suma de oportunidades Won"
-          />
+          <KpiCard label="Empresas" value={stats.companiesCount} icon={Building2} accent="blue" />
+          <KpiCard label="Contactos" value={stats.contactsCount} icon={Contact} accent="silver" />
+          <KpiCard label="Oportunidades abiertas" value={stats.openOpportunitiesCount} icon={Target} accent="blue" />
+          <KpiCard label="Pipeline" value={formatCurrency(stats.pipelineValue)} icon={TrendingUp} accent="emerald" hint="Oportunidades activas" />
+          <KpiCard label="Cotizaciones" value={stats.quotesCount} icon={Users2} accent="orange" />
+          <KpiCard label="Ingresos (ganados)" value={formatCurrency(stats.wonRevenue)} icon={DollarSign} accent="emerald" />
         </div>
 
-        {/* Pipeline breakdown */}
-        <div className="grid gap-4 lg:grid-cols-3">
-          <div className="lg:col-span-2">
-            <ChartContainer
-              title="Pipeline por etapa"
-              description="Valor de oportunidades distribuido en el pipeline de ventas."
-            />
-          </div>
-          <SummaryWidget
-            title="Resumen del pipeline"
-            rows={stats.pipelineByStage.map((stage) => ({
-              label: PIPELINE_STAGE_LABELS[stage.status] ?? stage.label,
-              value:
-                stage.count > 0
-                  ? `${stage.count} · ${formatCurrency(stage.value)}`
-                  : "—",
-            }))}
-          />
-        </div>
-
-        {/* Service / Cases */}
-        {caseStats ? (
-          <div className="space-y-4">
-            <h2 className="text-base font-semibold">Servicio — Casos</h2>
+        {/* Quick access to specialized dashboards */}
+        {areas.length > 0 ? (
+          <div>
+            <h2 className="mb-3 text-base font-semibold">Dashboards por área</h2>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <KpiCard
-                label="Casos abiertos"
-                value={caseStats.openCount}
-                icon={LifeBuoy}
-                accent="orange"
-                hint={`${caseStats.totalCount} en total`}
-              />
-              <KpiCard
-                label="Cumplimiento SLA"
-                value={
-                  caseStats.slaCompliancePct != null
-                    ? `${caseStats.slaCompliancePct}%`
-                    : "—"
-                }
-                icon={ShieldCheck}
-                accent="emerald"
-                hint="Casos dentro de SLA"
-              />
-              <KpiCard
-                label="SLA incumplidos"
-                value={caseStats.breachedCount}
-                icon={AlertTriangle}
-                accent="silver"
-              />
-            </div>
-            <div className="grid gap-4 lg:grid-cols-2">
-              <SummaryWidget
-                title="Casos por estado"
-                rows={CASE_STATUSES.map((s) => ({
-                  label: CASE_STATUS_LABELS[s],
-                  value: caseStats.byStatus[s],
-                }))}
-              />
-              <SummaryWidget
-                title="Casos por prioridad"
-                rows={CASE_PRIORITIES.map((p) => ({
-                  label: CASE_PRIORITY_LABELS[p],
-                  value: caseStats.byPriority[p],
-                }))}
-              />
+              {areas.map((a) => (
+                <Link
+                  key={a.href}
+                  href={a.href}
+                  className="group flex items-start gap-3 rounded-xl border bg-card p-5 transition-colors hover:border-primary/40"
+                >
+                  <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+                    <a.icon className="size-5" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-semibold text-foreground">{a.title}</p>
+                      <ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                    </div>
+                    <p className="mt-0.5 text-sm text-muted-foreground">
+                      {a.description}
+                    </p>
+                  </div>
+                </Link>
+              ))}
             </div>
           </div>
         ) : null}
-
-        {/* Field Service / Work Orders */}
-        {woStats ? (
-          <div className="space-y-4">
-            <h2 className="text-base font-semibold">Field Service — Órdenes de trabajo</h2>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <KpiCard
-                label="Órdenes abiertas"
-                value={woStats.openCount}
-                icon={Wrench}
-                accent="orange"
-                hint={`${woStats.totalCount} en total`}
-              />
-              <KpiCard
-                label="Completadas (mes)"
-                value={woStats.completedThisMonth}
-                icon={ClipboardCheck}
-                accent="emerald"
-              />
-              <KpiCard
-                label="Tiempo prom. resolución"
-                value={
-                  woStats.avgResolutionHours != null
-                    ? `${woStats.avgResolutionHours} h`
-                    : "—"
-                }
-                icon={Timer}
-                accent="blue"
-              />
-              <KpiCard
-                label="Utilización técnicos"
-                value={
-                  woStats.technicianUtilizationPct != null
-                    ? `${woStats.technicianUtilizationPct}%`
-                    : "—"
-                }
-                icon={UserCog}
-                accent="silver"
-                hint="Órdenes abiertas con técnico"
-              />
-            </div>
-            <div className="grid gap-4 lg:grid-cols-2">
-              <SummaryWidget
-                title="Órdenes por estado"
-                rows={WORK_ORDER_STATUSES.map((s) => ({
-                  label: WORK_ORDER_STATUS_LABELS[s],
-                  value: woStats.byStatus[s],
-                }))}
-              />
-              <SummaryWidget
-                title="Órdenes por prioridad"
-                rows={WORK_ORDER_PRIORITIES.map((p) => ({
-                  label: WORK_ORDER_PRIORITY_LABELS[p],
-                  value: woStats.byPriority[p],
-                }))}
-              />
-            </div>
-          </div>
-        ) : null}
-
-        {/* Activity feed — placeholder until activity queries are wired */}
-        <ActivityFeed items={[]} />
       </div>
     </>
   )

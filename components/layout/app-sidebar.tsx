@@ -1,30 +1,18 @@
 "use client"
 
-import {
-  CalendarClock,
-  ClipboardList,
-  HardHat,
-  LifeBuoy,
-  Wrench,
-  type LucideIcon,
-} from "lucide-react"
+import { ChevronDown } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useState } from "react"
 
 import { NexusLogo } from "@/components/layout/nexus-logo"
 import { cn } from "@/lib/utils"
 import { hasPermission } from "@/modules/authorization/domain/permission"
-import { workspaceNavigation } from "@/modules/platform/presentation/navigation"
-
-// Visual-only preview of the upcoming operational modules (Field Service line).
-// No routes yet — these communicate the product roadmap inside the UI.
-const FUTURE_MODULES: { label: string; icon: LucideIcon }[] = [
-  { label: "Assets", icon: Wrench },
-  { label: "Cases", icon: LifeBuoy },
-  { label: "Work Orders", icon: ClipboardList },
-  { label: "Technicians", icon: HardHat },
-  { label: "Scheduling", icon: CalendarClock },
-]
+import {
+  NAVIGATION_GROUP_ORDER,
+  workspaceNavigation,
+  type NavigationItem,
+} from "@/modules/platform/presentation/navigation"
 
 export function AppSidebar({
   tenantName,
@@ -40,15 +28,15 @@ export function AppSidebar({
     hasPermission(permissions, item.permission),
   )
   const ungrouped = items.filter((item) => !item.group)
-  const groups = items.reduce<Record<string, typeof items>>((acc, item) => {
-    if (!item.group) return acc
-    ;(acc[item.group] ??= []).push(item)
-    return acc
-  }, {})
 
-  const renderItem = (item: (typeof items)[number]) => {
+  const isActive = (segment: string) => {
+    const href = `/app/${tenantSlug}/${segment}`
+    return pathname === href || pathname.startsWith(`${href}/`)
+  }
+
+  const renderItem = (item: NavigationItem) => {
     const href = `/app/${tenantSlug}/${item.segment}`
-    const active = pathname === href
+    const active = isActive(item.segment)
     return (
       <Link
         key={item.segment}
@@ -82,11 +70,7 @@ export function AppSidebar({
         aria-label="Nexus — Where Operations Connect."
         className="flex h-[76px] items-center justify-center border-b border-sidebar-border bg-white px-4"
       >
-        <NexusLogo
-          variant="full"
-          theme="light"
-          className="h-14 w-auto object-contain"
-        />
+        <NexusLogo variant="full" theme="light" className="h-14 w-auto object-contain" />
       </Link>
 
       <div className="px-4 pb-2 pt-4">
@@ -97,41 +81,62 @@ export function AppSidebar({
 
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
         {ungrouped.map(renderItem)}
-        {Object.entries(groups).map(([group, groupItems]) => (
-          <div key={group} className="pt-5">
-            <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-sidebar-foreground/50">
-              {group}
-            </p>
-            <div className="space-y-1">{groupItems.map(renderItem)}</div>
-          </div>
-        ))}
 
-        <div className="pt-6">
-          <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-sidebar-foreground/50">
-            Operations
-          </p>
-          <div className="space-y-1">
-            {FUTURE_MODULES.map((mod) => (
-              <div
-                key={mod.label}
-                aria-disabled
-                title="Coming soon"
-                className="flex h-9 cursor-not-allowed items-center gap-3 rounded-lg px-3 text-sm font-medium text-sidebar-foreground/45"
-              >
-                <mod.icon className="size-4" />
-                <span className="flex-1">{mod.label}</span>
-                <span className="rounded-full bg-sidebar-foreground/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-sidebar-foreground/55">
-                  Soon
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+        {NAVIGATION_GROUP_ORDER.map((group) => {
+          const groupItems = items.filter((i) => i.group === group)
+          if (groupItems.length === 0) return null
+          const groupActive = groupItems.some((i) => isActive(i.segment))
+          return (
+            <NavGroup
+              key={group}
+              title={group}
+              defaultOpen={groupActive}
+              hasActive={groupActive}
+            >
+              {groupItems.map(renderItem)}
+            </NavGroup>
+          )
+        })}
       </nav>
 
       <div className="border-t border-sidebar-border px-5 py-3.5 text-[11px] text-sidebar-foreground/50">
         Where Operations Connect.
       </div>
     </aside>
+  )
+}
+
+function NavGroup({
+  title,
+  defaultOpen,
+  hasActive,
+  children,
+}: {
+  title: string
+  defaultOpen: boolean
+  hasActive: boolean
+  children: React.ReactNode
+}) {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <div className="pt-4">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className={cn(
+          "flex w-full items-center justify-between rounded-md px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors",
+          hasActive
+            ? "text-sidebar-foreground/80"
+            : "text-sidebar-foreground/50 hover:text-sidebar-foreground/80",
+        )}
+      >
+        <span>{title}</span>
+        <ChevronDown
+          className={cn("size-3.5 transition-transform", open ? "" : "-rotate-90")}
+        />
+      </button>
+      {open ? <div className="mt-1 space-y-1">{children}</div> : null}
+    </div>
   )
 }
