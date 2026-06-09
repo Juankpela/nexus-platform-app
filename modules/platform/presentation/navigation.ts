@@ -2,6 +2,7 @@ import {
   BookOpen,
   Building2,
   CalendarClock,
+  CalendarDays,
   Contact,
   Radar,
   Cpu,
@@ -135,6 +136,13 @@ export const workspaceNavigation: NavigationItem[] = [
     segment: "dispatch",
     icon: Radar,
     permission: SERVICE_PERMISSIONS.dispatchRead,
+    group: "Operaciones",
+  },
+  {
+    label: "Calendar",
+    segment: "calendar",
+    icon: CalendarDays,
+    permission: SERVICE_PERMISSIONS.schedulingRead,
     group: "Operaciones",
   },
   {
