@@ -73,7 +73,7 @@ export class SupabaseProductRepository implements ProductRepository {
 
     let query = client
       .from("products")
-      .select("*", { count: "exact" })
+      .select("*", { count: "estimated" })
       .eq("tenant_id", tenantId)
 
     const term = search ? sanitizeSearch(search) : ""

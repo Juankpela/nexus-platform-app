@@ -93,7 +93,7 @@ export class SupabaseAssetRepository implements AssetRepository {
 
     let query = client
       .from("assets")
-      .select(SELECT_WITH_REFS, { count: "exact" })
+      .select(SELECT_WITH_REFS, { count: "estimated" })
       .eq("tenant_id", tenantId)
 
     if (filters.status) query = query.eq("status", filters.status)

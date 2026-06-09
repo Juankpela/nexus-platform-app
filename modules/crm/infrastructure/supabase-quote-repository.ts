@@ -81,7 +81,7 @@ export class SupabaseQuoteRepository implements QuoteRepository {
 
     let query = client
       .from("quotes")
-      .select("*, companies(name)", { count: "exact" })
+      .select("*, companies(name)", { count: "estimated" })
       .eq("tenant_id", tenantId)
 
     const term = search ? sanitizeSearch(search) : ""

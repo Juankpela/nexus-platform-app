@@ -164,7 +164,7 @@ export function AiInsightsPanel({ tenantSlug, initialInsights }: Props) {
             <Lightbulb className="size-8 mx-auto text-muted-foreground/50 mb-3" />
             <p className="text-sm font-medium text-foreground">Sin análisis generado</p>
             <p className="text-xs text-muted-foreground mt-1">
-              Haz clic en "Analizar Pipeline" para obtener insights de IA sobre tu pipeline.
+              Haz clic en &quot;Analizar Pipeline&quot; para obtener insights de IA sobre tu pipeline.
             </p>
           </div>
         )}

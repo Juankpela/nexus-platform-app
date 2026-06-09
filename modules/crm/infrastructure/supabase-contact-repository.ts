@@ -65,7 +65,7 @@ export class SupabaseContactRepository implements ContactRepository {
 
     let query = client
       .from("contacts")
-      .select(SELECT_WITH_COMPANY, { count: "exact" })
+      .select(SELECT_WITH_COMPANY, { count: "estimated" })
       .eq("tenant_id", tenantId)
 
     const term = search ? sanitizeSearch(search) : ""

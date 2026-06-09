@@ -27,12 +27,12 @@ export class SupabaseDashboardStatsRepository
     ] = await Promise.all([
       client
         .from("companies")
-        .select("*", { count: "exact", head: true })
+        .select("*", { count: "estimated", head: true })
         .eq("tenant_id", tenantId),
 
       client
         .from("contacts")
-        .select("*", { count: "exact", head: true })
+        .select("*", { count: "estimated", head: true })
         .eq("tenant_id", tenantId),
 
       client
@@ -50,7 +50,7 @@ export class SupabaseDashboardStatsRepository
 
       client
         .from("quotes")
-        .select("*", { count: "exact", head: true })
+        .select("*", { count: "estimated", head: true })
         .eq("tenant_id", tenantId),
     ])
 

@@ -43,7 +43,7 @@ export class SupabasePriceBookRepository implements PriceBookRepository {
 
     let query = client
       .from("price_books")
-      .select("*", { count: "exact" })
+      .select("*", { count: "estimated" })
       .eq("tenant_id", tenantId)
 
     const term = search ? sanitizeSearch(search) : ""

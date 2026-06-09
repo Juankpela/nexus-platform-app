@@ -13,7 +13,11 @@ import type {
 import { OPPORTUNITY_STATUS_LABELS } from "@/modules/crm/domain/opportunity"
 import type { ForecastSnapshot, ForecastSnapshotInput } from "@/modules/forecasting/domain/forecast-snapshot"
 import type { SalesQuota, SalesQuotaInput } from "@/modules/forecasting/domain/sales-quota"
+import type { Database } from "@/types/database"
 import type { UUID } from "@/types/shared"
+
+type ForecastSnapshotRow = Database["public"]["Tables"]["forecast_snapshots"]["Row"]
+type SalesQuotaRow = Database["public"]["Tables"]["sales_quotas"]["Row"]
 
 // ── Period helpers ────────────────────────────────────────────────────────────
 
@@ -52,15 +56,6 @@ const OPEN_STATUSES_ARR: string[] = [...OPEN_STATUSES]
 
 const MONTH_LABELS = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"]
 
-/**
- * Escape hatch for tables not yet in types/database.ts.
- * Run `npm run db:types` after pushing the forecasting migration to remove this.
- */
-// biome-ignore lint/suspicious/noExplicitAny: pre-migration table access
-function anyFrom(client: unknown, table: string) {
-  // biome-ignore lint/suspicious/noExplicitAny: pre-migration table access
-  return (client as any).from(table)
-}
 
 type OppRow = {
   id?: string
@@ -312,7 +307,7 @@ export class SupabaseForecastingRepository implements ForecastingRepository {
 
   async createSnapshot(tenantId: UUID, userId: UUID, input: ForecastSnapshotInput): Promise<ForecastSnapshot> {
     const client = await createServerSupabaseClient()
-    const { data, error } = await anyFrom(client, "forecast_snapshots")
+    const { data, error } = await client.from("forecast_snapshots")
       .insert({
         tenant_id:           tenantId,
         created_by:          userId,
@@ -334,29 +329,27 @@ export class SupabaseForecastingRepository implements ForecastingRepository {
       .single()
 
     if (error) throw new ApplicationError("SNAPSHOT_CREATE_FAILED", error.message)
-    // biome-ignore lint/suspicious/noExplicitAny: pre-migration table
-    return toSnapshot(data as any)
+    return toSnapshot(data)
   }
 
   async listSnapshots(tenantId: UUID, limit = 20): Promise<ForecastSnapshot[]> {
     const client = await createServerSupabaseClient()
-    const { data, error } = await anyFrom(client, "forecast_snapshots")
+    const { data, error } = await client.from("forecast_snapshots")
       .select("*")
       .eq("tenant_id", tenantId)
       .order("snapshot_date", { ascending: false })
       .limit(limit)
 
     if (error) throw new ApplicationError("SNAPSHOT_LIST_FAILED", error.message)
-    // biome-ignore lint/suspicious/noExplicitAny: pre-migration table
-    return (data ?? []).map((r: any) => toSnapshot(r))
+    return (data ?? []).map((r) => toSnapshot(r))
   }
 
   async getQuota(tenantId: UUID, periodType: string, periodLabel: string, ownerId?: UUID | null): Promise<SalesQuota | null> {
     const client = await createServerSupabaseClient()
-    let query = anyFrom(client, "sales_quotas")
+    let query = client.from("sales_quotas")
       .select("*")
       .eq("tenant_id", tenantId)
-      .eq("period_type", periodType)
+      .eq("period_type", periodType as SalesQuotaRow["period_type"])
       .eq("period_label", periodLabel)
 
     if (ownerId === null || ownerId === undefined) {
@@ -366,13 +359,12 @@ export class SupabaseForecastingRepository implements ForecastingRepository {
     }
 
     const { data } = await query.maybeSingle()
-    // biome-ignore lint/suspicious/noExplicitAny: pre-migration table
-    return data ? toQuota(data as any) : null
+    return data ? toQuota(data) : null
   }
 
   async upsertQuota(tenantId: UUID, input: SalesQuotaInput): Promise<SalesQuota> {
     const client = await createServerSupabaseClient()
-    const { data, error } = await anyFrom(client, "sales_quotas")
+    const { data, error } = await client.from("sales_quotas")
       .upsert({
         tenant_id:    tenantId,
         owner_id:     input.ownerId,
@@ -385,15 +377,13 @@ export class SupabaseForecastingRepository implements ForecastingRepository {
       .single()
 
     if (error) throw new ApplicationError("QUOTA_UPSERT_FAILED", error.message)
-    // biome-ignore lint/suspicious/noExplicitAny: pre-migration table
-    return toQuota(data as any)
+    return toQuota(data)
   }
 }
 
 // ── Mappers ───────────────────────────────────────────────────────────────────
 
-// biome-ignore lint/suspicious/noExplicitAny: supabase row type
-function toSnapshot(row: any): ForecastSnapshot {
+function toSnapshot(row: ForecastSnapshotRow): ForecastSnapshot {
   return {
     id:               row.id,
     tenantId:         row.tenant_id,
@@ -415,8 +405,7 @@ function toSnapshot(row: any): ForecastSnapshot {
   }
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: supabase row type
-function toQuota(row: any): SalesQuota {
+function toQuota(row: SalesQuotaRow): SalesQuota {
   return {
     id:          row.id,
     tenantId:    row.tenant_id,

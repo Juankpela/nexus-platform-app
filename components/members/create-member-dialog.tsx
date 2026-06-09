@@ -69,9 +69,11 @@ function CreateMemberForm({
     { error: null, ok: false },
   )
 
-  // onSuccess is stable (inline function from parent), use ref to avoid dep
+  // Keep the latest onSuccess without re-triggering the effect on each render.
   const onSuccessRef = useRef(onSuccess)
-  onSuccessRef.current = onSuccess
+  useEffect(() => {
+    onSuccessRef.current = onSuccess
+  })
 
   useEffect(() => {
     if (state.ok) onSuccessRef.current()

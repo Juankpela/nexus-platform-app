@@ -66,7 +66,7 @@ export class SupabaseCompanyRepository implements CompanyRepository {
 
     let query = client
       .from("companies")
-      .select("*", { count: "exact" })
+      .select("*", { count: "estimated" })
       .eq("tenant_id", tenantId)
 
     const term = search ? sanitizeSearch(search) : ""
