@@ -5,7 +5,9 @@ import { randomUUID } from "node:crypto"
 import { hasPermission } from "@/modules/authorization/domain/permission"
 import {
   buildExportArtifact,
+  enqueueExportJob,
   exportPermissionFor,
+  getExportDownload,
 } from "@/modules/integrations/composition"
 import {
   isExportFormat,
@@ -59,5 +61,55 @@ export async function exportDataAction(
   } catch (e) {
     const message = e instanceof Error ? e.message : "Export failed."
     return { ok: false, error: message }
+  }
+}
+
+export type EnqueueResult = { ok: true; jobId: string } | { ok: false; error: string }
+
+/** Queue an async export (Tier 1 validation path / large datasets). */
+export async function enqueueExportAction(
+  tenantSlug: string,
+  object: string,
+  format: string,
+  filters: ExportFilters,
+): Promise<EnqueueResult> {
+  try {
+    if (!isExportableObject(object)) return { ok: false, error: "Unsupported object." }
+    if (!isExportFormat(format)) return { ok: false, error: "Unsupported format." }
+
+    const context = await getRequestContext(tenantSlug)
+    const permission = exportPermissionFor(object)
+    if (!permission || !hasPermission(context.effectivePermissions, permission)) {
+      return { ok: false, error: "You do not have permission to export this data." }
+    }
+
+    const job = await enqueueExportJob({
+      actorId: context.userId,
+      requestId: randomUUID(),
+      tenantId: context.tenantId,
+      requestedBy: context.userId,
+      object,
+      format,
+      filters,
+    })
+    return { ok: true, jobId: job.id }
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Could not queue export." }
+  }
+}
+
+export type DownloadResult = { ok: true; url: string } | { ok: false; error: string }
+
+/** Mint a short-TTL signed URL for the requester's own completed export job. */
+export async function getExportDownloadAction(
+  tenantSlug: string,
+  jobId: string,
+): Promise<DownloadResult> {
+  try {
+    const context = await getRequestContext(tenantSlug)
+    const url = await getExportDownload(context.tenantId, context.userId, jobId)
+    return { ok: true, url }
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Download unavailable." }
   }
 }

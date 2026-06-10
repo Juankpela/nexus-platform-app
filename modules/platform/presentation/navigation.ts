@@ -7,6 +7,7 @@ import {
   CalendarDays,
   Contact,
   Cpu,
+  FileDown,
   FileText,
   HardHat,
   LayoutDashboard,
@@ -92,6 +93,7 @@ export const workspaceNavigation: NavigationItem[] = [
   { label: "Reports", segment: "reports", icon: BarChart3, permission: FORECASTING_PERMISSIONS.read, group: "Analytics" },
 
   // ── Administration ─────────────────────────────────────────────────────────
+  { label: "Exports", segment: "exports", icon: FileDown, permission: FOUNDATION_PERMISSIONS.dashboardRead, group: "Administration" },
   { label: "Users", segment: "users", icon: Users, permission: FOUNDATION_PERMISSIONS.usersRead, group: "Administration" },
   { label: "Settings", segment: "settings", icon: Settings, permission: FOUNDATION_PERMISSIONS.settingsRead, group: "Administration" },
 ]

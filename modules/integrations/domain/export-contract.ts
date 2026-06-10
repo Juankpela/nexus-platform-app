@@ -21,6 +21,9 @@ export const EXPORTABLE_OBJECTS: readonly ExportableObject[] = [
 /** Synchronous export row ceiling (Tier 1). Beyond this → async export (Sprint C). */
 export const EXPORT_ROW_CAP = 5000
 
+/** Async export row ceiling (worker path). Bounds memory even when streaming. */
+export const EXPORT_ASYNC_CAP = 100000
+
 /** Loosely-typed filter bag passed from presentation; each data source interprets it. */
 export type ExportFilters = {
   search?: string | null

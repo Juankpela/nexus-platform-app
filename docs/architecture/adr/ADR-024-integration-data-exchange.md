@@ -145,6 +145,35 @@ signed-URL download all **reuse the per-object read permission** (e.g.
 (`requested_by = auth.uid()`) or an oversight role. The Cron worker authenticates via a
 `CRON_SECRET` header (not a tenant permission).
 
+## INT-1 Sprint C1 — Known limitations (operational audit)
+
+Accepted, documented limitations of the C1 async export (to be addressed later):
+- **F3 — Retention / cleanup deferred to C3.** Generated files are never deleted and
+  the `expired` status is never assigned in C1. A retention job (mark `expired` +
+  delete Storage objects past `expires_at`) lands in **Sprint C3**. Until then,
+  Storage grows unbounded; operationally bounded by low C1 volume (Tier-1 validation).
+- **F4 — Memory pressure from full result-set loading.** The worker fetches up to
+  `EXPORT_ASYNC_CAP` (100k) rows into an in-memory array before rendering (no
+  row-streaming/batching yet). Large jobs can pressure serverless memory. Mitigation
+  (later): batch the read use-case and stream rows into the renderer.
+- **F5 — Throughput limits from cron cadence + batch size.** `*/5` cron ×
+  `batchSize=10` ≈ 120 jobs/hour (single worker per tick); ~100 jobs ≈ 50 min, ~1000
+  jobs ≈ 8 h to drain. Mitigation (later): increase batch/cron frequency or run
+  parallel workers (the SKIP LOCKED claim already supports concurrent workers safely).
+
+These are **not** correctness or security risks; F1 (lease fencing) and F2 (audit
+isolation) — the correctness issues from the audit — are fixed (see below).
+
+### F1/F2 fixes (implemented)
+- **F1 lease fencing:** `markCompleted`/`markFailed` update only when
+  `attempt_count = <claimed attempt>` AND `status='processing'`, returning whether the
+  write committed. A stale worker (lease expired, job reclaimed → newer attempt) gets
+  `committed=false` and cannot overwrite the newer worker's result. Proven against real
+  Postgres (stale worker affects 0 rows; final state is the newer worker's).
+- **F2 audit isolation:** the domain event is emitted via `safeAudit` (failure
+  swallowed) and only AFTER the job state committed. An audit-logging failure can never
+  flip a completed job to failed/queued.
+
 ## Consequences
 **Positivas:** habilita ERP/CRM/partners a escala enterprise reutilizando lo probado;
 aislamiento y auditoría preservados; evoluciones aditivas y acotadas.

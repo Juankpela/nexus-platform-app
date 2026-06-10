@@ -1622,6 +1622,63 @@ export type Database = {
           },
         ]
       }
+      export_jobs: {
+        Row: {
+          attempt_count: number
+          completed_at: string | null
+          created_at: string
+          expires_at: string | null
+          filters: Json
+          format: string
+          id: string
+          last_error: string | null
+          lease_until: string | null
+          object: string
+          requested_by: string
+          row_count: number | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["export_job_status"]
+          storage_path: string | null
+          tenant_id: string
+        }
+        Insert: {
+          attempt_count?: number
+          completed_at?: string | null
+          created_at?: string
+          expires_at?: string | null
+          filters?: Json
+          format: string
+          id?: string
+          last_error?: string | null
+          lease_until?: string | null
+          object: string
+          requested_by: string
+          row_count?: number | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["export_job_status"]
+          storage_path?: string | null
+          tenant_id: string
+        }
+        Update: {
+          attempt_count?: number
+          completed_at?: string | null
+          created_at?: string
+          expires_at?: string | null
+          filters?: Json
+          format?: string
+          id?: string
+          last_error?: string | null
+          lease_until?: string | null
+          object?: string
+          requested_by?: string
+          row_count?: number | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["export_job_status"]
+          storage_path?: string | null
+          tenant_id?: string
+        }
+        Relationships: []
+      }
       materials: {
         Row: {
           active: boolean
@@ -1968,6 +2025,10 @@ export type Database = {
         Returns: boolean
       }
       is_platform_admin: { Args: never; Returns: boolean }
+      claim_export_job: {
+        Args: { p_lease_seconds: number; p_max_attempts: number }
+        Returns: Json
+      }
       inventory_receive: {
         Args: {
           p_tenant_id: string
@@ -2080,6 +2141,12 @@ export type Database = {
         | "resolved"
         | "closed"
       crm_record_status: "active" | "inactive"
+      export_job_status:
+        | "queued"
+        | "processing"
+        | "completed"
+        | "failed"
+        | "expired"
       inventory_reference_type:
         | "work_order"
         | "work_order_execution"

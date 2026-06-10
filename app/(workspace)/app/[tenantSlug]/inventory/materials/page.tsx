@@ -3,6 +3,7 @@ import Link from "next/link"
 
 import { EmptyState } from "@/components/layout/empty-state"
 import { ExportButton } from "@/components/integrations/export-button"
+import { QueueExportButton } from "@/components/integrations/queue-export-button"
 import { PageHeader } from "@/components/layout/page-header"
 import { Pagination } from "@/components/crm/pagination"
 import { Button } from "@/components/ui/button"
@@ -62,11 +63,18 @@ export default async function MaterialsListPage({
             </select>
             <Button type="submit" variant="outline" size="sm">Filter</Button>
           </form>
-          <ExportButton
-            tenantSlug={tenantSlug}
-            object="materials"
-            filters={{ search, sku, active: sp.active ?? null }}
-          />
+          <div className="flex items-center gap-2">
+            <ExportButton
+              tenantSlug={tenantSlug}
+              object="materials"
+              filters={{ search, sku, active: sp.active ?? null }}
+            />
+            <QueueExportButton
+              tenantSlug={tenantSlug}
+              object="materials"
+              filters={{ search, sku, active: sp.active ?? null }}
+            />
+          </div>
         </div>
 
         {result.items.length === 0 ? (
