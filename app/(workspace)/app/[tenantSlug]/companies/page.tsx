@@ -5,6 +5,7 @@ import Link from "next/link"
 import { CompanyFormDialog } from "@/components/crm/company-form-dialog"
 import { CrmStatusToggle } from "@/components/crm/crm-status-toggle"
 import { Pagination } from "@/components/crm/pagination"
+import { ExportButton } from "@/components/integrations/export-button"
 import { EmptyState } from "@/components/layout/empty-state"
 import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
@@ -72,17 +73,20 @@ export default async function CompaniesPage({
               placeholder="Search companies..."
             />
           </form>
-          {canWrite ? (
-            <CompanyFormDialog
-              tenantSlug={tenantSlug}
-              trigger={
-                <Button>
-                  <Plus />
-                  New company
-                </Button>
-              }
-            />
-          ) : null}
+          <div className="flex items-center gap-2">
+            <ExportButton tenantSlug={tenantSlug} object="accounts" filters={{ search }} />
+            {canWrite ? (
+              <CompanyFormDialog
+                tenantSlug={tenantSlug}
+                trigger={
+                  <Button>
+                    <Plus />
+                    New company
+                  </Button>
+                }
+              />
+            ) : null}
+          </div>
         </div>
 
         {result.items.length === 0 ? (

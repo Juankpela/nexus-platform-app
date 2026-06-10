@@ -5,6 +5,7 @@ import Link from "next/link"
 import { ContactFormDialog } from "@/components/crm/contact-form-dialog"
 import { CrmStatusToggle } from "@/components/crm/crm-status-toggle"
 import { Pagination } from "@/components/crm/pagination"
+import { ExportButton } from "@/components/integrations/export-button"
 import { EmptyState } from "@/components/layout/empty-state"
 import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
@@ -77,18 +78,21 @@ export default async function ContactsPage({
               placeholder="Search contacts..."
             />
           </form>
-          {canWrite ? (
-            <ContactFormDialog
-              tenantSlug={tenantSlug}
-              companyOptions={companyOptions}
-              trigger={
-                <Button>
-                  <Plus />
-                  New contact
-                </Button>
-              }
-            />
-          ) : null}
+          <div className="flex items-center gap-2">
+            <ExportButton tenantSlug={tenantSlug} object="contacts" filters={{ search }} />
+            {canWrite ? (
+              <ContactFormDialog
+                tenantSlug={tenantSlug}
+                companyOptions={companyOptions}
+                trigger={
+                  <Button>
+                    <Plus />
+                    New contact
+                  </Button>
+                }
+              />
+            ) : null}
+          </div>
         </div>
 
         {result.items.length === 0 ? (

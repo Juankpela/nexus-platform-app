@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 
 import { EmptyState } from "@/components/layout/empty-state"
+import { ExportButton } from "@/components/integrations/export-button"
 import { PageHeader } from "@/components/layout/page-header"
 import { Pagination } from "@/components/crm/pagination"
 import { Button } from "@/components/ui/button"
@@ -46,20 +47,27 @@ export default async function MaterialsListPage({
     <>
       <PageHeader title="Materials" description="Material catalog and stock units." />
       <div className="space-y-4 px-5 py-6 sm:px-8">
-        <form action={base} className="flex flex-wrap items-center gap-2">
-          <Input type="search" name="search" defaultValue={search ?? ""} placeholder="Search by name..." className="w-52" />
-          <Input type="search" name="sku" defaultValue={sku ?? ""} placeholder="SKU..." className="w-36" />
-          <select
-            name="active"
-            defaultValue={active === true ? "true" : active === false ? "false" : ""}
-            className="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-          >
-            <option value="">All statuses</option>
-            <option value="true">Active</option>
-            <option value="false">Inactive</option>
-          </select>
-          <Button type="submit" variant="outline" size="sm">Filter</Button>
-        </form>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <form action={base} className="flex flex-wrap items-center gap-2">
+            <Input type="search" name="search" defaultValue={search ?? ""} placeholder="Search by name..." className="w-52" />
+            <Input type="search" name="sku" defaultValue={sku ?? ""} placeholder="SKU..." className="w-36" />
+            <select
+              name="active"
+              defaultValue={active === true ? "true" : active === false ? "false" : ""}
+              className="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <option value="">All statuses</option>
+              <option value="true">Active</option>
+              <option value="false">Inactive</option>
+            </select>
+            <Button type="submit" variant="outline" size="sm">Filter</Button>
+          </form>
+          <ExportButton
+            tenantSlug={tenantSlug}
+            object="materials"
+            filters={{ search, sku, active: sp.active ?? null }}
+          />
+        </div>
 
         {result.items.length === 0 ? (
           <EmptyState
