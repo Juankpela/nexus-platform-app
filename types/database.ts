@@ -1420,6 +1420,7 @@ export type Database = {
           status: Database["public"]["Enums"]["technician_status"]
           tenant_id: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -1433,6 +1434,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["technician_status"]
           tenant_id: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -1446,6 +1448,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["technician_status"]
           tenant_id?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -1612,6 +1615,86 @@ export type Database = {
           },
           {
             foreignKeyName: "work_order_assignments_work_order_id_tenant_id_fkey"
+            columns: ["work_order_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id", "tenant_id"]
+          },
+        ]
+      }
+      work_order_executions: {
+        Row: {
+          accepted_at: string | null
+          arrived_at: string | null
+          assignment_id: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          resolution_notes: string | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["execution_status"]
+          technician_id: string
+          tenant_id: string
+          unable_reason: string | null
+          updated_at: string
+          work_order_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          arrived_at?: string | null
+          assignment_id: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          resolution_notes?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["execution_status"]
+          technician_id: string
+          tenant_id: string
+          unable_reason?: string | null
+          updated_at?: string
+          work_order_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          arrived_at?: string | null
+          assignment_id?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          resolution_notes?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["execution_status"]
+          technician_id?: string
+          tenant_id?: string
+          unable_reason?: string | null
+          updated_at?: string
+          work_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_order_executions_assignment_id_tenant_id_fkey"
+            columns: ["assignment_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "work_order_assignments"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "work_order_executions_technician_id_tenant_id_fkey"
+            columns: ["technician_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "technicians"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "work_order_executions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_order_executions_work_order_id_tenant_id_fkey"
             columns: ["work_order_id", "tenant_id"]
             isOneToOne: false
             referencedRelation: "work_orders"
@@ -1837,6 +1920,13 @@ export type Database = {
         | "resolved"
         | "closed"
       crm_record_status: "active" | "inactive"
+      execution_status:
+        | "pending"
+        | "accepted"
+        | "on_site"
+        | "working"
+        | "completed"
+        | "unable_to_complete"
       forecast_period_type: "month" | "quarter" | "year"
       membership_status: "invited" | "active" | "suspended"
       opportunity_business_type:
@@ -2033,6 +2123,14 @@ export const Constants = {
         "closed",
       ],
       crm_record_status: ["active", "inactive"],
+      execution_status: [
+        "pending",
+        "accepted",
+        "on_site",
+        "working",
+        "completed",
+        "unable_to_complete",
+      ],
       forecast_period_type: ["month", "quarter", "year"],
       membership_status: ["invited", "active", "suspended"],
       opportunity_business_type: [

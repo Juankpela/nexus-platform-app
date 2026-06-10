@@ -1,6 +1,4 @@
-import { AppHeader } from "@/components/layout/app-header"
-import { AppSidebar } from "@/components/layout/app-sidebar"
-import { Breadcrumbs } from "@/components/layout/breadcrumbs"
+import { WorkspaceChrome } from "@/components/layout/workspace-chrome"
 import { getCachedCurrentUser } from "@/modules/identity/composition"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 
@@ -18,21 +16,13 @@ export default async function WorkspaceLayout({
   ])
 
   return (
-    <div className="workspace-bg flex min-h-screen">
-      <AppSidebar
-        tenantName={context.tenant.name}
-        tenantSlug={context.tenant.slug}
-        permissions={context.effectivePermissions}
-      />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <AppHeader
-          tenantName={context.tenant.name}
-          tenantSlug={context.tenant.slug}
-          userEmail={user?.email ?? null}
-        />
-        <Breadcrumbs tenantSlug={context.tenant.slug} />
-        <main className="flex-1">{children}</main>
-      </div>
-    </div>
+    <WorkspaceChrome
+      tenantName={context.tenant.name}
+      tenantSlug={context.tenant.slug}
+      permissions={context.effectivePermissions}
+      userEmail={user?.email ?? null}
+    >
+      {children}
+    </WorkspaceChrome>
   )
 }

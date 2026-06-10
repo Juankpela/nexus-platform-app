@@ -35,6 +35,8 @@ export const SERVICE_PERMISSIONS = {
   schedulingRead:  "service.scheduling.read",
   schedulingWrite: "service.scheduling.write",
   dispatchRead:    "service.dispatch.read",
+  fieldRead:       "service.field.read",
+  fieldExecute:    "service.field.execute",
 } as const
 
 export const FORECASTING_PERMISSIONS = {
