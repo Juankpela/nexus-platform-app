@@ -100,6 +100,51 @@ a read use-case in its module first, then a thin `ExportDataSource` that calls i
 Columns are declared only in the **centralized Column Registry** — never inline in a
 data source or renderer.
 
+## INT-1 Sprint C — Async Export (approved design + worker exception)
+
+Async exports (Tier 2: Work Orders, Inventory Transactions) run outside the user's
+request via an `export_jobs` queue drained by a Vercel Cron worker, uploading to a
+private Supabase Storage bucket and served through short-TTL signed URLs.
+
+### Worker exception to the ExportDataSource constraint (condition #1)
+The ExportDataSource constraint above mandates RLS-scoped, session reads. The async
+worker has **no user session**, so a bounded, explicit exception applies:
+- The worker runs with the **service role** (RLS bypassed) **only** inside the export
+  worker path.
+- It MUST filter every read by the **`tenant_id` of the job** — never unscoped.
+- The job's `tenant_id`/object permission are **validated at enqueue time** against
+  the requesting user (`has_tenant_permission` / `requirePermission`); the worker
+  trusts the already-authorized job.
+- Every processed job is **audited** (`export.completed` / `export.failed`).
+This mirrors the Inventory `SECURITY DEFINER` RPC pattern (elevated privilege +
+mandatory explicit tenant filter). The synchronous (Sprint B) path is unchanged and
+remains session/RLS-scoped. Tenant isolation is preserved by the mandatory filter +
+enqueue-time authorization, not by RLS, on this path only.
+
+### `export_jobs` — lease & retry fields (condition #2)
+Beyond the base columns, the table includes:
+- **`lease_until timestamptz`** — a processing lease. The worker claims jobs with
+  `FOR UPDATE SKIP LOCKED` and sets `lease_until = now() + interval`; a job whose
+  lease expires while still `processing` is reclaimable (crash recovery).
+- **`attempt_count int not null default 0`** — incremented per claim; a job exceeding
+  the max attempts is marked `failed` (no infinite retries).
+- **`last_error text`** — the most recent failure message for monitoring/diagnosis.
+
+### Snapshot semantics — "processing-time snapshot" (condition #3)
+An async export reflects the data **as of the moment the worker processes it**, NOT
+as of enqueue time. Filters are captured at enqueue; the actual rows are read when the
+worker runs. Consequence: data may change between request and generation, and the file
+is a **processing-time snapshot** (not transactional/point-in-time-of-request). This is
+documented to consumers (the monitoring UI shows `completed_at` as the snapshot
+instant). Acceptable for reporting/extraction; not a consistent cross-object snapshot.
+
+### Permissions (condition #4)
+**No new `integrations.exports.read` permission.** Enqueue, monitoring visibility, and
+signed-URL download all **reuse the per-object read permission** (e.g.
+`service.work_orders.read`, `inventory.stock.read`) plus ownership
+(`requested_by = auth.uid()`) or an oversight role. The Cron worker authenticates via a
+`CRON_SECRET` header (not a tenant permission).
+
 ## Consequences
 **Positivas:** habilita ERP/CRM/partners a escala enterprise reutilizando lo probado;
 aislamiento y auditoría preservados; evoluciones aditivas y acotadas.
