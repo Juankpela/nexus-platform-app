@@ -1622,6 +1622,112 @@ export type Database = {
           },
         ]
       }
+      materials: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          product_id: string | null
+          sku: string | null
+          tenant_id: string
+          unit_of_measure: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          product_id?: string | null
+          sku?: string | null
+          tenant_id: string
+          unit_of_measure: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          product_id?: string | null
+          sku?: string | null
+          tenant_id?: string
+          unit_of_measure?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      inventory_items: {
+        Row: {
+          created_at: string
+          id: string
+          material_id: string
+          quantity_available: number
+          quantity_on_hand: number
+          quantity_reserved: number
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          material_id: string
+          quantity_on_hand?: number
+          quantity_reserved?: number
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          material_id?: string
+          quantity_on_hand?: number
+          quantity_reserved?: number
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      inventory_transactions: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          material_id: string
+          quantity: number
+          reference_id: string | null
+          reference_type: Database["public"]["Enums"]["inventory_reference_type"]
+          tenant_id: string
+          type: Database["public"]["Enums"]["inventory_transaction_type"]
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          material_id: string
+          quantity: number
+          reference_id?: string | null
+          reference_type?: Database["public"]["Enums"]["inventory_reference_type"]
+          tenant_id: string
+          type: Database["public"]["Enums"]["inventory_transaction_type"]
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          material_id?: string
+          quantity?: number
+          reference_id?: string | null
+          reference_type?: Database["public"]["Enums"]["inventory_reference_type"]
+          tenant_id?: string
+          type?: Database["public"]["Enums"]["inventory_transaction_type"]
+        }
+        Relationships: []
+      }
       work_order_executions: {
         Row: {
           accepted_at: string | null
@@ -1862,6 +1968,57 @@ export type Database = {
         Returns: boolean
       }
       is_platform_admin: { Args: never; Returns: boolean }
+      inventory_receive: {
+        Args: {
+          p_tenant_id: string
+          p_material_id: string
+          p_quantity: number
+          p_reference_type: Database["public"]["Enums"]["inventory_reference_type"]
+          p_reference_id: string | null
+        }
+        Returns: Json
+      }
+      inventory_consume: {
+        Args: {
+          p_tenant_id: string
+          p_material_id: string
+          p_quantity: number
+          p_reference_type: Database["public"]["Enums"]["inventory_reference_type"]
+          p_reference_id: string | null
+          p_fulfill_reservation: boolean
+        }
+        Returns: Json
+      }
+      inventory_adjust: {
+        Args: {
+          p_tenant_id: string
+          p_material_id: string
+          p_quantity: number
+          p_reference_type: Database["public"]["Enums"]["inventory_reference_type"]
+          p_reference_id: string | null
+        }
+        Returns: Json
+      }
+      inventory_reserve: {
+        Args: {
+          p_tenant_id: string
+          p_material_id: string
+          p_quantity: number
+          p_reference_type: Database["public"]["Enums"]["inventory_reference_type"]
+          p_reference_id: string | null
+        }
+        Returns: Json
+      }
+      inventory_release: {
+        Args: {
+          p_tenant_id: string
+          p_material_id: string
+          p_quantity: number
+          p_reference_type: Database["public"]["Enums"]["inventory_reference_type"]
+          p_reference_id: string | null
+        }
+        Returns: Json
+      }
       next_asset_number: { Args: { p_tenant_id: string }; Returns: string }
       next_case_number: { Args: { p_tenant_id: string }; Returns: string }
       next_quote_number: { Args: { p_tenant_id: string }; Returns: string }
@@ -1923,6 +2080,17 @@ export type Database = {
         | "resolved"
         | "closed"
       crm_record_status: "active" | "inactive"
+      inventory_reference_type:
+        | "work_order"
+        | "work_order_execution"
+        | "manual"
+        | "reconciliation"
+      inventory_transaction_type:
+        | "receipt"
+        | "consumption"
+        | "adjustment"
+        | "reservation"
+        | "release"
       execution_status:
         | "pending"
         | "accepted"

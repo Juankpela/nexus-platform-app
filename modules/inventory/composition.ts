@@ -1,0 +1,59 @@
+import "server-only"
+
+import { SupabaseAuditRepository } from "@/modules/audit/infrastructure/supabase-audit-repository"
+import type { StockMovementDeps } from "@/modules/inventory/application/use-cases/apply-stock-movement"
+import {
+  getInventory,
+  listMaterials,
+} from "@/modules/inventory/application/use-cases/read-inventory"
+import {
+  adjustStock,
+  consumeMaterial,
+  receiveStock,
+  releaseReservation,
+  reserveMaterial,
+  type StockOpInput,
+} from "@/modules/inventory/application/use-cases/stock-operations"
+import { SupabaseInventoryRepository } from "@/modules/inventory/infrastructure/supabase-inventory-repository"
+import type { UUID } from "@/types/shared"
+
+function inventoryRepo() {
+  return new SupabaseInventoryRepository()
+}
+
+function deps(): StockMovementDeps {
+  return { inventory: inventoryRepo(), audit: new SupabaseAuditRepository() }
+}
+
+export function receiveStockMovement(input: StockOpInput) {
+  return receiveStock(deps(), input)
+}
+
+export function adjustStockMovement(input: StockOpInput) {
+  return adjustStock(deps(), input)
+}
+
+export function reserveMaterialMovement(input: StockOpInput) {
+  return reserveMaterial(deps(), input)
+}
+
+export function releaseReservationMovement(input: StockOpInput) {
+  return releaseReservation(deps(), input)
+}
+
+export function consumeMaterialMovement(
+  input: StockOpInput & { fulfillReservation?: boolean },
+) {
+  return consumeMaterial(deps(), input)
+}
+
+export function listInventoryMaterials(
+  tenantId: UUID,
+  options?: { activeOnly?: boolean },
+) {
+  return listMaterials({ inventory: inventoryRepo() }, tenantId, options)
+}
+
+export function getInventorySnapshot(tenantId: UUID, materialId: UUID) {
+  return getInventory({ inventory: inventoryRepo() }, tenantId, materialId)
+}
