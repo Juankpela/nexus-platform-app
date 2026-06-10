@@ -75,6 +75,31 @@ Versionado `/v1`; evolución solo aditiva; breaking → `/v2`; deprecación con 
 - **INT-3 Webhooks & Ecosystem:** outbox + dispatcher (retry/backoff/DLQ/HMAC) +
   subscripciones + OAuth2 + marketplace. Esfuerzo: Alto.
 
+## ExportDataSource Architectural Constraint (INT-1, binding)
+
+**Constraint:** every `ExportDataSource` MUST obtain its rows by delegating to an
+existing **read use-case** of the owning module (via that module's `composition`).
+An `ExportDataSource` MUST NOT:
+- query Supabase / any table directly,
+- use the service-role client,
+- bypass RLS, or
+- re-implement filtering/tenant-scoping that a module read already provides.
+
+**Why:** the export layer is a *consumer*, not an owner, of data. Routing every
+export read through the module's read use-case guarantees (1) **tenant isolation**
+and **RLS** are inherited unchanged, (2) **column/permission semantics** stay
+consistent with the rest of the app, and (3) `integrations` never couples to another
+module's schema — only to its application boundary. This keeps the dependency arrow
+one-way (`integrations → {inventory, crm, service}`; never the reverse) and prevents
+the export surface from becoming a second, divergent data-access path.
+
+**Enforcement:** the three Sprint B data sources comply
+(`materialsFetch → searchInventoryMaterials`, `accountsFetch → listTenantCompanies`,
+`contactsFetch → listTenantContacts`). Any new exportable object (Tier 2/3) MUST add
+a read use-case in its module first, then a thin `ExportDataSource` that calls it.
+Columns are declared only in the **centralized Column Registry** — never inline in a
+data source or renderer.
+
 ## Consequences
 **Positivas:** habilita ERP/CRM/partners a escala enterprise reutilizando lo probado;
 aislamiento y auditoría preservados; evoluciones aditivas y acotadas.
