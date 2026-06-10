@@ -1622,6 +1622,54 @@ export type Database = {
           },
         ]
       }
+      api_keys: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          key_hash: string
+          label: string
+          last_used_at: string | null
+          prefix: string
+          rotated_from: string | null
+          scopes: string[]
+          status: Database["public"]["Enums"]["api_key_status"]
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          key_hash: string
+          label: string
+          last_used_at?: string | null
+          prefix: string
+          rotated_from?: string | null
+          scopes?: string[]
+          status?: Database["public"]["Enums"]["api_key_status"]
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          key_hash?: string
+          label?: string
+          last_used_at?: string | null
+          prefix?: string
+          rotated_from?: string | null
+          scopes?: string[]
+          status?: Database["public"]["Enums"]["api_key_status"]
+          tenant_id?: string
+        }
+        Relationships: []
+      }
+      api_rate_events: {
+        Row: { id: number; occurred_at: string; scope: string; scope_id: string }
+        Insert: { id?: number; occurred_at?: string; scope: string; scope_id: string }
+        Update: { id?: number; occurred_at?: string; scope?: string; scope_id?: string }
+        Relationships: []
+      }
       export_jobs: {
         Row: {
           attempt_count: number
@@ -2025,6 +2073,16 @@ export type Database = {
         Returns: boolean
       }
       is_platform_admin: { Args: never; Returns: boolean }
+      consume_rate_limit: {
+        Args: {
+          p_api_key_id: string
+          p_tenant_id: string
+          p_key_limit: number
+          p_tenant_limit: number
+          p_window_seconds: number
+        }
+        Returns: Json
+      }
       claim_export_job: {
         Args: { p_lease_seconds: number; p_max_attempts: number }
         Returns: Json
@@ -2140,6 +2198,7 @@ export type Database = {
         | "escalated"
         | "resolved"
         | "closed"
+      api_key_status: "active" | "revoked"
       crm_record_status: "active" | "inactive"
       export_job_status:
         | "queued"

@@ -22,6 +22,7 @@ import {
   type StockOpInput,
 } from "@/modules/inventory/application/use-cases/stock-operations"
 import { SupabaseInventoryRepository } from "@/modules/inventory/infrastructure/supabase-inventory-repository"
+import { listMaterialsKeyset } from "@/modules/inventory/infrastructure/supabase-material-api-reader"
 import type { UUID } from "@/types/shared"
 
 function inventoryRepo() {
@@ -75,4 +76,12 @@ export function listInventoryTransactions(tenantId: UUID, query: TransactionQuer
 
 export function getInventoryOverviewStats(tenantId: UUID) {
   return getInventoryOverview({ inventory: inventoryRepo() }, tenantId)
+}
+
+// Public API read path (INT-2): service-role + tenant filter, keyset by id.
+export function listMaterialsApiPage(
+  tenantId: UUID,
+  params: { afterId: string | null; limit: number; active: boolean | null },
+) {
+  return listMaterialsKeyset(tenantId, params)
 }
