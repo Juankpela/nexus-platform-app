@@ -2,9 +2,16 @@ import "server-only"
 
 import { SupabaseAuditRepository } from "@/modules/audit/infrastructure/supabase-audit-repository"
 import type { StockMovementDeps } from "@/modules/inventory/application/use-cases/apply-stock-movement"
+import type {
+  MaterialQuery,
+  TransactionQuery,
+} from "@/modules/inventory/application/ports/inventory-repository"
 import {
   getInventory,
+  getInventoryOverview,
   listMaterials,
+  listTransactions,
+  searchMaterials,
 } from "@/modules/inventory/application/use-cases/read-inventory"
 import {
   adjustStock,
@@ -56,4 +63,16 @@ export function listInventoryMaterials(
 
 export function getInventorySnapshot(tenantId: UUID, materialId: UUID) {
   return getInventory({ inventory: inventoryRepo() }, tenantId, materialId)
+}
+
+export function searchInventoryMaterials(tenantId: UUID, query: MaterialQuery) {
+  return searchMaterials({ inventory: inventoryRepo() }, tenantId, query)
+}
+
+export function listInventoryTransactions(tenantId: UUID, query: TransactionQuery) {
+  return listTransactions({ inventory: inventoryRepo() }, tenantId, query)
+}
+
+export function getInventoryOverviewStats(tenantId: UUID) {
+  return getInventoryOverview({ inventory: inventoryRepo() }, tenantId)
 }

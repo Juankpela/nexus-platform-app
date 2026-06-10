@@ -4,8 +4,13 @@ import { ApplicationError } from "@/lib/errors/application-error"
 import { createServerSupabaseClient } from "@/lib/supabase/server"
 import type {
   ApplyStockMovementParams,
+  InventoryOverview,
   InventoryRepository,
+  InventoryTransactionView,
+  MaterialQuery,
+  Paged,
   StockMovementResult,
+  TransactionQuery,
 } from "@/modules/inventory/application/ports/inventory-repository"
 import type { InventoryItem } from "@/modules/inventory/domain/inventory-item"
 import type { InventoryTransaction } from "@/modules/inventory/domain/inventory-transaction"
@@ -184,6 +189,87 @@ export class SupabaseInventoryRepository implements InventoryRepository {
     return {
       item: toItem(payload.item),
       transaction: toTransaction(payload.transaction),
+    }
+  }
+
+  // ── Read-only queries (E-1) ──────────────────────────────────────────────
+  async searchMaterials(
+    tenantId: UUID,
+    query: MaterialQuery,
+  ): Promise<Paged<Material>> {
+    const client = await createServerSupabaseClient()
+    let q = client
+      .from("materials")
+      .select("*", { count: "exact" })
+      .eq("tenant_id", tenantId)
+    if (query.search) q = q.ilike("name", `%${query.search}%`)
+    if (query.sku) q = q.ilike("sku", `%${query.sku}%`)
+    if (query.active !== null && query.active !== undefined) {
+      q = q.eq("active", query.active)
+    }
+    const { data, error, count } = await q
+      .order("name", { ascending: true })
+      .range(query.offset, query.offset + query.limit - 1)
+
+    if (error) {
+      throw new ApplicationError("Unable to search materials.", "MATERIALS_SEARCH_FAILED", error)
+    }
+    return { items: (data ?? []).map(toMaterial), total: count ?? 0 }
+  }
+
+  async listTransactions(
+    tenantId: UUID,
+    query: TransactionQuery,
+  ): Promise<Paged<InventoryTransactionView>> {
+    const client = await createServerSupabaseClient()
+    let q = client
+      .from("inventory_transactions")
+      .select("*, materials(name, sku)", { count: "exact" })
+      .eq("tenant_id", tenantId)
+    if (query.materialId) q = q.eq("material_id", query.materialId)
+    if (query.type) q = q.eq("type", query.type)
+    const { data, error, count } = await q
+      .order("created_at", { ascending: false })
+      .range(query.offset, query.offset + query.limit - 1)
+
+    if (error) {
+      throw new ApplicationError("Unable to list transactions.", "TRANSACTIONS_LIST_FAILED", error)
+    }
+    const rows = (data ?? []) as unknown as (TxRow & {
+      materials: { name: string; sku: string | null } | null
+    })[]
+    const items = rows.map((row) => ({
+      ...toTransaction(row),
+      materialName: row.materials?.name ?? null,
+      materialSku: row.materials?.sku ?? null,
+    }))
+    return { items, total: count ?? 0 }
+  }
+
+  async getOverview(tenantId: UUID): Promise<InventoryOverview> {
+    const client = await createServerSupabaseClient()
+    const [materials, items, lowStock, recent] = await Promise.all([
+      client.from("materials").select("id", { count: "exact", head: true }).eq("tenant_id", tenantId),
+      client.from("inventory_items").select("id", { count: "exact", head: true }).eq("tenant_id", tenantId),
+      client
+        .from("inventory_items")
+        .select("id", { count: "exact", head: true })
+        .eq("tenant_id", tenantId)
+        .lte("quantity_available", 0),
+      this.listTransactions(tenantId, { limit: 5, offset: 0 }),
+    ])
+    if (materials.error || items.error || lowStock.error) {
+      throw new ApplicationError(
+        "Unable to load inventory overview.",
+        "INVENTORY_OVERVIEW_FAILED",
+        materials.error ?? items.error ?? lowStock.error,
+      )
+    }
+    return {
+      totalMaterials: materials.count ?? 0,
+      totalItems: items.count ?? 0,
+      lowStockCount: lowStock.count ?? 0,
+      recentMovements: recent.items,
     }
   }
 }

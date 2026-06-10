@@ -30,6 +30,37 @@ export type ApplyStockMovementParams = {
   createdBy: UUID
 }
 
+// ── Read-only query DTOs (E-1 exposure layer; no business logic) ─────────────
+export type Paged<T> = { items: T[]; total: number }
+
+export type MaterialQuery = {
+  search?: string | null
+  sku?: string | null
+  active?: boolean | null
+  limit: number
+  offset: number
+}
+
+export type TransactionQuery = {
+  materialId?: UUID | null
+  type?: TransactionType | null
+  limit: number
+  offset: number
+}
+
+/** A ledger row enriched with its material's display fields, for read views. */
+export type InventoryTransactionView = InventoryTransaction & {
+  materialName: string | null
+  materialSku: string | null
+}
+
+export type InventoryOverview = {
+  totalMaterials: number
+  totalItems: number
+  lowStockCount: number
+  recentMovements: InventoryTransactionView[]
+}
+
 export interface InventoryRepository {
   getMaterial(tenantId: UUID, materialId: UUID): Promise<Material | null>
   listMaterials(
@@ -43,4 +74,12 @@ export interface InventoryRepository {
   applyStockMovement(
     params: ApplyStockMovementParams,
   ): Promise<StockMovementResult>
+
+  // ── Read-only (E-1) ──
+  searchMaterials(tenantId: UUID, query: MaterialQuery): Promise<Paged<Material>>
+  listTransactions(
+    tenantId: UUID,
+    query: TransactionQuery,
+  ): Promise<Paged<InventoryTransactionView>>
+  getOverview(tenantId: UUID): Promise<InventoryOverview>
 }

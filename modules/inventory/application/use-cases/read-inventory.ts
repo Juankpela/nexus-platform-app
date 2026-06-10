@@ -1,5 +1,12 @@
 import { ApplicationError } from "@/lib/errors/application-error"
-import type { InventoryRepository } from "@/modules/inventory/application/ports/inventory-repository"
+import type {
+  InventoryOverview,
+  InventoryRepository,
+  InventoryTransactionView,
+  MaterialQuery,
+  Paged,
+  TransactionQuery,
+} from "@/modules/inventory/application/ports/inventory-repository"
 import type { InventoryItem } from "@/modules/inventory/domain/inventory-item"
 import type { Material } from "@/modules/inventory/domain/material"
 import type { UUID } from "@/types/shared"
@@ -31,4 +38,29 @@ export async function getInventory(
   }
   const item = await inventory.getInventoryItem(tenantId, materialId)
   return { material, item }
+}
+
+// ── E-1 read-only queries (expose existing data; no business logic) ──────────
+
+export function searchMaterials(
+  { inventory }: ReadInventoryDeps,
+  tenantId: UUID,
+  query: MaterialQuery,
+): Promise<Paged<Material>> {
+  return inventory.searchMaterials(tenantId, query)
+}
+
+export function listTransactions(
+  { inventory }: ReadInventoryDeps,
+  tenantId: UUID,
+  query: TransactionQuery,
+): Promise<Paged<InventoryTransactionView>> {
+  return inventory.listTransactions(tenantId, query)
+}
+
+export function getInventoryOverview(
+  { inventory }: ReadInventoryDeps,
+  tenantId: UUID,
+): Promise<InventoryOverview> {
+  return inventory.getOverview(tenantId)
 }

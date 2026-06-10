@@ -3,7 +3,10 @@ import { describe, expect, it, vi } from "vitest"
 import type { InventoryRepository } from "@/modules/inventory/application/ports/inventory-repository"
 import {
   getInventory,
+  getInventoryOverview,
   listMaterials,
+  listTransactions,
+  searchMaterials,
 } from "@/modules/inventory/application/use-cases/read-inventory"
 import type { Material } from "@/modules/inventory/domain/material"
 
@@ -22,6 +25,14 @@ function repo(over: Partial<Record<keyof InventoryRepository, unknown>> = {}) {
     getInventoryItem: vi.fn().mockResolvedValue(null),
     listMaterials: vi.fn().mockResolvedValue([material]),
     applyStockMovement: vi.fn(),
+    searchMaterials: vi.fn().mockResolvedValue({ items: [material], total: 1 }),
+    listTransactions: vi.fn().mockResolvedValue({ items: [], total: 0 }),
+    getOverview: vi.fn().mockResolvedValue({
+      totalMaterials: 1,
+      totalItems: 0,
+      lowStockCount: 0,
+      recentMovements: [],
+    }),
     ...over,
   } as unknown as InventoryRepository
 }
@@ -47,5 +58,29 @@ describe("getInventory", () => {
     await expect(getInventory({ inventory }, TENANT, MAT)).rejects.toMatchObject({
       code: "MATERIAL_NOT_FOUND",
     })
+  })
+})
+
+describe("E-1 read queries delegate to the repository", () => {
+  it("searchMaterials forwards the query and returns paged result", async () => {
+    const inventory = repo()
+    const q = { search: "tinta", sku: null, active: true, limit: 20, offset: 0 }
+    const res = await searchMaterials({ inventory }, TENANT, q)
+    expect(res).toEqual({ items: [material], total: 1 })
+    expect(inventory.searchMaterials).toHaveBeenCalledWith(TENANT, q)
+  })
+
+  it("listTransactions forwards the query", async () => {
+    const inventory = repo()
+    const q = { materialId: MAT, type: null, limit: 25, offset: 0 }
+    await listTransactions({ inventory }, TENANT, q)
+    expect(inventory.listTransactions).toHaveBeenCalledWith(TENANT, q)
+  })
+
+  it("getInventoryOverview returns the overview", async () => {
+    const inventory = repo()
+    const res = await getInventoryOverview({ inventory }, TENANT)
+    expect(res.totalMaterials).toBe(1)
+    expect(inventory.getOverview).toHaveBeenCalledWith(TENANT)
   })
 })

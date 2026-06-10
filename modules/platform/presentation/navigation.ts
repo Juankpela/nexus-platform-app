@@ -1,6 +1,7 @@
 import {
   BarChart3,
   BookOpen,
+  Boxes,
   Building2,
   CalendarClock,
   CalendarDays,
@@ -11,6 +12,7 @@ import {
   LayoutDashboard,
   LifeBuoy,
   Package,
+  PackageSearch,
   Radar,
   Settings,
   Target,
@@ -24,6 +26,7 @@ import {
   CRM_PERMISSIONS,
   FORECASTING_PERMISSIONS,
   FOUNDATION_PERMISSIONS,
+  INVENTORY_PERMISSIONS,
   SERVICE_PERMISSIONS,
 } from "@/modules/authorization/domain/permission"
 
@@ -45,6 +48,7 @@ export const NAVIGATION_GROUP_ORDER = [
   "CRM",
   "Service",
   "Field Service",
+  "Inventory",
   "Analytics",
   "Administration",
 ] as const
@@ -78,6 +82,10 @@ export const workspaceNavigation: NavigationItem[] = [
   { label: "Schedule", segment: "schedule", icon: CalendarClock, permission: SERVICE_PERMISSIONS.schedulingRead, group: "Field Service" },
   { label: "Dispatch", segment: "dispatch", icon: Radar, permission: SERVICE_PERMISSIONS.dispatchRead, group: "Field Service" },
   { label: "Calendar", segment: "calendar", icon: CalendarDays, permission: SERVICE_PERMISSIONS.schedulingRead, group: "Field Service" },
+
+  // ── Inventory ──────────────────────────────────────────────────────────────
+  { label: "Inventory", segment: "inventory", icon: Boxes, permission: INVENTORY_PERMISSIONS.stockRead, group: "Inventory" },
+  { label: "Materials", segment: "inventory/materials", icon: PackageSearch, permission: INVENTORY_PERMISSIONS.materialsRead, group: "Inventory" },
 
   // ── Analytics ──────────────────────────────────────────────────────────────
   { label: "Forecast", segment: "forecasting", icon: TrendingUp, permission: FORECASTING_PERMISSIONS.read, group: "Analytics" },

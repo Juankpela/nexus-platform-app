@@ -46,6 +46,16 @@ export const FORECASTING_PERMISSIONS = {
   snapshotsWrite:    "forecasting.snapshots.write",
 } as const
 
+// Inventory permissions already provisioned in the DB (20260610002_inventory_core.sql).
+// Referenced here for the presentation layer (E-1); no new permissions are created.
+export const INVENTORY_PERMISSIONS = {
+  materialsRead:  "inventory.materials.read",
+  materialsWrite: "inventory.materials.write",
+  stockRead:      "inventory.stock.read",
+  stockManage:    "inventory.stock.manage",
+  consume:        "inventory.consume",
+} as const
+
 export type FoundationPermission =
   (typeof FOUNDATION_PERMISSIONS)[keyof typeof FOUNDATION_PERMISSIONS]
 
