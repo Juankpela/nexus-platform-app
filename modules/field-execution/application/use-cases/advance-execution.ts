@@ -56,6 +56,8 @@ function timestampsFor(
       return { startedAt: now }
     case "completed":
       return { completedAt: now }
+    case "unable_to_complete":
+      return { unableToCompleteAt: now }
     default:
       return {}
   }

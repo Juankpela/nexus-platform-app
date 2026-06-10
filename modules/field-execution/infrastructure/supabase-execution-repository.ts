@@ -45,6 +45,7 @@ function toExecution(row: ExecutionRow): Execution {
     arrivedAt: row.arrived_at,
     startedAt: row.started_at,
     completedAt: row.completed_at,
+    unableToCompleteAt: row.unable_to_complete_at,
     resolutionNotes: row.resolution_notes,
     unableReason: row.unable_reason,
     createdAt: row.created_at,
@@ -77,6 +78,8 @@ function patchToRow(patch: ExecutionPatch) {
   if ("arrivedAt" in patch) row.arrived_at = patch.arrivedAt
   if ("startedAt" in patch) row.started_at = patch.startedAt
   if ("completedAt" in patch) row.completed_at = patch.completedAt
+  if ("unableToCompleteAt" in patch)
+    row.unable_to_complete_at = patch.unableToCompleteAt
   if ("resolutionNotes" in patch) row.resolution_notes = patch.resolutionNotes
   if ("unableReason" in patch) row.unable_reason = patch.unableReason
   return row

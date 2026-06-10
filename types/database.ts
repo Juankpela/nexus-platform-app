@@ -1636,6 +1636,7 @@ export type Database = {
           technician_id: string
           tenant_id: string
           unable_reason: string | null
+          unable_to_complete_at: string | null
           updated_at: string
           work_order_id: string
         }
@@ -1652,6 +1653,7 @@ export type Database = {
           technician_id: string
           tenant_id: string
           unable_reason?: string | null
+          unable_to_complete_at?: string | null
           updated_at?: string
           work_order_id: string
         }
@@ -1668,6 +1670,7 @@ export type Database = {
           technician_id?: string
           tenant_id?: string
           unable_reason?: string | null
+          unable_to_complete_at?: string | null
           updated_at?: string
           work_order_id?: string
         }

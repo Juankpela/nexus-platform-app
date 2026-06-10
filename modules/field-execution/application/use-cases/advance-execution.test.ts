@@ -28,6 +28,7 @@ function fakeExec(status: ExecutionStatus): Execution {
     arrivedAt: null,
     startedAt: null,
     completedAt: null,
+    unableToCompleteAt: null,
     resolutionNotes: null,
     unableReason: null,
     createdAt: "2026-06-09T00:00:00Z",

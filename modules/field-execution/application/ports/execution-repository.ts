@@ -12,6 +12,7 @@ export type ExecutionPatch = {
   arrivedAt?: string | null
   startedAt?: string | null
   completedAt?: string | null
+  unableToCompleteAt?: string | null
   resolutionNotes?: string | null
   unableReason?: string | null
 }
