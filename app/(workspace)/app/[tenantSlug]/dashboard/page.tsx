@@ -96,6 +96,7 @@ export default async function MissionControlPage({
     day: "numeric",
     month: "long",
     year: "numeric",
+    timeZone: "America/Bogota",
   })
 
   const attention = buildAttentionItems({

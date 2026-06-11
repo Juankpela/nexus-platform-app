@@ -84,6 +84,7 @@ export default async function QuotePrintPage({
                   year: "numeric",
                   month: "long",
                   day: "numeric",
+                  timeZone: "America/Bogota",
                 })}
               </p>
             )}
@@ -93,6 +94,7 @@ export default async function QuotePrintPage({
                 year: "numeric",
                 month: "long",
                 day: "numeric",
+                timeZone: "America/Bogota",
               })}
             </p>
           </div>

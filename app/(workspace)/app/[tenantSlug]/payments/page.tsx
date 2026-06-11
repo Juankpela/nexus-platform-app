@@ -118,7 +118,7 @@ export default async function PaymentsPage({
                       })}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {new Date(p.paymentDate).toLocaleDateString()}
+                      {new Date(p.paymentDate).toLocaleDateString(undefined, { timeZone: "America/Bogota" })}
                     </td>
                   </tr>
                 ))}

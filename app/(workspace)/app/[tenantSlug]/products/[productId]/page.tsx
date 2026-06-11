@@ -112,11 +112,11 @@ export default async function ProductDetailPage({
             <Detail label="Unit of Measure" value={product.unitOfMeasure} />
             <Detail
               label="Created"
-              value={new Date(product.createdAt).toLocaleDateString()}
+              value={new Date(product.createdAt).toLocaleDateString(undefined, { timeZone: "America/Bogota" })}
             />
             <Detail
               label="Last Updated"
-              value={new Date(product.updatedAt).toLocaleDateString()}
+              value={new Date(product.updatedAt).toLocaleDateString(undefined, { timeZone: "America/Bogota" })}
             />
           </dl>
           {product.description ? (
@@ -221,7 +221,7 @@ export default async function ProductDetailPage({
                         ) : null}
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
-                        {new Date(ev.occurredAt).toLocaleString()}
+                        {new Date(ev.occurredAt).toLocaleString(undefined, { timeZone: "America/Bogota" })}
                       </td>
                     </tr>
                   ))}

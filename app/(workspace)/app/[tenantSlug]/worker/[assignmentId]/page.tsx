@@ -22,7 +22,7 @@ function fmt(iso: string): string {
     month: "short",
     hour: "2-digit",
     minute: "2-digit",
-    timeZone: "UTC",
+    timeZone: "America/Bogota",
   })
 }
 

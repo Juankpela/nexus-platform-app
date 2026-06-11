@@ -56,7 +56,7 @@ function isTerminal(status: WorkOrderStatus) {
 
 function fmtDate(iso: string | null): string | null {
   return iso
-    ? new Date(iso).toLocaleDateString(undefined, { day: "2-digit", month: "short" })
+    ? new Date(iso).toLocaleDateString(undefined, { day: "2-digit", month: "short", timeZone: "America/Bogota" })
     : null
 }
 

@@ -59,7 +59,7 @@ export function WorkOrderBillingControls({
           <p className="mt-0.5 text-sm text-muted-foreground">
             {billable ? "Facturable" : "No facturable"}
             {approved
-              ? ` · Aprobada para facturación (${new Date(billingApprovedAt).toLocaleDateString()})`
+              ? ` · Aprobada para facturación (${new Date(billingApprovedAt).toLocaleDateString(undefined, { timeZone: "America/Bogota" })})`
               : billable
                 ? " · Pendiente de aprobación"
                 : ""}

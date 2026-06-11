@@ -92,7 +92,7 @@ export function InvoicePaymentsSection({
               <div className="flex items-center gap-3">
                 <span className="font-medium">{p.paymentNumber}</span>
                 <span className="text-muted-foreground">
-                  {new Date(p.paymentDate).toLocaleDateString()}
+                  {new Date(p.paymentDate).toLocaleDateString(undefined, { timeZone: "America/Bogota" })}
                 </span>
                 <span
                   className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${PAYMENT_STATUS_COLORS[p.status]}`}

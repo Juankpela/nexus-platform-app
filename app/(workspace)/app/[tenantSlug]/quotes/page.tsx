@@ -177,11 +177,11 @@ export default async function QuotesPage({
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {q.expirationDate
-                        ? new Date(q.expirationDate).toLocaleDateString()
+                        ? new Date(q.expirationDate).toLocaleDateString(undefined, { timeZone: "America/Bogota" })
                         : "—"}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {new Date(q.createdAt).toLocaleDateString()}
+                      {new Date(q.createdAt).toLocaleDateString(undefined, { timeZone: "America/Bogota" })}
                     </td>
                   </tr>
                 ))}

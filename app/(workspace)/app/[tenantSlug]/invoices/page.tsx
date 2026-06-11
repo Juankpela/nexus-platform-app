@@ -139,11 +139,11 @@ export default async function InvoicesPage({
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {inv.dueDate
-                        ? new Date(inv.dueDate).toLocaleDateString()
+                        ? new Date(inv.dueDate).toLocaleDateString(undefined, { timeZone: "America/Bogota" })
                         : "—"}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {new Date(inv.createdAt).toLocaleDateString()}
+                      {new Date(inv.createdAt).toLocaleDateString(undefined, { timeZone: "America/Bogota" })}
                     </td>
                   </tr>
                 ))}

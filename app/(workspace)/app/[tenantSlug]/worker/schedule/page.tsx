@@ -30,7 +30,7 @@ function fmt(iso: string): string {
     weekday: "short",
     hour: "2-digit",
     minute: "2-digit",
-    timeZone: "UTC",
+    timeZone: "America/Bogota",
   })
 }
 

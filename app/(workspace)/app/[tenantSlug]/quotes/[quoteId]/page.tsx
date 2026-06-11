@@ -172,7 +172,7 @@ export default async function QuoteDetailPage({
                 Expires
               </dt>
               <dd className="mt-0.5 text-sm">
-                {new Date(quote.expirationDate).toLocaleDateString()}
+                {new Date(quote.expirationDate).toLocaleDateString(undefined, { timeZone: "America/Bogota" })}
               </dd>
             </div>
           )}
@@ -296,7 +296,7 @@ export default async function QuoteDetailPage({
                       )}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {new Date(ev.occurredAt).toLocaleString()}
+                      {new Date(ev.occurredAt).toLocaleString(undefined, { timeZone: "America/Bogota" })}
                     </td>
                   </tr>
                 ))}

@@ -57,7 +57,7 @@ function parseActivityFilters(sp: {
 }
 
 function fmt(iso: string | null): string | null {
-  return iso ? new Date(iso).toLocaleString() : null
+  return iso ? new Date(iso).toLocaleString(undefined, { timeZone: "America/Bogota" }) : null
 }
 
 function Detail({ label, value }: { label: string; value: string | null }) {
@@ -332,7 +332,7 @@ export default async function WorkOrderDetailPage({
                     <tr key={ev.id} className="align-top">
                       <td className="px-4 py-3 font-medium">{ev.action}</td>
                       <td className="px-4 py-3 text-muted-foreground">
-                        {new Date(ev.occurredAt).toLocaleString()}
+                        {new Date(ev.occurredAt).toLocaleString(undefined, { timeZone: "America/Bogota" })}
                       </td>
                     </tr>
                   ))}

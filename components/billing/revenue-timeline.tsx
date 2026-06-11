@@ -106,7 +106,7 @@ export function RevenueTimeline({
                       <div className="tabular-nums">{money(e.amount)}</div>
                     )}
                     <div className="text-xs text-muted-foreground">
-                      {new Date(e.date).toLocaleDateString("es-CO")}
+                      {new Date(e.date).toLocaleDateString("es-CO", { timeZone: "America/Bogota" })}
                     </div>
                   </div>
                 </li>

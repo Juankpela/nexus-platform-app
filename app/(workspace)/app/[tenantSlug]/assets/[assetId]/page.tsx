@@ -217,7 +217,7 @@ export default async function AssetDetailPage({
           <Metric label="Estado">{ASSET_STATUS_LABELS[asset.status]}</Metric>
           <Metric label="Próximo servicio">
             {asset.nextServiceDueAt
-              ? new Date(asset.nextServiceDueAt).toLocaleDateString()
+              ? new Date(asset.nextServiceDueAt).toLocaleDateString(undefined, { timeZone: "America/Bogota" })
               : "—"}
           </Metric>
         </div>
@@ -242,7 +242,7 @@ export default async function AssetDetailPage({
               label="Instalado"
               value={
                 asset.installedAt
-                  ? new Date(asset.installedAt).toLocaleDateString()
+                  ? new Date(asset.installedAt).toLocaleDateString(undefined, { timeZone: "America/Bogota" })
                   : null
               }
             />
@@ -250,7 +250,7 @@ export default async function AssetDetailPage({
               label="Garantía hasta"
               value={
                 asset.warrantyUntil
-                  ? new Date(asset.warrantyUntil).toLocaleDateString()
+                  ? new Date(asset.warrantyUntil).toLocaleDateString(undefined, { timeZone: "America/Bogota" })
                   : null
               }
             />
@@ -329,14 +329,14 @@ export default async function AssetDetailPage({
                 </Metric>
                 <Metric label="Última visita">
                   {serviceSummary.lastVisitAt
-                    ? new Date(serviceSummary.lastVisitAt).toLocaleDateString()
+                    ? new Date(serviceSummary.lastVisitAt).toLocaleDateString(undefined, { timeZone: "America/Bogota" })
                     : "—"}
                 </Metric>
                 <Metric label="Próxima programada">
                   {serviceSummary.nextScheduledAt
                     ? new Date(
                         serviceSummary.nextScheduledAt,
-                      ).toLocaleDateString()
+                      ).toLocaleDateString(undefined, { timeZone: "America/Bogota" })
                     : "—"}
                 </Metric>
               </div>
@@ -381,7 +381,7 @@ export default async function AssetDetailPage({
                         </td>
                         <td className="px-4 py-3 text-muted-foreground">
                           {wo.scheduledStart
-                            ? new Date(wo.scheduledStart).toLocaleDateString()
+                            ? new Date(wo.scheduledStart).toLocaleDateString(undefined, { timeZone: "America/Bogota" })
                             : "—"}
                         </td>
                       </tr>
@@ -423,7 +423,7 @@ export default async function AssetDetailPage({
                     <tr key={ev.id} className="align-top">
                       <td className="px-4 py-3 font-medium">{ev.action}</td>
                       <td className="px-4 py-3 text-muted-foreground">
-                        {new Date(ev.occurredAt).toLocaleString()}
+                        {new Date(ev.occurredAt).toLocaleString(undefined, { timeZone: "America/Bogota" })}
                       </td>
                     </tr>
                   ))}

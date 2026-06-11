@@ -118,11 +118,11 @@ export default async function PriceBookDetailPage({
           <dl className="mt-4 grid gap-4 sm:grid-cols-2">
             <Detail
               label="Created"
-              value={new Date(priceBook.createdAt).toLocaleDateString()}
+              value={new Date(priceBook.createdAt).toLocaleDateString(undefined, { timeZone: "America/Bogota" })}
             />
             <Detail
               label="Last Updated"
-              value={new Date(priceBook.updatedAt).toLocaleDateString()}
+              value={new Date(priceBook.updatedAt).toLocaleDateString(undefined, { timeZone: "America/Bogota" })}
             />
           </dl>
           {priceBook.description ? (

@@ -128,11 +128,11 @@ export default async function TechnicianDetailPage({
             <Detail label="ID de empleado" value={technician.employeeId} />
             <Detail
               label="Creado"
-              value={new Date(technician.createdAt).toLocaleString()}
+              value={new Date(technician.createdAt).toLocaleString(undefined, { timeZone: "America/Bogota" })}
             />
             <Detail
               label="Última actualización"
-              value={new Date(technician.updatedAt).toLocaleString()}
+              value={new Date(technician.updatedAt).toLocaleString(undefined, { timeZone: "America/Bogota" })}
             />
           </dl>
         </div>

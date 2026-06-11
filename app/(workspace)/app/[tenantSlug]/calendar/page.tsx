@@ -55,7 +55,7 @@ function fmtTime(iso: string): string {
   return new Date(iso).toLocaleTimeString(undefined, {
     hour: "2-digit",
     minute: "2-digit",
-    timeZone: "UTC",
+    timeZone: "America/Bogota",
   })
 }
 

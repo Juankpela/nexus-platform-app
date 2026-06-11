@@ -43,6 +43,7 @@ export default async function InvoicePrintPage({
       year: "numeric",
       month: "long",
       day: "numeric",
+      timeZone: "America/Bogota",
     })
 
   return (

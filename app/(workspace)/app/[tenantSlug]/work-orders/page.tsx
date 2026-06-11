@@ -337,7 +337,7 @@ export default async function WorkOrdersPage({
                       </td>
                       <td className="px-4 py-4 text-muted-foreground">
                         {wo.scheduledStart
-                          ? new Date(wo.scheduledStart).toLocaleDateString()
+                          ? new Date(wo.scheduledStart).toLocaleDateString(undefined, { timeZone: "America/Bogota" })
                           : "—"}
                       </td>
                     </tr>

@@ -189,7 +189,7 @@ export function AiInsightsPanel({ tenantSlug, initialInsights }: Props) {
               <ScoreGauge label="Forecast Score" value={insights.forecastScore} color="#2563eb" />
               <div className="text-center px-4">
                 <p className="text-xs text-muted-foreground mb-1">
-                  {new Date(insights.generatedAt).toLocaleString("es-CO", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short" })}
+                  {new Date(insights.generatedAt).toLocaleString("es-CO", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short", timeZone: "America/Bogota" })}
                 </p>
                 <p className="text-xs text-muted-foreground">{insights.insights.length} insights</p>
               </div>

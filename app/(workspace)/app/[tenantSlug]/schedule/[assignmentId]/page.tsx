@@ -72,7 +72,7 @@ export default async function AssignmentDetailPage({
     label: technicianFullName(t),
   }))
 
-  const fmt = (iso: string) => new Date(iso).toLocaleString()
+  const fmt = (iso: string) => new Date(iso).toLocaleString(undefined, { timeZone: "America/Bogota" })
 
   return (
     <>

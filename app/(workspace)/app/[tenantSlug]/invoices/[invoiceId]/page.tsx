@@ -114,11 +114,11 @@ export default async function InvoiceDetailPage({
       <div className="grid grid-cols-2 gap-4 rounded-xl border bg-card p-4 text-sm sm:grid-cols-4">
         <div>
           <div className="text-xs uppercase text-muted-foreground">Issue date</div>
-          <div>{invoice.issueDate ? new Date(invoice.issueDate).toLocaleDateString() : "—"}</div>
+          <div>{invoice.issueDate ? new Date(invoice.issueDate).toLocaleDateString(undefined, { timeZone: "America/Bogota" }) : "—"}</div>
         </div>
         <div>
           <div className="text-xs uppercase text-muted-foreground">Due date</div>
-          <div>{invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : "—"}</div>
+          <div>{invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString(undefined, { timeZone: "America/Bogota" }) : "—"}</div>
         </div>
         <div>
           <div className="text-xs uppercase text-muted-foreground">Terms</div>

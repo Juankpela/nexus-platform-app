@@ -183,7 +183,7 @@ export default async function LeadsPage({
                       </span>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {new Date(l.createdAt).toLocaleDateString("es-CO")}
+                      {new Date(l.createdAt).toLocaleDateString("es-CO", { timeZone: "America/Bogota" })}
                     </td>
                   </tr>
                 ))}
