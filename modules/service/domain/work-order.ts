@@ -84,9 +84,26 @@ export type WorkOrder = {
   laborHours: number | null
   resolutionSummary: string | null
   completionNotes: string | null
+  /** E2 — commercial attribute: does completing this WO grant a right to bill? */
+  billable: boolean
+  /** E2-H3 — set when a billing role approves the WO for invoicing. */
+  billingApprovedAt: string | null
+  billingApprovedBy: UUID | null
   createdBy: UUID | null
   createdAt: string
   updatedAt: string
+}
+
+/**
+ * E2 — a Work Order may be invoiced only when it is billable, approved for billing,
+ * and completed. Used by the billing flow (E1 generate-from-WO) and the UI gate.
+ */
+export function isWorkOrderInvoiceable(wo: {
+  billable: boolean
+  billingApprovedAt: string | null
+  status: WorkOrderStatus
+}): boolean {
+  return wo.billable && wo.billingApprovedAt !== null && wo.status === "completed"
 }
 
 /** Fields a user may set when creating/editing a work order (status/technician managed separately). */

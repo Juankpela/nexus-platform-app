@@ -40,6 +40,14 @@ import {
   type ChangeWorkOrderStatusInput,
 } from "@/modules/service/application/use-cases/change-work-order-status"
 import {
+  setWorkOrderBillable,
+  type SetWorkOrderBillableInput,
+} from "@/modules/service/application/use-cases/set-work-order-billable"
+import {
+  approveWorkOrderBilling,
+  type ApproveWorkOrderBillingInput,
+} from "@/modules/service/application/use-cases/approve-work-order-billing"
+import {
   createWorkOrder,
   type CreateWorkOrderInput,
 } from "@/modules/service/application/use-cases/create-work-order"
@@ -202,6 +210,22 @@ export function updateWorkOrderRecord(input: UpdateWorkOrderInput) {
 
 export function changeWorkOrderRecordStatus(input: ChangeWorkOrderStatusInput) {
   return changeWorkOrderStatus(
+    { workOrders: workOrderRepo(), audit: audit() },
+    input,
+  )
+}
+
+export function setWorkOrderRecordBillable(input: SetWorkOrderBillableInput) {
+  return setWorkOrderBillable(
+    { workOrders: workOrderRepo(), audit: audit() },
+    input,
+  )
+}
+
+export function approveWorkOrderRecordBilling(
+  input: ApproveWorkOrderBillingInput,
+) {
+  return approveWorkOrderBilling(
     { workOrders: workOrderRepo(), audit: audit() },
     input,
   )

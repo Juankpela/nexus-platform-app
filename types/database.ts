@@ -2229,6 +2229,9 @@ export type Database = {
           actual_start: string | null
           asset_id: string | null
           assigned_technician_id: string | null
+          billable: boolean
+          billing_approved_at: string | null
+          billing_approved_by: string | null
           case_id: string | null
           company_id: string | null
           completion_notes: string | null
@@ -2252,6 +2255,9 @@ export type Database = {
           actual_start?: string | null
           asset_id?: string | null
           assigned_technician_id?: string | null
+          billable?: boolean
+          billing_approved_at?: string | null
+          billing_approved_by?: string | null
           case_id?: string | null
           company_id?: string | null
           completion_notes?: string | null
@@ -2275,6 +2281,9 @@ export type Database = {
           actual_start?: string | null
           asset_id?: string | null
           assigned_technician_id?: string | null
+          billable?: boolean
+          billing_approved_at?: string | null
+          billing_approved_by?: string | null
           case_id?: string | null
           company_id?: string | null
           completion_notes?: string | null

@@ -19,7 +19,10 @@ import {
   type InvoiceStatus,
 } from "@/modules/billing/domain/invoice"
 import type { Paginated } from "@/modules/crm/domain/pagination"
+import type { Database } from "@/types/database"
 import type { UUID } from "@/types/shared"
+
+type InvoiceLineInsert = Database["public"]["Tables"]["invoice_lines"]["Insert"]
 
 // ── Mapping helpers ──────────────────────────────────────────────────────────
 
@@ -174,7 +177,9 @@ export class SupabaseInvoiceRepository implements InvoiceRepository {
 
     const { data: wo, error: woError } = await client
       .from("work_orders")
-      .select("id, company_id")
+      .select(
+        "id, company_id, billable, billing_approved_at, status, labor_hours",
+      )
       .eq("tenant_id", tenantId)
       .eq("id", workOrderId)
       .maybeSingle()
@@ -188,6 +193,25 @@ export class SupabaseInvoiceRepository implements InvoiceRepository {
     }
     if (!wo) {
       throw new ApplicationError("Work order not found.", "WORK_ORDER_NOT_FOUND")
+    }
+    // E2 gate: a WO is invoiceable only when billable, approved, and completed.
+    if (!wo.billable) {
+      throw new ApplicationError(
+        "The work order is not marked billable.",
+        "WORK_ORDER_NOT_BILLABLE",
+      )
+    }
+    if (!wo.billing_approved_at) {
+      throw new ApplicationError(
+        "The work order has not been approved for billing.",
+        "WORK_ORDER_NOT_BILLING_APPROVED",
+      )
+    }
+    if (wo.status !== "completed") {
+      throw new ApplicationError(
+        "Only completed work orders can be invoiced.",
+        "WORK_ORDER_NOT_COMPLETED",
+      )
     }
     if (!wo.company_id) {
       throw new ApplicationError(
@@ -221,7 +245,87 @@ export class SupabaseInvoiceRepository implements InvoiceRepository {
         error,
       )
     }
-    return toInvoice(data as unknown as Record<string, unknown>)
+
+    const invoice = toInvoice(data as unknown as Record<string, unknown>)
+
+    // E2-H2 — pre-populate draft lines from the WO's consumed materials and labor.
+    // Quantities are seeded; unit prices are 0 — the billing role sets the sale
+    // price in the draft (decision A, 2026-06-11). Totals stay 0 until then.
+    await this.seedLinesFromWorkOrder(
+      client,
+      tenantId,
+      invoice.id,
+      workOrderId,
+      wo.labor_hours,
+    )
+
+    return invoice
+  }
+
+  /** E2-H2 — seed invoice_lines from consumed materials + labor (price 0). */
+  private async seedLinesFromWorkOrder(
+    client: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+    tenantId: UUID,
+    invoiceId: UUID,
+    workOrderId: UUID,
+    laborHours: number | null,
+  ): Promise<void> {
+    const { data: consumptions } = await client
+      .from("inventory_transactions")
+      .select("material_id, quantity, materials(name, unit_of_measure)")
+      .eq("tenant_id", tenantId)
+      .eq("type", "consumption")
+      .eq("reference_type", "work_order")
+      .eq("reference_id", workOrderId)
+
+    type Row = {
+      quantity: number
+      materials:
+        | { name: string; unit_of_measure: string }
+        | { name: string; unit_of_measure: string }[]
+        | null
+    }
+
+    const lines: InvoiceLineInsert[] = []
+    let sortOrder = 0
+
+    for (const row of (consumptions ?? []) as unknown as Row[]) {
+      const mat = Array.isArray(row.materials) ? row.materials[0] : row.materials
+      const name = mat?.name ?? "Material"
+      const uom = mat?.unit_of_measure ? ` (${mat.unit_of_measure})` : ""
+      lines.push({
+        tenant_id: tenantId,
+        invoice_id: invoiceId,
+        description: `${name}${uom}`,
+        quantity: Math.abs(Number(row.quantity)),
+        unit_price: 0,
+        discount_amount: 0,
+        tax_rate: 0,
+        tax_amount: 0,
+        line_total: 0,
+        sort_order: sortOrder++,
+      })
+    }
+
+    if (laborHours && laborHours > 0) {
+      lines.push({
+        tenant_id: tenantId,
+        invoice_id: invoiceId,
+        description: "Mano de obra",
+        quantity: laborHours,
+        unit_price: 0,
+        discount_amount: 0,
+        tax_rate: 0,
+        tax_amount: 0,
+        line_total: 0,
+        sort_order: sortOrder++,
+      })
+    }
+
+    if (lines.length > 0) {
+      await client.from("invoice_lines").insert(lines)
+      await this.recalculateTotals(tenantId, invoiceId)
+    }
   }
 
   // ── Find active invoice by Work Order (E1-H1 CA4 guard) ──────────────────────

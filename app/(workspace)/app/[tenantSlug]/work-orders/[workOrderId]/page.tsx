@@ -36,9 +36,11 @@ import {
 import {
   WORK_ORDER_PRIORITY_LABELS,
   WORK_ORDER_STATUS_LABELS,
+  isWorkOrderInvoiceable,
 } from "@/modules/service/domain/work-order"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 import { listCachedTenantMembers } from "@/modules/tenancy/composition"
+import { WorkOrderBillingControls } from "./_components/work-order-billing-controls"
 
 export const metadata: Metadata = { title: "Work Order" }
 
@@ -163,7 +165,7 @@ export default async function WorkOrderDetailPage({
             Órdenes de trabajo
           </Link>
           <div className="flex items-center gap-2">
-            {canInvoice && workOrder.status === "completed" ? (
+            {canInvoice && isWorkOrderInvoiceable(workOrder) ? (
               <GenerateInvoiceButton
                 tenantSlug={tenantSlug}
                 workOrderId={workOrder.id}
@@ -288,6 +290,18 @@ export default async function WorkOrderDetailPage({
             </div>
           ) : null}
         </div>
+
+        {canWrite || canInvoice ? (
+          <WorkOrderBillingControls
+            tenantSlug={tenantSlug}
+            workOrderId={workOrder.id}
+            status={workOrder.status}
+            billable={workOrder.billable}
+            billingApprovedAt={workOrder.billingApprovedAt}
+            canWrite={canWrite}
+            canApprove={canInvoice}
+          />
+        ) : null}
 
         {canReadActivities ? (
           <ActivityTimeline

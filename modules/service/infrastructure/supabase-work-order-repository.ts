@@ -54,6 +54,9 @@ function toWorkOrder(row: WorkOrderRowWithRefs): WorkOrder {
     laborHours: row.labor_hours,
     resolutionSummary: row.resolution_summary,
     completionNotes: row.completion_notes,
+    billable: row.billable,
+    billingApprovedAt: row.billing_approved_at,
+    billingApprovedBy: row.billing_approved_by,
     createdBy: row.created_by,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -273,6 +276,58 @@ export class SupabaseWorkOrderRepository implements WorkOrderRepository {
       throw new ApplicationError(
         "Unable to assign technician.",
         "WORK_ORDER_TECH_FAILED",
+        error,
+      )
+    }
+  }
+
+  async setBillable(
+    tenantId: UUID,
+    id: UUID,
+    billable: boolean,
+  ): Promise<void> {
+    const client = await createServerSupabaseClient()
+    // Toggling billability resets any prior approval — the decision must be re-confirmed.
+    const patch: Database["public"]["Tables"]["work_orders"]["Update"] = {
+      billable,
+      billing_approved_at: null,
+      billing_approved_by: null,
+    }
+    const { error } = await client
+      .from("work_orders")
+      .update(patch)
+      .eq("tenant_id", tenantId)
+      .eq("id", id)
+
+    if (error) {
+      throw new ApplicationError(
+        "Unable to update work order billability.",
+        "WORK_ORDER_BILLABLE_FAILED",
+        error,
+      )
+    }
+  }
+
+  async approveBilling(
+    tenantId: UUID,
+    id: UUID,
+    approvedBy: UUID,
+    approvedAt: string,
+  ): Promise<void> {
+    const client = await createServerSupabaseClient()
+    const { error } = await client
+      .from("work_orders")
+      .update({
+        billing_approved_at: approvedAt,
+        billing_approved_by: approvedBy,
+      })
+      .eq("tenant_id", tenantId)
+      .eq("id", id)
+
+    if (error) {
+      throw new ApplicationError(
+        "Unable to approve work order for billing.",
+        "WORK_ORDER_BILLING_APPROVE_FAILED",
         error,
       )
     }

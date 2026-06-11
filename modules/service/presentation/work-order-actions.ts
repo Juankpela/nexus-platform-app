@@ -4,11 +4,16 @@ import { revalidatePath } from "next/cache"
 import { z } from "zod"
 
 import { ApplicationError } from "@/lib/errors/application-error"
-import { SERVICE_PERMISSIONS } from "@/modules/authorization/domain/permission"
 import {
+  BILLING_PERMISSIONS,
+  SERVICE_PERMISSIONS,
+} from "@/modules/authorization/domain/permission"
+import {
+  approveWorkOrderRecordBilling,
   assignWorkOrderRecordTechnician,
   changeWorkOrderRecordStatus,
   createWorkOrderRecord,
+  setWorkOrderRecordBillable,
   updateWorkOrderRecord,
 } from "@/modules/service/composition"
 import {
@@ -103,6 +108,18 @@ function describeError(error: unknown): string {
   ) {
     return "Transición de estado no permitida."
   }
+  if (
+    error instanceof ApplicationError &&
+    error.code === "WORK_ORDER_NOT_BILLABLE"
+  ) {
+    return "Solo las órdenes facturables pueden aprobarse para facturación."
+  }
+  if (
+    error instanceof ApplicationError &&
+    error.code === "WORK_ORDER_NOT_COMPLETED"
+  ) {
+    return "Solo las órdenes completadas pueden aprobarse para facturación."
+  }
   return "No se pudo completar la acción."
 }
 
@@ -192,6 +209,63 @@ export async function setWorkOrderStatusAction(
       requestId: context.requestId,
       id: id.data,
       status: status.data,
+    })
+  } catch (error) {
+    return fail(describeError(error))
+  }
+
+  revalidate(tenantSlug, id.data)
+  return { error: null, ok: true }
+}
+
+export async function setWorkOrderBillableAction(
+  _state: ServiceActionState,
+  formData: FormData,
+): Promise<ServiceActionState> {
+  const tenantSlug = field(formData, "tenantSlug")
+  const id = idSchema.safeParse(field(formData, "id"))
+  if (!tenantSlug || !id.success) return fail("Solicitud inválida.")
+  const billable = field(formData, "billable") === "true"
+
+  try {
+    const context = await requireServiceContext(
+      tenantSlug,
+      SERVICE_PERMISSIONS.workOrdersWrite,
+    )
+    await setWorkOrderRecordBillable({
+      actorId: context.userId,
+      tenantId: context.tenantId,
+      requestId: context.requestId,
+      id: id.data,
+      billable,
+    })
+  } catch (error) {
+    return fail(describeError(error))
+  }
+
+  revalidate(tenantSlug, id.data)
+  return { error: null, ok: true }
+}
+
+export async function approveWorkOrderBillingAction(
+  _state: ServiceActionState,
+  formData: FormData,
+): Promise<ServiceActionState> {
+  const tenantSlug = field(formData, "tenantSlug")
+  const id = idSchema.safeParse(field(formData, "id"))
+  if (!tenantSlug || !id.success) return fail("Solicitud inválida.")
+
+  try {
+    const context = await requireServiceContext(
+      tenantSlug,
+      BILLING_PERMISSIONS.invoicesWrite,
+    )
+    await approveWorkOrderRecordBilling({
+      actorId: context.userId,
+      tenantId: context.tenantId,
+      requestId: context.requestId,
+      id: id.data,
+      approvedAt: new Date().toISOString(),
     })
   } catch (error) {
     return fail(describeError(error))

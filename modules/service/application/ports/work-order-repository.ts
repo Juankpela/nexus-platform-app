@@ -37,6 +37,15 @@ export interface WorkOrderRepository {
     id: UUID,
     technicianId: UUID | null,
   ): Promise<void>
+  /** E2-H1 — mark/unmark a work order as billable (resets prior approval). */
+  setBillable(tenantId: UUID, id: UUID, billable: boolean): Promise<void>
+  /** E2-H3 — record the billing approval (approver + timestamp). */
+  approveBilling(
+    tenantId: UUID,
+    id: UUID,
+    approvedBy: UUID,
+    approvedAt: string,
+  ): Promise<void>
   nextWorkOrderNumber(tenantId: UUID): Promise<string>
   getStats(tenantId: UUID): Promise<WorkOrderStats>
   getAssetServiceSummary(
