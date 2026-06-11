@@ -20,6 +20,7 @@ import {
   Wallet,
   Target,
   TrendingUp,
+  UserPlus,
   Users,
   Wrench,
   type LucideIcon,
@@ -70,6 +71,7 @@ export const workspaceNavigation: NavigationItem[] = [
   },
 
   // ── CRM ────────────────────────────────────────────────────────────────────
+  { label: "Leads", segment: "leads", icon: UserPlus, permission: CRM_PERMISSIONS.leadsRead, group: "CRM" },
   { label: "Companies", segment: "companies", icon: Building2, permission: CRM_PERMISSIONS.companiesRead, group: "CRM" },
   { label: "Contacts", segment: "contacts", icon: Contact, permission: CRM_PERMISSIONS.contactsRead, group: "CRM" },
   { label: "Opportunities", segment: "opportunities", icon: Target, permission: CRM_PERMISSIONS.opportunitiesRead, group: "CRM" },

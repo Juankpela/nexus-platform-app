@@ -136,6 +136,16 @@ import {
 import { SupabaseQuoteRepository } from "@/modules/crm/infrastructure/supabase-quote-repository"
 import { SupabaseDashboardStatsRepository } from "@/modules/crm/infrastructure/supabase-dashboard-stats-repository"
 import { getDashboardStats } from "@/modules/crm/application/use-cases/get-dashboard-stats"
+import { SupabaseLeadRepository } from "@/modules/crm/infrastructure/supabase-lead-repository"
+import { createLead, type CreateLeadInput } from "@/modules/crm/application/use-cases/create-lead"
+import { updateLead, type UpdateLeadInput } from "@/modules/crm/application/use-cases/update-lead"
+import {
+  changeLeadStatus,
+  type ChangeLeadStatusInput,
+} from "@/modules/crm/application/use-cases/change-lead-status"
+import { convertLead, type ConvertLeadInput } from "@/modules/crm/application/use-cases/convert-lead"
+import { listLeads } from "@/modules/crm/application/use-cases/list-leads"
+import type { LeadListQuery } from "@/modules/crm/domain/lead"
 import type { QuoteListQuery } from "@/modules/crm/domain/quote"
 import type { ActivityFilters } from "@/modules/crm/domain/activity"
 import type { OpportunityFilters } from "@/modules/crm/domain/opportunity"
@@ -465,6 +475,48 @@ export function listQuoteProductLineOptions(
   priceBookId: UUID | null,
 ) {
   return quoteRepo().listProductLineOptions(tenantId, priceBookId)
+}
+
+// --- Leads (E7) ------------------------------------------------------------
+function leadRepo() {
+  return new SupabaseLeadRepository()
+}
+
+export function listTenantLeads(tenantId: UUID, query: LeadListQuery) {
+  return listLeads(leadRepo(), tenantId, query)
+}
+
+export function getLeadRecord(tenantId: UUID, id: UUID) {
+  return leadRepo().getById(tenantId, id)
+}
+
+export function getLeadFunnelMetrics(tenantId: UUID) {
+  return leadRepo().getFunnelMetrics(tenantId)
+}
+
+export function createLeadRecord(input: CreateLeadInput) {
+  return createLead({ leads: leadRepo(), audit: audit() }, input)
+}
+
+export function updateLeadRecord(input: UpdateLeadInput) {
+  return updateLead({ leads: leadRepo(), audit: audit() }, input)
+}
+
+export function changeLeadRecordStatus(input: ChangeLeadStatusInput) {
+  return changeLeadStatus({ leads: leadRepo(), audit: audit() }, input)
+}
+
+export function convertLeadRecord(input: ConvertLeadInput) {
+  return convertLead(
+    {
+      leads: leadRepo(),
+      companies: companyRepo(),
+      contacts: contactRepo(),
+      opportunities: opportunityRepo(),
+      audit: audit(),
+    },
+    input,
+  )
 }
 
 // --- Dashboard -------------------------------------------------------------

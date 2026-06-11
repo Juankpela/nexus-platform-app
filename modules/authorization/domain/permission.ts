@@ -7,6 +7,8 @@ export const FOUNDATION_PERMISSIONS = {
 } as const
 
 export const CRM_PERMISSIONS = {
+  leadsRead: "crm.leads.read",
+  leadsWrite: "crm.leads.write",
   companiesRead: "crm.companies.read",
   companiesWrite: "crm.companies.write",
   contactsRead: "crm.contacts.read",

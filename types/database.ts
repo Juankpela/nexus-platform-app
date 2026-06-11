@@ -1104,6 +1104,72 @@ export type Database = {
           },
         ]
       }
+      leads: {
+        Row: {
+          company: string | null
+          converted_at: string | null
+          converted_opportunity_id: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          owner_id: string | null
+          phone: string | null
+          source: string | null
+          status: Database["public"]["Enums"]["lead_status"]
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          company?: string | null
+          converted_at?: string | null
+          converted_opportunity_id?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          owner_id?: string | null
+          phone?: string | null
+          source?: string | null
+          status?: Database["public"]["Enums"]["lead_status"]
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          company?: string | null
+          converted_at?: string | null
+          converted_opportunity_id?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          owner_id?: string | null
+          phone?: string | null
+          source?: string | null
+          status?: Database["public"]["Enums"]["lead_status"]
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_converted_opportunity_id_tenant_id_fkey"
+            columns: ["converted_opportunity_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "leads_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       materials: {
         Row: {
           active: boolean
@@ -2685,6 +2751,12 @@ export type Database = {
         | "release"
       invoice_origin_type: "work_order" | "sales_order"
       invoice_status: "draft" | "issued" | "partially_paid" | "paid" | "void"
+      lead_status:
+        | "new"
+        | "working"
+        | "qualified"
+        | "disqualified"
+        | "converted"
       membership_status: "invited" | "active" | "suspended"
       opportunity_business_type:
         | "flexography"
@@ -2913,6 +2985,7 @@ export const Constants = {
       ],
       invoice_origin_type: ["work_order", "sales_order"],
       invoice_status: ["draft", "issued", "partially_paid", "paid", "void"],
+      lead_status: ["new", "working", "qualified", "disqualified", "converted"],
       membership_status: ["invited", "active", "suspended"],
       opportunity_business_type: [
         "flexography",
