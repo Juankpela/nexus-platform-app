@@ -126,6 +126,11 @@ export default async function FieldMonitorPage({
                     <p className="pt-1 text-xs text-muted-foreground">
                       {EXECUTION_STATUS_LABELS[job.executionStatus]} · {relativeSince(job.since)}
                     </p>
+                    {job.notes ? (
+                      <p className="mt-1 rounded-md bg-muted/60 p-2 text-xs italic text-muted-foreground">
+                        “{job.notes}”
+                      </p>
+                    ) : null}
                   </div>
                 ) : (
                   <p className="mt-3 text-sm text-muted-foreground">

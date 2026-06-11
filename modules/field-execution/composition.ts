@@ -59,6 +59,8 @@ export function projectExecution(input: {
   assignmentId: UUID
   target: Exclude<ExecutionStatus, "pending">
   technicianUserId: UUID
+  resolutionNotes?: string | null
+  unableReason?: string | null
 }) {
   return projectExecutionToWorkOrder({ ...input, now: new Date().toISOString() })
 }

@@ -81,6 +81,8 @@ export type WorkerAssignment = {
   assetName: string | null
   executionId: UUID | null
   executionStatus: ExecutionStatus
+  /** Technician's closing comment: resolution notes or unable-to-complete reason. */
+  notes: string | null
 }
 
 /** The effective execution status for a possibly-missing execution row. */

@@ -17,6 +17,8 @@ export type FieldMonitorJob = {
   executionStatus: ExecutionStatus
   /** When the current status began (accepted/arrived/started/…), if known. */
   since: string | null
+  /** Technician's closing comment (resolution notes / unable reason), if any. */
+  notes: string | null
   updatedAt: string
 }
 

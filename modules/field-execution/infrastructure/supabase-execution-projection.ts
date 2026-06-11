@@ -42,6 +42,9 @@ export async function projectExecutionToWorkOrder(input: {
   target: Target
   /** The acting technician's user id → shown as "Técnico asignado" on the WO. */
   technicianUserId: UUID
+  /** Technician's closing comment, mirrored to the WO so the admin sees it. */
+  resolutionNotes?: string | null
+  unableReason?: string | null
   now: string
 }): Promise<void> {
   const admin = createAdminSupabaseClient()
@@ -64,8 +67,19 @@ export async function projectExecutionToWorkOrder(input: {
   if (input.target === "working") {
     woPatch.actual_start = input.now
   }
-  if (input.target === "completed" || input.target === "unable_to_complete") {
+  if (input.target === "completed") {
     woPatch.actual_end = input.now
+    if (input.resolutionNotes) {
+      woPatch.completion_notes = input.resolutionNotes
+      woPatch.resolution_summary = input.resolutionNotes
+    }
+  }
+  if (input.target === "unable_to_complete") {
+    woPatch.actual_end = input.now
+    if (input.unableReason) {
+      woPatch.resolution_summary = `No completado: ${input.unableReason}`
+      woPatch.completion_notes = input.unableReason
+    }
   }
 
   await admin

@@ -119,6 +119,11 @@ export default async function TechnicianMonitorPage({
                           <p className="mt-0.5 text-[11px] text-muted-foreground">
                             {a.companyName ?? "—"} · {fmt(a.scheduledStart)}
                           </p>
+                          {a.notes ? (
+                            <p className="mt-1.5 rounded-md bg-muted/60 p-2 text-xs italic text-muted-foreground">
+                              “{a.notes}”
+                            </p>
+                          ) : null}
                         </div>
                         <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
                       </Link>

@@ -103,6 +103,8 @@ async function transition(
       assignmentId: assignment.assignmentId,
       target,
       technicianUserId: context.userId,
+      resolutionNotes: extras?.resolutionNotes,
+      unableReason: extras?.unableReason,
     })
 
     // Notify the tenant's Field Monitor (admin live view) to refresh.

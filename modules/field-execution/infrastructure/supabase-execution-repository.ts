@@ -33,13 +33,20 @@ type WorkerAssignmentRow = {
     companies: { name: string } | null
     assets: { name: string; asset_number: string } | null
   } | null
-  work_order_executions: { id: string; status: ExecutionRow["status"] }[] | null
+  work_order_executions:
+    | {
+        id: string
+        status: ExecutionRow["status"]
+        resolution_notes: string | null
+        unable_reason: string | null
+      }[]
+    | null
 }
 
 const ASSIGNMENT_SELECT =
   "id, scheduled_start, scheduled_end, work_order_id, " +
   "work_orders(work_order_number, subject, companies(name), assets(name, asset_number)), " +
-  "work_order_executions(id, status)"
+  "work_order_executions(id, status, resolution_notes, unable_reason)"
 
 function toExecution(row: ExecutionRow): Execution {
   return {
@@ -74,6 +81,7 @@ function toWorkerAssignment(row: WorkerAssignmentRow): WorkerAssignment {
     assetName: wo?.assets ? `${wo.assets.asset_number} · ${wo.assets.name}` : null,
     executionId: exec?.id ?? null,
     executionStatus: exec?.status ?? "pending",
+    notes: exec?.resolution_notes ?? exec?.unable_reason ?? null,
   }
 }
 
@@ -307,7 +315,7 @@ export class SupabaseExecutionRepository implements ExecutionRepository {
         .select(
           "assignment_id, work_order_id, technician_id, status, " +
             "accepted_at, arrived_at, started_at, completed_at, " +
-            "unable_to_complete_at, updated_at, " +
+            "unable_to_complete_at, resolution_notes, unable_reason, updated_at, " +
             "work_orders(work_order_number, subject, priority, companies(name))",
         )
         .eq("tenant_id", tenantId)
@@ -391,6 +399,8 @@ type FieldExecutionRow = {
   started_at: string | null
   completed_at: string | null
   unable_to_complete_at: string | null
+  resolution_notes: string | null
+  unable_reason: string | null
   updated_at: string
   work_orders: {
     work_order_number: string
@@ -428,6 +438,7 @@ function toFieldMonitorJob(row: FieldExecutionRow): FieldMonitorJob {
     priority: wo?.priority ?? null,
     executionStatus: row.status,
     since: sinceFor(row),
+    notes: row.resolution_notes ?? row.unable_reason ?? null,
     updatedAt: row.updated_at,
   }
 }
