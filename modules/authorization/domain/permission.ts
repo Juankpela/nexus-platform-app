@@ -23,6 +23,15 @@ export const CRM_PERMISSIONS = {
   quotesWrite: "crm.quotes.write",
 } as const
 
+// Billing / Revenue Operations permissions (20260610006_billing_invoices.sql).
+// Granular by design: issue and void are distinct from create/edit (frozen 2026-06-10).
+export const BILLING_PERMISSIONS = {
+  invoicesRead:  "billing.invoices.read",
+  invoicesWrite: "billing.invoices.write",
+  invoicesIssue: "billing.invoices.issue",
+  invoicesVoid:  "billing.invoices.void",
+} as const
+
 export const SERVICE_PERMISSIONS = {
   casesRead:   "service.cases.read",
   casesWrite:  "service.cases.write",

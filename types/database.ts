@@ -124,6 +124,77 @@ export type Database = {
           },
         ]
       }
+      api_keys: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          key_hash: string
+          label: string
+          last_used_at: string | null
+          prefix: string
+          rotated_from: string | null
+          scopes: string[]
+          status: Database["public"]["Enums"]["api_key_status"]
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          key_hash: string
+          label: string
+          last_used_at?: string | null
+          prefix: string
+          rotated_from?: string | null
+          scopes?: string[]
+          status?: Database["public"]["Enums"]["api_key_status"]
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          key_hash?: string
+          label?: string
+          last_used_at?: string | null
+          prefix?: string
+          rotated_from?: string | null
+          scopes?: string[]
+          status?: Database["public"]["Enums"]["api_key_status"]
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_keys_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      api_rate_events: {
+        Row: {
+          id: number
+          occurred_at: string
+          scope: string
+          scope_id: string
+        }
+        Insert: {
+          id?: number
+          occurred_at?: string
+          scope: string
+          scope_id: string
+        }
+        Update: {
+          id?: number
+          occurred_at?: string
+          scope?: string
+          scope_id?: string
+        }
+        Relationships: []
+      }
       asset_sequences: {
         Row: {
           last_seq: number
@@ -571,6 +642,71 @@ export type Database = {
           },
         ]
       }
+      export_jobs: {
+        Row: {
+          attempt_count: number
+          completed_at: string | null
+          created_at: string
+          expires_at: string | null
+          filters: Json
+          format: string
+          id: string
+          last_error: string | null
+          lease_until: string | null
+          object: string
+          requested_by: string
+          row_count: number | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["export_job_status"]
+          storage_path: string | null
+          tenant_id: string
+        }
+        Insert: {
+          attempt_count?: number
+          completed_at?: string | null
+          created_at?: string
+          expires_at?: string | null
+          filters?: Json
+          format: string
+          id?: string
+          last_error?: string | null
+          lease_until?: string | null
+          object: string
+          requested_by: string
+          row_count?: number | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["export_job_status"]
+          storage_path?: string | null
+          tenant_id: string
+        }
+        Update: {
+          attempt_count?: number
+          completed_at?: string | null
+          created_at?: string
+          expires_at?: string | null
+          filters?: Json
+          format?: string
+          id?: string
+          last_error?: string | null
+          lease_until?: string | null
+          object?: string
+          requested_by?: string
+          row_count?: number | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["export_job_status"]
+          storage_path?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "export_jobs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       features: {
         Row: {
           created_at: string
@@ -659,6 +795,362 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "forecast_snapshots_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_items: {
+        Row: {
+          created_at: string
+          id: string
+          material_id: string
+          quantity_available: number
+          quantity_on_hand: number
+          quantity_reserved: number
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          material_id: string
+          quantity_available?: number | null
+          quantity_on_hand?: number
+          quantity_reserved?: number
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          material_id?: string
+          quantity_available?: number | null
+          quantity_on_hand?: number
+          quantity_reserved?: number
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_items_material_id_tenant_id_fkey"
+            columns: ["material_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "inventory_items_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_transactions: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          material_id: string
+          quantity: number
+          reference_id: string | null
+          reference_type: Database["public"]["Enums"]["inventory_reference_type"]
+          tenant_id: string
+          type: Database["public"]["Enums"]["inventory_transaction_type"]
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          material_id: string
+          quantity: number
+          reference_id?: string | null
+          reference_type?: Database["public"]["Enums"]["inventory_reference_type"]
+          tenant_id: string
+          type: Database["public"]["Enums"]["inventory_transaction_type"]
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          material_id?: string
+          quantity?: number
+          reference_id?: string | null
+          reference_type?: Database["public"]["Enums"]["inventory_reference_type"]
+          tenant_id?: string
+          type?: Database["public"]["Enums"]["inventory_transaction_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_transactions_material_id_tenant_id_fkey"
+            columns: ["material_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "inventory_transactions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoice_lines: {
+        Row: {
+          created_at: string
+          description: string
+          discount_amount: number
+          id: string
+          invoice_id: string
+          line_total: number
+          product_id: string | null
+          quantity: number
+          sort_order: number
+          tax_amount: number
+          tax_rate: number
+          tenant_id: string
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          discount_amount?: number
+          id?: string
+          invoice_id: string
+          line_total?: number
+          product_id?: string | null
+          quantity: number
+          sort_order?: number
+          tax_amount?: number
+          tax_rate?: number
+          tenant_id: string
+          unit_price: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          discount_amount?: number
+          id?: string
+          invoice_id?: string
+          line_total?: number
+          product_id?: string | null
+          quantity?: number
+          sort_order?: number
+          tax_amount?: number
+          tax_rate?: number
+          tenant_id?: string
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_lines_invoice_id_tenant_id_fkey"
+            columns: ["invoice_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "invoice_lines_product_id_tenant_id_fkey"
+            columns: ["product_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "invoice_lines_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoice_sequences: {
+        Row: {
+          last_seq: number
+          tenant_id: string
+          year: number
+        }
+        Insert: {
+          last_seq?: number
+          tenant_id: string
+          year: number
+        }
+        Update: {
+          last_seq?: number
+          tenant_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_sequences_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          amount_paid: number
+          company_id: string
+          contact_id: string | null
+          created_at: string
+          currency: string
+          discount_amount: number
+          due_date: string | null
+          id: string
+          invoice_number: string | null
+          issue_date: string | null
+          notes: string | null
+          origin_type: Database["public"]["Enums"]["invoice_origin_type"]
+          payment_terms: string | null
+          sales_order_id: string | null
+          status: Database["public"]["Enums"]["invoice_status"]
+          subtotal: number
+          tax_amount: number
+          tenant_id: string
+          total_amount: number
+          updated_at: string
+          void_reason: string | null
+          work_order_id: string | null
+        }
+        Insert: {
+          amount_paid?: number
+          company_id: string
+          contact_id?: string | null
+          created_at?: string
+          currency?: string
+          discount_amount?: number
+          due_date?: string | null
+          id?: string
+          invoice_number?: string | null
+          issue_date?: string | null
+          notes?: string | null
+          origin_type: Database["public"]["Enums"]["invoice_origin_type"]
+          payment_terms?: string | null
+          sales_order_id?: string | null
+          status?: Database["public"]["Enums"]["invoice_status"]
+          subtotal?: number
+          tax_amount?: number
+          tenant_id: string
+          total_amount?: number
+          updated_at?: string
+          void_reason?: string | null
+          work_order_id?: string | null
+        }
+        Update: {
+          amount_paid?: number
+          company_id?: string
+          contact_id?: string | null
+          created_at?: string
+          currency?: string
+          discount_amount?: number
+          due_date?: string | null
+          id?: string
+          invoice_number?: string | null
+          issue_date?: string | null
+          notes?: string | null
+          origin_type?: Database["public"]["Enums"]["invoice_origin_type"]
+          payment_terms?: string | null
+          sales_order_id?: string | null
+          status?: Database["public"]["Enums"]["invoice_status"]
+          subtotal?: number
+          tax_amount?: number
+          tenant_id?: string
+          total_amount?: number
+          updated_at?: string
+          void_reason?: string | null
+          work_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_company_id_tenant_id_fkey"
+            columns: ["company_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "invoices_contact_id_tenant_id_fkey"
+            columns: ["contact_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "invoices_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_work_order_id_tenant_id_fkey"
+            columns: ["work_order_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id", "tenant_id"]
+          },
+        ]
+      }
+      materials: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          product_id: string | null
+          sku: string | null
+          tenant_id: string
+          unit_of_measure: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          product_id?: string | null
+          sku?: string | null
+          tenant_id: string
+          unit_of_measure: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          product_id?: string | null
+          sku?: string | null
+          tenant_id?: string
+          unit_of_measure?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "materials_product_id_tenant_id_fkey"
+            columns: ["product_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "materials_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -1622,217 +2114,6 @@ export type Database = {
           },
         ]
       }
-      api_keys: {
-        Row: {
-          created_at: string
-          expires_at: string | null
-          id: string
-          key_hash: string
-          label: string
-          last_used_at: string | null
-          prefix: string
-          rotated_from: string | null
-          scopes: string[]
-          status: Database["public"]["Enums"]["api_key_status"]
-          tenant_id: string
-        }
-        Insert: {
-          created_at?: string
-          expires_at?: string | null
-          id?: string
-          key_hash: string
-          label: string
-          last_used_at?: string | null
-          prefix: string
-          rotated_from?: string | null
-          scopes?: string[]
-          status?: Database["public"]["Enums"]["api_key_status"]
-          tenant_id: string
-        }
-        Update: {
-          created_at?: string
-          expires_at?: string | null
-          id?: string
-          key_hash?: string
-          label?: string
-          last_used_at?: string | null
-          prefix?: string
-          rotated_from?: string | null
-          scopes?: string[]
-          status?: Database["public"]["Enums"]["api_key_status"]
-          tenant_id?: string
-        }
-        Relationships: []
-      }
-      api_rate_events: {
-        Row: { id: number; occurred_at: string; scope: string; scope_id: string }
-        Insert: { id?: number; occurred_at?: string; scope: string; scope_id: string }
-        Update: { id?: number; occurred_at?: string; scope?: string; scope_id?: string }
-        Relationships: []
-      }
-      export_jobs: {
-        Row: {
-          attempt_count: number
-          completed_at: string | null
-          created_at: string
-          expires_at: string | null
-          filters: Json
-          format: string
-          id: string
-          last_error: string | null
-          lease_until: string | null
-          object: string
-          requested_by: string
-          row_count: number | null
-          started_at: string | null
-          status: Database["public"]["Enums"]["export_job_status"]
-          storage_path: string | null
-          tenant_id: string
-        }
-        Insert: {
-          attempt_count?: number
-          completed_at?: string | null
-          created_at?: string
-          expires_at?: string | null
-          filters?: Json
-          format: string
-          id?: string
-          last_error?: string | null
-          lease_until?: string | null
-          object: string
-          requested_by: string
-          row_count?: number | null
-          started_at?: string | null
-          status?: Database["public"]["Enums"]["export_job_status"]
-          storage_path?: string | null
-          tenant_id: string
-        }
-        Update: {
-          attempt_count?: number
-          completed_at?: string | null
-          created_at?: string
-          expires_at?: string | null
-          filters?: Json
-          format?: string
-          id?: string
-          last_error?: string | null
-          lease_until?: string | null
-          object?: string
-          requested_by?: string
-          row_count?: number | null
-          started_at?: string | null
-          status?: Database["public"]["Enums"]["export_job_status"]
-          storage_path?: string | null
-          tenant_id?: string
-        }
-        Relationships: []
-      }
-      materials: {
-        Row: {
-          active: boolean
-          created_at: string
-          description: string | null
-          id: string
-          name: string
-          product_id: string | null
-          sku: string | null
-          tenant_id: string
-          unit_of_measure: string
-          updated_at: string
-        }
-        Insert: {
-          active?: boolean
-          created_at?: string
-          description?: string | null
-          id?: string
-          name: string
-          product_id?: string | null
-          sku?: string | null
-          tenant_id: string
-          unit_of_measure: string
-          updated_at?: string
-        }
-        Update: {
-          active?: boolean
-          created_at?: string
-          description?: string | null
-          id?: string
-          name?: string
-          product_id?: string | null
-          sku?: string | null
-          tenant_id?: string
-          unit_of_measure?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      inventory_items: {
-        Row: {
-          created_at: string
-          id: string
-          material_id: string
-          quantity_available: number
-          quantity_on_hand: number
-          quantity_reserved: number
-          tenant_id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          material_id: string
-          quantity_on_hand?: number
-          quantity_reserved?: number
-          tenant_id: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          material_id?: string
-          quantity_on_hand?: number
-          quantity_reserved?: number
-          tenant_id?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      inventory_transactions: {
-        Row: {
-          created_at: string
-          created_by: string
-          id: string
-          material_id: string
-          quantity: number
-          reference_id: string | null
-          reference_type: Database["public"]["Enums"]["inventory_reference_type"]
-          tenant_id: string
-          type: Database["public"]["Enums"]["inventory_transaction_type"]
-        }
-        Insert: {
-          created_at?: string
-          created_by: string
-          id?: string
-          material_id: string
-          quantity: number
-          reference_id?: string | null
-          reference_type?: Database["public"]["Enums"]["inventory_reference_type"]
-          tenant_id: string
-          type: Database["public"]["Enums"]["inventory_transaction_type"]
-        }
-        Update: {
-          created_at?: string
-          created_by?: string
-          id?: string
-          material_id?: string
-          quantity?: number
-          reference_id?: string | null
-          reference_type?: Database["public"]["Enums"]["inventory_reference_type"]
-          tenant_id?: string
-          type?: Database["public"]["Enums"]["inventory_transaction_type"]
-        }
-        Relationships: []
-      }
       work_order_executions: {
         Row: {
           accepted_at: string | null
@@ -2052,6 +2333,20 @@ export type Database = {
         Args: { target_profile_id: string }
         Returns: boolean
       }
+      claim_export_job: {
+        Args: { p_lease_seconds: number; p_max_attempts: number }
+        Returns: Json
+      }
+      consume_rate_limit: {
+        Args: {
+          p_api_key_id: string
+          p_key_limit: number
+          p_tenant_id: string
+          p_tenant_limit: number
+          p_window_seconds: number
+        }
+        Returns: Json
+      }
       dispatch_technician_workload: {
         Args: { p_from: string; p_tenant_id: string; p_to: string }
         Returns: {
@@ -2068,78 +2363,77 @@ export type Database = {
         Args: { permission_key: string; target_tenant_id: string }
         Returns: boolean
       }
-      is_active_tenant_member: {
-        Args: { target_tenant_id: string }
-        Returns: boolean
-      }
-      is_platform_admin: { Args: never; Returns: boolean }
-      consume_rate_limit: {
+      inventory__apply_movement: {
         Args: {
-          p_api_key_id: string
-          p_tenant_id: string
-          p_key_limit: number
-          p_tenant_limit: number
-          p_window_seconds: number
-        }
-        Returns: Json
-      }
-      claim_export_job: {
-        Args: { p_lease_seconds: number; p_max_attempts: number }
-        Returns: Json
-      }
-      inventory_receive: {
-        Args: {
-          p_tenant_id: string
-          p_material_id: string
-          p_quantity: number
-          p_reference_type: Database["public"]["Enums"]["inventory_reference_type"]
-          p_reference_id: string | null
-        }
-        Returns: Json
-      }
-      inventory_consume: {
-        Args: {
-          p_tenant_id: string
-          p_material_id: string
-          p_quantity: number
-          p_reference_type: Database["public"]["Enums"]["inventory_reference_type"]
-          p_reference_id: string | null
           p_fulfill_reservation: boolean
+          p_material_id: string
+          p_quantity: number
+          p_reference_id: string | null
+          p_reference_type: Database["public"]["Enums"]["inventory_reference_type"]
+          p_tenant_id: string
+          p_type: Database["public"]["Enums"]["inventory_transaction_type"]
         }
         Returns: Json
       }
       inventory_adjust: {
         Args: {
-          p_tenant_id: string
           p_material_id: string
           p_quantity: number
-          p_reference_type: Database["public"]["Enums"]["inventory_reference_type"]
           p_reference_id: string | null
+          p_reference_type: Database["public"]["Enums"]["inventory_reference_type"]
+          p_tenant_id: string
         }
         Returns: Json
       }
-      inventory_reserve: {
+      inventory_consume: {
         Args: {
-          p_tenant_id: string
+          p_fulfill_reservation: boolean
           p_material_id: string
           p_quantity: number
-          p_reference_type: Database["public"]["Enums"]["inventory_reference_type"]
           p_reference_id: string | null
+          p_reference_type: Database["public"]["Enums"]["inventory_reference_type"]
+          p_tenant_id: string
+        }
+        Returns: Json
+      }
+      inventory_receive: {
+        Args: {
+          p_material_id: string
+          p_quantity: number
+          p_reference_id: string | null
+          p_reference_type: Database["public"]["Enums"]["inventory_reference_type"]
+          p_tenant_id: string
         }
         Returns: Json
       }
       inventory_release: {
         Args: {
-          p_tenant_id: string
           p_material_id: string
           p_quantity: number
-          p_reference_type: Database["public"]["Enums"]["inventory_reference_type"]
           p_reference_id: string | null
+          p_reference_type: Database["public"]["Enums"]["inventory_reference_type"]
+          p_tenant_id: string
         }
         Returns: Json
       }
+      inventory_reserve: {
+        Args: {
+          p_material_id: string
+          p_quantity: number
+          p_reference_id: string | null
+          p_reference_type: Database["public"]["Enums"]["inventory_reference_type"]
+          p_tenant_id: string
+        }
+        Returns: Json
+      }
+      is_active_tenant_member: {
+        Args: { target_tenant_id: string }
+        Returns: boolean
+      }
+      is_platform_admin: { Args: never; Returns: boolean }
       next_asset_number: { Args: { p_tenant_id: string }; Returns: string }
       next_case_number: { Args: { p_tenant_id: string }; Returns: string }
+      next_invoice_number: { Args: { p_tenant_id: string }; Returns: string }
       next_quote_number: { Args: { p_tenant_id: string }; Returns: string }
       next_work_order_number: { Args: { p_tenant_id: string }; Returns: string }
       provision_organization: {
@@ -2176,6 +2470,7 @@ export type Database = {
     Enums: {
       activity_status: "open" | "completed"
       activity_type: "call" | "email" | "meeting" | "task" | "note" | "whatsapp"
+      api_key_status: "active" | "revoked"
       asset_category:
         | "printing"
         | "lamination"
@@ -2198,14 +2493,21 @@ export type Database = {
         | "escalated"
         | "resolved"
         | "closed"
-      api_key_status: "active" | "revoked"
       crm_record_status: "active" | "inactive"
+      execution_status:
+        | "pending"
+        | "accepted"
+        | "on_site"
+        | "working"
+        | "completed"
+        | "unable_to_complete"
       export_job_status:
         | "queued"
         | "processing"
         | "completed"
         | "failed"
         | "expired"
+      forecast_period_type: "month" | "quarter" | "year"
       inventory_reference_type:
         | "work_order"
         | "work_order_execution"
@@ -2217,14 +2519,8 @@ export type Database = {
         | "adjustment"
         | "reservation"
         | "release"
-      execution_status:
-        | "pending"
-        | "accepted"
-        | "on_site"
-        | "working"
-        | "completed"
-        | "unable_to_complete"
-      forecast_period_type: "month" | "quarter" | "year"
+      invoice_origin_type: "work_order" | "sales_order"
+      invoice_status: "draft" | "issued" | "partially_paid" | "paid" | "void"
       membership_status: "invited" | "active" | "suspended"
       opportunity_business_type:
         | "flexography"
@@ -2395,6 +2691,7 @@ export const Constants = {
     Enums: {
       activity_status: ["open", "completed"],
       activity_type: ["call", "email", "meeting", "task", "note", "whatsapp"],
+      api_key_status: ["active", "revoked"],
       asset_category: [
         "printing",
         "lamination",
@@ -2428,7 +2725,29 @@ export const Constants = {
         "completed",
         "unable_to_complete",
       ],
+      export_job_status: [
+        "queued",
+        "processing",
+        "completed",
+        "failed",
+        "expired",
+      ],
       forecast_period_type: ["month", "quarter", "year"],
+      inventory_reference_type: [
+        "work_order",
+        "work_order_execution",
+        "manual",
+        "reconciliation",
+      ],
+      inventory_transaction_type: [
+        "receipt",
+        "consumption",
+        "adjustment",
+        "reservation",
+        "release",
+      ],
+      invoice_origin_type: ["work_order", "sales_order"],
+      invoice_status: ["draft", "issued", "partially_paid", "paid", "void"],
       membership_status: ["invited", "active", "suspended"],
       opportunity_business_type: [
         "flexography",

@@ -15,6 +15,7 @@ import {
   Package,
   PackageSearch,
   Radar,
+  Receipt,
   Settings,
   Target,
   TrendingUp,
@@ -24,6 +25,7 @@ import {
 } from "lucide-react"
 
 import {
+  BILLING_PERMISSIONS,
   CRM_PERMISSIONS,
   FORECASTING_PERMISSIONS,
   FOUNDATION_PERMISSIONS,
@@ -49,6 +51,7 @@ export const NAVIGATION_GROUP_ORDER = [
   "CRM",
   "Service",
   "Field Service",
+  "Revenue",
   "Inventory",
   "Analytics",
   "Administration",
@@ -83,6 +86,9 @@ export const workspaceNavigation: NavigationItem[] = [
   { label: "Schedule", segment: "schedule", icon: CalendarClock, permission: SERVICE_PERMISSIONS.schedulingRead, group: "Field Service" },
   { label: "Dispatch", segment: "dispatch", icon: Radar, permission: SERVICE_PERMISSIONS.dispatchRead, group: "Field Service" },
   { label: "Calendar", segment: "calendar", icon: CalendarDays, permission: SERVICE_PERMISSIONS.schedulingRead, group: "Field Service" },
+
+  // ── Revenue ──────────────────────────────────────────────────────────────
+  { label: "Invoices", segment: "invoices", icon: Receipt, permission: BILLING_PERMISSIONS.invoicesRead, group: "Revenue" },
 
   // ── Inventory ──────────────────────────────────────────────────────────────
   { label: "Inventory", segment: "inventory", icon: Boxes, permission: INVENTORY_PERMISSIONS.stockRead, group: "Inventory" },

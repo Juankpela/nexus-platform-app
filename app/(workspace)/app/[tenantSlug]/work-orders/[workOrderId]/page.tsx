@@ -11,10 +11,12 @@ import { WorkOrderTechnicianAssign } from "@/components/service/work-order-techn
 import { Button } from "@/components/ui/button"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
 import {
+  BILLING_PERMISSIONS,
   CRM_PERMISSIONS,
   SERVICE_PERMISSIONS,
   hasPermission,
 } from "@/modules/authorization/domain/permission"
+import { GenerateInvoiceButton } from "./_components/generate-invoice-button"
 import {
   listCompanyOptions,
   listSubjectAuditEvents,
@@ -89,6 +91,10 @@ export default async function WorkOrderDetailPage({
     context.effectivePermissions,
     SERVICE_PERMISSIONS.workOrdersWrite,
   )
+  const canInvoice = hasPermission(
+    context.effectivePermissions,
+    BILLING_PERMISSIONS.invoicesWrite,
+  )
   const canReadAudit = hasPermission(
     context.effectivePermissions,
     "tenant.audit.read",
@@ -156,20 +162,28 @@ export default async function WorkOrderDetailPage({
             <ArrowLeft className="size-4" />
             Órdenes de trabajo
           </Link>
-          {canWrite ? (
-            <WorkOrderFormDialog
-              tenantSlug={tenantSlug}
-              companyOptions={companyOptions}
-              caseOptions={caseOptions}
-              assetOptions={assetOptions}
-              workOrder={workOrder}
-              trigger={
-                <Button variant="outline" size="sm">
-                  Editar
-                </Button>
-              }
-            />
-          ) : null}
+          <div className="flex items-center gap-2">
+            {canInvoice && workOrder.status === "completed" ? (
+              <GenerateInvoiceButton
+                tenantSlug={tenantSlug}
+                workOrderId={workOrder.id}
+              />
+            ) : null}
+            {canWrite ? (
+              <WorkOrderFormDialog
+                tenantSlug={tenantSlug}
+                companyOptions={companyOptions}
+                caseOptions={caseOptions}
+                assetOptions={assetOptions}
+                workOrder={workOrder}
+                trigger={
+                  <Button variant="outline" size="sm">
+                    Editar
+                  </Button>
+                }
+              />
+            ) : null}
+          </div>
         </div>
 
         {/* Traceability chain: Cliente -> Activo -> Caso -> Intervención */}
