@@ -91,9 +91,19 @@ export default async function InvoiceDetailPage({
             {invoice.workOrderNumber ? ` ${invoice.workOrderNumber}` : ""}
           </p>
         </div>
-        <Button asChild size="sm" variant="ghost">
-          <Link href={`/app/${tenantSlug}/invoices`}>← Back to invoices</Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild size="sm" variant="outline">
+            <Link
+              href={`/app/${tenantSlug}/invoices/${invoice.id}/print`}
+              target="_blank"
+            >
+              PDF
+            </Link>
+          </Button>
+          <Button asChild size="sm" variant="ghost">
+            <Link href={`/app/${tenantSlug}/invoices`}>← Back to invoices</Link>
+          </Button>
+        </div>
       </div>
 
       {/* Meta */}
