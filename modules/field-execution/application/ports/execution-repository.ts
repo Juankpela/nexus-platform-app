@@ -54,4 +54,14 @@ export interface ExecutionRepository {
   ): Promise<Execution>
   /** Oversight read model: each technician and their current field status. */
   getFieldMonitor(tenantId: UUID): Promise<FieldMonitorBoard>
+  /** Oversight: all assignments (any status) for one technician. */
+  getTechnicianAssignments(
+    tenantId: UUID,
+    technicianId: UUID,
+  ): Promise<WorkerAssignment[]>
+  /** Oversight: a technician's display info. */
+  getTechnicianInfo(
+    tenantId: UUID,
+    technicianId: UUID,
+  ): Promise<{ id: UUID; name: string; status: string } | null>
 }

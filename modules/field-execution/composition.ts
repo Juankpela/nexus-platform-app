@@ -6,6 +6,8 @@ import {
   type AdvanceExecutionInput,
 } from "@/modules/field-execution/application/use-cases/advance-execution"
 import { SupabaseExecutionRepository } from "@/modules/field-execution/infrastructure/supabase-execution-repository"
+import { projectExecutionToWorkOrder } from "@/modules/field-execution/infrastructure/supabase-execution-projection"
+import type { ExecutionStatus } from "@/modules/field-execution/domain/execution"
 import type { UUID } from "@/types/shared"
 
 function executionRepo() {
@@ -41,4 +43,22 @@ export function advanceExecutionRecord(input: AdvanceExecutionInput) {
 
 export function getFieldMonitorBoard(tenantId: UUID) {
   return executionRepo().getFieldMonitor(tenantId)
+}
+
+export function getTechnicianFieldDetail(tenantId: UUID, technicianId: UUID) {
+  const repo = executionRepo()
+  return Promise.all([
+    repo.getTechnicianInfo(tenantId, technicianId),
+    repo.getTechnicianAssignments(tenantId, technicianId),
+  ]).then(([technician, assignments]) => ({ technician, assignments }))
+}
+
+export function projectExecution(input: {
+  tenantId: UUID
+  workOrderId: UUID
+  assignmentId: UUID
+  target: Exclude<ExecutionStatus, "pending">
+  technicianUserId: UUID
+}) {
+  return projectExecutionToWorkOrder({ ...input, now: new Date().toISOString() })
 }

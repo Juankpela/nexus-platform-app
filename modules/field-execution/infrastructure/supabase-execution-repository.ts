@@ -121,12 +121,14 @@ export class SupabaseExecutionRepository implements ExecutionRepository {
     technicianId: UUID,
   ): Promise<WorkerAssignment[]> {
     const client = await createServerSupabaseClient()
+    // Filter by the EXECUTION lifecycle (page-side), not assignment.status —
+    // once a job is accepted the assignment becomes in_progress (projection),
+    // but it must remain in the technician's inbox until execution closes.
     const { data, error } = await client
       .from("work_order_assignments")
       .select(ASSIGNMENT_SELECT)
       .eq("tenant_id", tenantId)
       .eq("technician_id", technicianId)
-      .in("status", ["scheduled"])
       .order("scheduled_start", { ascending: true })
 
     if (error) {
@@ -137,6 +139,55 @@ export class SupabaseExecutionRepository implements ExecutionRepository {
       )
     }
     return (data as unknown as WorkerAssignmentRow[]).map(toWorkerAssignment)
+  }
+
+  async getTechnicianAssignments(
+    tenantId: UUID,
+    technicianId: UUID,
+  ): Promise<WorkerAssignment[]> {
+    // Oversight read (dispatcher/admin): all of a technician's assignments with
+    // their execution status. RLS allows it via the work_orders.read policy.
+    const client = await createServerSupabaseClient()
+    const { data, error } = await client
+      .from("work_order_assignments")
+      .select(ASSIGNMENT_SELECT)
+      .eq("tenant_id", tenantId)
+      .eq("technician_id", technicianId)
+      .order("scheduled_start", { ascending: false })
+
+    if (error) {
+      throw new ApplicationError(
+        "Unable to load technician assignments.",
+        "TECHNICIAN_ASSIGNMENTS_FAILED",
+        error,
+      )
+    }
+    return (data as unknown as WorkerAssignmentRow[]).map(toWorkerAssignment)
+  }
+
+  async getTechnicianInfo(
+    tenantId: UUID,
+    technicianId: UUID,
+  ): Promise<{ id: UUID; name: string; status: string } | null> {
+    const client = await createServerSupabaseClient()
+    const { data, error } = await client
+      .from("technicians")
+      .select("id, first_name, last_name, status")
+      .eq("tenant_id", tenantId)
+      .eq("id", technicianId)
+      .is("deleted_at", null)
+      .maybeSingle()
+
+    if (error) {
+      throw new ApplicationError(
+        "Unable to load technician.",
+        "TECHNICIAN_LOAD_FAILED",
+        error,
+      )
+    }
+    if (!data) return null
+    const name = [data.first_name, data.last_name].filter(Boolean).join(" ").trim()
+    return { id: data.id, name: name || "Técnico", status: data.status }
   }
 
   async getMyAssignment(

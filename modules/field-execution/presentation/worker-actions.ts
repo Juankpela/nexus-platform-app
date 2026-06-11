@@ -12,6 +12,7 @@ import {
 import {
   advanceExecutionRecord,
   getMyAssignment,
+  projectExecution,
   resolveCurrentTechnician,
 } from "@/modules/field-execution/composition"
 import type { ExecutionStatus } from "@/modules/field-execution/domain/execution"
@@ -93,8 +94,23 @@ async function transition(
       resolutionNotes: extras?.resolutionNotes,
       unableReason: extras?.unableReason,
     })
+
+    // Project the transition onto the Work Order + assignment so the WO detail
+    // and Dispatch board reflect the technician's live progress.
+    await projectExecution({
+      tenantId: context.tenantId,
+      workOrderId: assignment.workOrderId,
+      assignmentId: assignment.assignmentId,
+      target,
+      technicianUserId: context.userId,
+    })
+
     // Notify the tenant's Field Monitor (admin live view) to refresh.
     await broadcastFieldMonitorUpdate(context.tenantId)
+
+    // Refresh the oversight surfaces that reference this work order.
+    revalidatePath(`/app/${tenantSlug}/work-orders/${assignment.workOrderId}`)
+    revalidatePath(`/app/${tenantSlug}/dispatch`)
   } catch (error) {
     return { error: describe(error), ok: false }
   }

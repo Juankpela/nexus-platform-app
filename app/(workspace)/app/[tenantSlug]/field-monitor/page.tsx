@@ -81,9 +81,10 @@ export default async function FieldMonitorPage({
           {board.entries.map((e) => {
             const job = e.activeJob
             return (
-              <div
+              <Link
                 key={e.technicianId}
-                className="flex flex-col rounded-xl border bg-card p-4"
+                href={`/app/${tenantSlug}/field-monitor/${e.technicianId}`}
+                className="flex flex-col rounded-xl border bg-card p-4 transition-colors hover:border-primary/40"
               >
                 <div className="flex items-center justify-between gap-2">
                   <p className="truncate font-medium">{e.technicianName}</p>
@@ -102,10 +103,7 @@ export default async function FieldMonitorPage({
 
                 {job ? (
                   <div className="mt-3 space-y-1.5">
-                    <Link
-                      href={`/app/${tenantSlug}/work-orders/${job.workOrderId}`}
-                      className="flex items-center gap-1.5 text-sm font-medium hover:text-primary"
-                    >
+                    <div className="flex items-center gap-1.5 text-sm font-medium">
                       <Wrench className="size-3.5 shrink-0 text-muted-foreground" />
                       <span className="truncate">{job.workOrderNumber}</span>
                       {job.priority ? (
@@ -115,7 +113,7 @@ export default async function FieldMonitorPage({
                           {job.priority}
                         </span>
                       ) : null}
-                    </Link>
+                    </div>
                     <p className="truncate text-sm text-muted-foreground">
                       {job.workOrderSubject}
                     </p>
@@ -142,7 +140,7 @@ export default async function FieldMonitorPage({
                     {e.completedToday} cerrada(s) hoy
                   </p>
                 ) : null}
-              </div>
+              </Link>
             )
           })}
         </div>
