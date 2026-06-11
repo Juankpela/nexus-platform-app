@@ -31,6 +31,16 @@ export interface InvoiceRepository {
     workOrderId: UUID,
   ): Promise<Invoice | null>
 
+  /**
+   * Create a draft invoice from a Quote (product sale). Polymorphic origin: quote.
+   * Seeds lines from the quote's PRODUCT lines at agreed prices (service lines flow
+   * to a Work Order, not here). Does not create a Work Order or any intermediate.
+   */
+  createFromQuote(tenantId: UUID, quoteId: UUID): Promise<Invoice>
+
+  /** Guard — an existing non-void invoice already generated from this quote. */
+  findActiveByQuote(tenantId: UUID, quoteId: UUID): Promise<Invoice | null>
+
   /** E1-H2 — edit header fields (draft only; enforced in use-case). */
   updateDraft(
     tenantId: UUID,

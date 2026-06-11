@@ -10,6 +10,10 @@ import {
   type GenerateInvoiceFromWorkOrderInput,
 } from "@/modules/billing/application/use-cases/generate-invoice-from-work-order"
 import {
+  generateInvoiceFromQuote,
+  type GenerateInvoiceFromQuoteInput,
+} from "@/modules/billing/application/use-cases/generate-invoice-from-quote"
+import {
   issueInvoice,
   type IssueInvoiceInput,
 } from "@/modules/billing/application/use-cases/issue-invoice"
@@ -74,6 +78,15 @@ export function generateInvoiceFromWorkOrderRecord(
   input: GenerateInvoiceFromWorkOrderInput,
 ) {
   return generateInvoiceFromWorkOrder(
+    { invoices: invoiceRepo(), audit: audit() },
+    input,
+  )
+}
+
+export function generateInvoiceFromQuoteRecord(
+  input: GenerateInvoiceFromQuoteInput,
+) {
+  return generateInvoiceFromQuote(
     { invoices: invoiceRepo(), audit: audit() },
     input,
   )

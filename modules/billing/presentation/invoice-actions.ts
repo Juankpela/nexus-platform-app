@@ -7,6 +7,7 @@ import { ApplicationError } from "@/lib/errors/application-error"
 import { BILLING_PERMISSIONS } from "@/modules/authorization/domain/permission"
 import {
   addInvoiceLineRecord,
+  generateInvoiceFromQuoteRecord,
   generateInvoiceFromWorkOrderRecord,
   issueInvoiceRecord,
   removeInvoiceLineRecord,
@@ -94,6 +95,30 @@ export async function generateInvoiceFromWorkOrderAction(
       actorId: userId,
       requestId,
       workOrderId,
+    })
+    revalidatePath(`/app/${tenantSlug}/invoices`)
+    return { ok: true, error: null, data: invoice }
+  } catch (err) {
+    return handleError(err)
+  }
+}
+
+// ── Generate from Quote (product sale) ──────────────────────────────────────────
+
+export async function generateInvoiceFromQuoteAction(
+  tenantSlug: string,
+  quoteId: string,
+): Promise<InvoiceActionState> {
+  try {
+    const { tenantId, userId, requestId } = await requireBillingContext(
+      tenantSlug,
+      BILLING_PERMISSIONS.invoicesWrite,
+    )
+    const invoice = await generateInvoiceFromQuoteRecord({
+      tenantId,
+      actorId: userId,
+      requestId,
+      quoteId,
     })
     revalidatePath(`/app/${tenantSlug}/invoices`)
     return { ok: true, error: null, data: invoice }

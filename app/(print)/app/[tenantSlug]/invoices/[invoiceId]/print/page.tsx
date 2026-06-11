@@ -110,7 +110,11 @@ export default async function InvoicePrintPage({
             <div className="section-label">Origen</div>
             <div className="section-value">
               {INVOICE_ORIGIN_LABELS[invoice.originType]}
-              {invoice.workOrderNumber ? ` ${invoice.workOrderNumber}` : ""}
+              {invoice.workOrderNumber
+                ? ` ${invoice.workOrderNumber}`
+                : invoice.quoteNumber
+                  ? ` ${invoice.quoteNumber}`
+                  : ""}
             </div>
             {invoice.paymentTerms && (
               <div className="section-value" style={{ color: "#555", marginTop: 4 }}>

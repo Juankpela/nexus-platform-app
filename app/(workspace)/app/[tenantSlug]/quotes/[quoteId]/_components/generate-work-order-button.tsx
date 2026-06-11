@@ -53,10 +53,9 @@ export function GenerateWorkOrderButton({
         </p>
         {p > 0 && (
           <p className="mt-1 text-emerald-700 dark:text-emerald-400">
-            {p} línea{p !== 1 ? "s" : ""} de producto permanece
-            {p !== 1 ? "n" : ""} pendiente{p !== 1 ? "s" : ""} y será
-            {p !== 1 ? "n" : ""} gestionada{p !== 1 ? "s" : ""} mediante Sales
-            Order (E6).
+            {p} línea{p !== 1 ? "s" : ""} de producto se factura
+            {p !== 1 ? "n" : ""} directamente desde la cotización (botón "Generar
+            factura").
           </p>
         )}
         <Button

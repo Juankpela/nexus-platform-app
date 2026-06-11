@@ -57,19 +57,19 @@ export function canVoidInvoice(status: InvoiceStatus): boolean {
 
 // ── Origin (polymorphic) ──────────────────────────────────────────────────────
 //
-// FROZEN DOMAIN RULE (2026-06-10): an Invoice may originate ONLY from a Work Order
-// or a Sales Order — never directly from a Case. A Case must always pass through a
-// Work Order before reaching Revenue. This is enforced structurally: there is no
-// `case` origin type, the DB CHECK requires exactly one of work_order/sales_order,
-// and no code path constructs an invoice from a Case.
+// FROZEN DOMAIN RULE (2026-06-11): an Invoice may originate ONLY from a Work Order
+// (service sold / service request) or a Quote (product sale) — never from a Case,
+// Opportunity or Lead. Sales Order was removed from Nexus entirely. Enforced
+// structurally: only these two origin types exist, the DB CHECK requires exactly one
+// of work_order/quote, and no code path constructs an invoice from anything else.
 
-export const INVOICE_ORIGIN_TYPES = ["work_order", "sales_order"] as const
+export const INVOICE_ORIGIN_TYPES = ["work_order", "quote"] as const
 
 export type InvoiceOriginType = (typeof INVOICE_ORIGIN_TYPES)[number]
 
 export const INVOICE_ORIGIN_LABELS: Record<InvoiceOriginType, string> = {
   work_order: "Work Order",
-  sales_order: "Sales Order",
+  quote: "Cotización",
 }
 
 // ── Domain types ─────────────────────────────────────────────────────────────
@@ -81,7 +81,7 @@ export type Invoice = {
   invoiceNumber: string | null
   originType: InvoiceOriginType
   workOrderId: UUID | null
-  salesOrderId: UUID | null
+  quoteId: UUID | null
   companyId: UUID
   contactId: UUID | null
   status: InvoiceStatus
@@ -107,6 +107,7 @@ export type InvoiceDetail = Invoice & {
   companyName: string | null
   contactName: string | null
   workOrderNumber: string | null
+  quoteNumber: string | null
 }
 
 /** Invoice list item — includes companyName for display without full join. */

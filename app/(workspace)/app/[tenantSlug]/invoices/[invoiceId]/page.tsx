@@ -88,7 +88,11 @@ export default async function InvoiceDetailPage({
           <p className="mt-1 text-sm text-muted-foreground">
             {invoice.companyName ?? "—"} ·{" "}
             {INVOICE_ORIGIN_LABELS[invoice.originType]}
-            {invoice.workOrderNumber ? ` ${invoice.workOrderNumber}` : ""}
+            {invoice.workOrderNumber
+              ? ` ${invoice.workOrderNumber}`
+              : invoice.quoteNumber
+                ? ` ${invoice.quoteNumber}`
+                : ""}
           </p>
         </div>
         <div className="flex items-center gap-2">

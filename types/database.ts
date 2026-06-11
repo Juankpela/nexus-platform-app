@@ -1015,7 +1015,7 @@ export type Database = {
           notes: string | null
           origin_type: Database["public"]["Enums"]["invoice_origin_type"]
           payment_terms: string | null
-          sales_order_id: string | null
+          quote_id: string | null
           status: Database["public"]["Enums"]["invoice_status"]
           subtotal: number
           tax_amount: number
@@ -1039,7 +1039,7 @@ export type Database = {
           notes?: string | null
           origin_type: Database["public"]["Enums"]["invoice_origin_type"]
           payment_terms?: string | null
-          sales_order_id?: string | null
+          quote_id?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           subtotal?: number
           tax_amount?: number
@@ -1063,7 +1063,7 @@ export type Database = {
           notes?: string | null
           origin_type?: Database["public"]["Enums"]["invoice_origin_type"]
           payment_terms?: string | null
-          sales_order_id?: string | null
+          quote_id?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           subtotal?: number
           tax_amount?: number
@@ -1086,6 +1086,13 @@ export type Database = {
             columns: ["contact_id", "tenant_id"]
             isOneToOne: false
             referencedRelation: "contacts"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "invoices_quote_id_tenant_id_fkey"
+            columns: ["quote_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
             referencedColumns: ["id", "tenant_id"]
           },
           {
@@ -2749,7 +2756,7 @@ export type Database = {
         | "adjustment"
         | "reservation"
         | "release"
-      invoice_origin_type: "work_order" | "sales_order"
+      invoice_origin_type: "work_order" | "quote"
       invoice_status: "draft" | "issued" | "partially_paid" | "paid" | "void"
       lead_status:
         | "new"
@@ -2983,7 +2990,7 @@ export const Constants = {
         "reservation",
         "release",
       ],
-      invoice_origin_type: ["work_order", "sales_order"],
+      invoice_origin_type: ["work_order", "quote"],
       invoice_status: ["draft", "issued", "partially_paid", "paid", "void"],
       lead_status: ["new", "working", "qualified", "disqualified", "converted"],
       membership_status: ["invited", "active", "suspended"],

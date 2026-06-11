@@ -34,7 +34,7 @@ function toInvoice(row: Record<string, unknown>): Invoice {
     invoiceNumber: (row.invoice_number as string | null) ?? null,
     originType: row.origin_type as InvoiceOriginType,
     workOrderId: (row.work_order_id as string | null) ?? null,
-    salesOrderId: (row.sales_order_id as string | null) ?? null,
+    quoteId: (row.quote_id as string | null) ?? null,
     companyId: row.company_id as string,
     contactId: (row.contact_id as string | null) ?? null,
     status: row.status as InvoiceStatus,
@@ -133,7 +133,7 @@ export class SupabaseInvoiceRepository implements InvoiceRepository {
     const { data, error } = await client
       .from("invoices")
       .select(
-        "*, companies(name), contacts(first_name, last_name), work_orders(work_order_number)",
+        "*, companies(name), contacts(first_name, last_name), work_orders(work_order_number), quotes(quote_number)",
       )
       .eq("tenant_id", tenantId)
       .eq("id", id)
@@ -155,6 +155,7 @@ export class SupabaseInvoiceRepository implements InvoiceRepository {
     const wo = Array.isArray(data.work_orders)
       ? data.work_orders[0]
       : data.work_orders
+    const qt = Array.isArray(data.quotes) ? data.quotes[0] : data.quotes
 
     const contactName = ct
       ? [ct.first_name, ct.last_name].filter(Boolean).join(" ") || null
@@ -165,6 +166,7 @@ export class SupabaseInvoiceRepository implements InvoiceRepository {
       companyName: (co?.name as string | null) ?? null,
       contactName,
       workOrderNumber: (wo?.work_order_number as string | null) ?? null,
+      quoteNumber: (qt?.quote_number as string | null) ?? null,
     }
   }
 
@@ -417,6 +419,168 @@ export class SupabaseInvoiceRepository implements InvoiceRepository {
       )
     }
     return data ? toInvoice(data as unknown as Record<string, unknown>) : null
+  }
+
+  // ── Create from Quote (product sale) ─────────────────────────────────────────
+  async createFromQuote(tenantId: UUID, quoteId: UUID): Promise<Invoice> {
+    const client = await createServerSupabaseClient()
+
+    const { data: quote, error: qErr } = await client
+      .from("quotes")
+      .select("id, company_id, status, quote_number")
+      .eq("tenant_id", tenantId)
+      .eq("id", quoteId)
+      .maybeSingle()
+
+    if (qErr) {
+      throw new ApplicationError("Unable to load quote.", "QUOTE_LOAD_FAILED", qErr)
+    }
+    if (!quote) {
+      throw new ApplicationError("Quote not found.", "QUOTE_NOT_FOUND")
+    }
+    if (quote.status !== "accepted") {
+      throw new ApplicationError(
+        "Only accepted quotes can be invoiced.",
+        "QUOTE_NOT_ACCEPTED",
+      )
+    }
+    if (!quote.company_id) {
+      throw new ApplicationError(
+        "The quote has no company to invoice.",
+        "QUOTE_NO_COMPANY",
+      )
+    }
+
+    // A product invoice needs product lines; pure-service quotes go through a WO.
+    const { data: qLines } = await client
+      .from("quote_lines")
+      .select("products(product_type)")
+      .eq("tenant_id", tenantId)
+      .eq("quote_id", quoteId)
+    const productCount = ((qLines ?? []) as unknown as {
+      products: { product_type: string } | { product_type: string }[] | null
+    }[]).filter((r) => {
+      const p = Array.isArray(r.products) ? r.products[0] : r.products
+      return p?.product_type !== "service"
+    }).length
+    if (productCount === 0) {
+      throw new ApplicationError(
+        "This quote has no product lines. Invoice its services through a Work Order.",
+        "QUOTE_NO_PRODUCT_LINES",
+      )
+    }
+
+    const { data, error } = await client
+      .from("invoices")
+      .insert({
+        tenant_id: tenantId,
+        origin_type: "quote",
+        quote_id: quoteId,
+        company_id: quote.company_id,
+        status: "draft",
+        currency: "COP",
+        subtotal: 0,
+        discount_amount: 0,
+        tax_amount: 0,
+        total_amount: 0,
+        amount_paid: 0,
+      })
+      .select("*")
+      .single()
+
+    if (error || !data) {
+      throw new ApplicationError(
+        "Unable to create invoice.",
+        "INVOICE_CREATE_FAILED",
+        error,
+      )
+    }
+
+    const invoice = toInvoice(data as unknown as Record<string, unknown>)
+    await this.seedLinesFromQuoteProducts(client, tenantId, invoice.id, quoteId)
+    return invoice
+  }
+
+  async findActiveByQuote(
+    tenantId: UUID,
+    quoteId: UUID,
+  ): Promise<Invoice | null> {
+    const client = await createServerSupabaseClient()
+    const { data, error } = await client
+      .from("invoices")
+      .select("*")
+      .eq("tenant_id", tenantId)
+      .eq("quote_id", quoteId)
+      .neq("status", "void")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (error) {
+      throw new ApplicationError(
+        "Unable to check existing invoices.",
+        "INVOICE_LOOKUP_FAILED",
+        error,
+      )
+    }
+    return data ? toInvoice(data as unknown as Record<string, unknown>) : null
+  }
+
+  /** Seed invoice_lines from a quote's PRODUCT lines (product sale, agreed prices). */
+  private async seedLinesFromQuoteProducts(
+    client: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+    tenantId: UUID,
+    invoiceId: UUID,
+    quoteId: UUID,
+  ): Promise<void> {
+    const { data: quoteLines } = await client
+      .from("quote_lines")
+      .select(
+        "product_id, quantity, unit_price, discount_amount, products(name, product_type)",
+      )
+      .eq("tenant_id", tenantId)
+      .eq("quote_id", quoteId)
+      .order("sort_order")
+
+    type Row = {
+      product_id: string
+      quantity: number
+      unit_price: number
+      discount_amount: number
+      products:
+        | { name: string; product_type: string }
+        | { name: string; product_type: string }[]
+        | null
+    }
+
+    const lines: InvoiceLineInsert[] = []
+    let sortOrder = 0
+    for (const row of (quoteLines ?? []) as unknown as Row[]) {
+      const prod = Array.isArray(row.products) ? row.products[0] : row.products
+      // Only PRODUCT lines; service lines belong to a Work Order invoice.
+      if (prod?.product_type === "service") continue
+      const qty = Number(row.quantity)
+      const unit = Number(row.unit_price)
+      const discount = Number(row.discount_amount)
+      lines.push({
+        tenant_id: tenantId,
+        invoice_id: invoiceId,
+        product_id: row.product_id,
+        description: prod?.name ?? "Producto",
+        quantity: qty,
+        unit_price: unit,
+        discount_amount: discount,
+        tax_rate: 0,
+        tax_amount: 0,
+        line_total: Math.max(0, qty * unit - discount),
+        sort_order: sortOrder++,
+      })
+    }
+
+    if (lines.length > 0) {
+      await client.from("invoice_lines").insert(lines)
+      await this.recalculateTotals(tenantId, invoiceId)
+    }
   }
 
   // ── Update draft (E1-H2) ─────────────────────────────────────────────────────

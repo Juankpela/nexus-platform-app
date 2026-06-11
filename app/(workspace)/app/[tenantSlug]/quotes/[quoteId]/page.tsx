@@ -6,6 +6,7 @@ import { notFound } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
 import {
+  BILLING_PERMISSIONS,
   CRM_PERMISSIONS,
   SERVICE_PERMISSIONS,
   hasPermission,
@@ -27,6 +28,7 @@ import {
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 import { QuoteDetailActions } from "./_components/quote-detail-actions"
 import { GenerateWorkOrderButton } from "./_components/generate-work-order-button"
+import { GenerateInvoiceFromQuoteButton } from "./_components/generate-invoice-button"
 
 export const metadata: Metadata = { title: "Quote Detail" }
 
@@ -46,6 +48,10 @@ export default async function QuoteDetailPage({
   const canCreateWorkOrder = hasPermission(
     context.effectivePermissions,
     SERVICE_PERMISSIONS.workOrdersWrite,
+  )
+  const canCreateInvoice = hasPermission(
+    context.effectivePermissions,
+    BILLING_PERMISSIONS.invoicesWrite,
   )
 
   const [quote, lines, companies, contacts, opportunities, priceBooks, auditEvents] =
@@ -99,6 +105,12 @@ export default async function QuoteDetailPage({
         <div className="flex items-center gap-2">
           {canCreateWorkOrder && quote.status === "accepted" && (
             <GenerateWorkOrderButton tenantSlug={tenantSlug} quoteId={quoteId} />
+          )}
+          {canCreateInvoice && quote.status === "accepted" && (
+            <GenerateInvoiceFromQuoteButton
+              tenantSlug={tenantSlug}
+              quoteId={quoteId}
+            />
           )}
           <Button asChild variant="outline" size="sm">
             <Link
