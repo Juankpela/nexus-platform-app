@@ -8,7 +8,11 @@ import {
   BILLING_PERMISSIONS,
   hasPermission,
 } from "@/modules/authorization/domain/permission"
-import { getInvoiceRecord, listInvoiceLines } from "@/modules/billing/composition"
+import {
+  getInvoiceRecord,
+  listInvoiceLines,
+  listInvoicePayments,
+} from "@/modules/billing/composition"
 import {
   INVOICE_ORIGIN_LABELS,
   INVOICE_STATUS_COLORS,
@@ -16,6 +20,7 @@ import {
 } from "@/modules/billing/domain/invoice"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 import { InvoiceDetailActions } from "./_components/invoice-detail-actions"
+import { InvoicePaymentsSection } from "./_components/invoice-payments-section"
 
 export const metadata: Metadata = { title: "Invoice" }
 
@@ -39,6 +44,18 @@ export default async function InvoiceDetailPage({
   if (!invoice) notFound()
 
   const lines = await listInvoiceLines(context.tenantId, invoiceId)
+
+  const canPaymentsRead = hasPermission(
+    context.effectivePermissions,
+    BILLING_PERMISSIONS.paymentsRead,
+  )
+  const canPaymentsWrite = hasPermission(
+    context.effectivePermissions,
+    BILLING_PERMISSIONS.paymentsWrite,
+  )
+  const payments = canPaymentsRead
+    ? await listInvoicePayments(context.tenantId, invoiceId)
+    : []
 
   const canWrite = hasPermission(
     context.effectivePermissions,
@@ -180,6 +197,18 @@ export default async function InvoiceDetailPage({
         canIssue={canIssue}
         canVoid={canVoid}
       />
+
+      {canPaymentsRead && invoice.status !== "draft" && invoice.status !== "void" ? (
+        <InvoicePaymentsSection
+          tenantSlug={tenantSlug}
+          invoiceId={invoice.id}
+          companyId={invoice.companyId}
+          balance={invoice.balance}
+          status={invoice.status}
+          payments={payments}
+          canWrite={canPaymentsWrite}
+        />
+      ) : null}
     </div>
   )
 }

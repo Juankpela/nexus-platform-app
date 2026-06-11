@@ -30,6 +30,8 @@ export const BILLING_PERMISSIONS = {
   invoicesWrite: "billing.invoices.write",
   invoicesIssue: "billing.invoices.issue",
   invoicesVoid:  "billing.invoices.void",
+  paymentsRead:  "billing.payments.read",
+  paymentsWrite: "billing.payments.write",
 } as const
 
 export const SERVICE_PERMISSIONS = {

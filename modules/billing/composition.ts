@@ -31,11 +31,25 @@ import {
   type VoidInvoiceInput,
 } from "@/modules/billing/application/use-cases/void-invoice"
 import { SupabaseInvoiceRepository } from "@/modules/billing/infrastructure/supabase-invoice-repository"
+import { SupabasePaymentRepository } from "@/modules/billing/infrastructure/supabase-payment-repository"
+import {
+  recordPayment,
+  type RecordPaymentUseCaseInput,
+} from "@/modules/billing/application/use-cases/record-payment"
+import {
+  reversePayment,
+  type ReversePaymentInput,
+} from "@/modules/billing/application/use-cases/reverse-payment"
+import { listPayments } from "@/modules/billing/application/use-cases/list-payments"
 import type { InvoiceListQuery } from "@/modules/billing/domain/invoice"
+import type { PaymentListQuery } from "@/modules/billing/domain/payment"
 import type { UUID } from "@/types/shared"
 
 function invoiceRepo() {
   return new SupabaseInvoiceRepository()
+}
+function paymentRepo() {
+  return new SupabasePaymentRepository()
 }
 function audit() {
   return new SupabaseAuditRepository()
@@ -77,6 +91,31 @@ export function voidInvoiceRecord(input: VoidInvoiceInput) {
 }
 
 // --- Invoice lines ---------------------------------------------------------
+// --- Payments (E3) ---------------------------------------------------------
+export function listTenantPayments(tenantId: UUID, query: PaymentListQuery) {
+  return listPayments(paymentRepo(), tenantId, query)
+}
+
+export function getPaymentRecord(tenantId: UUID, id: UUID) {
+  return paymentRepo().getById(tenantId, id)
+}
+
+export function listInvoicePayments(tenantId: UUID, invoiceId: UUID) {
+  return paymentRepo().listForInvoice(tenantId, invoiceId)
+}
+
+export function listCompanyOpenInvoices(tenantId: UUID, companyId: UUID) {
+  return paymentRepo().listOpenInvoices(tenantId, companyId)
+}
+
+export function recordPaymentRecord(input: RecordPaymentUseCaseInput) {
+  return recordPayment({ payments: paymentRepo(), audit: audit() }, input)
+}
+
+export function reversePaymentRecord(input: ReversePaymentInput) {
+  return reversePayment({ payments: paymentRepo(), audit: audit() }, input)
+}
+
 export function addInvoiceLineRecord(input: AddInvoiceLineInput) {
   return addInvoiceLine({ invoices: invoiceRepo(), audit: audit() }, input)
 }

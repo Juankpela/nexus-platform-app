@@ -17,6 +17,7 @@ import {
   Radar,
   Receipt,
   Settings,
+  Wallet,
   Target,
   TrendingUp,
   Users,
@@ -89,6 +90,7 @@ export const workspaceNavigation: NavigationItem[] = [
 
   // ── Revenue ──────────────────────────────────────────────────────────────
   { label: "Invoices", segment: "invoices", icon: Receipt, permission: BILLING_PERMISSIONS.invoicesRead, group: "Revenue" },
+  { label: "Payments", segment: "payments", icon: Wallet, permission: BILLING_PERMISSIONS.paymentsRead, group: "Revenue" },
 
   // ── Inventory ──────────────────────────────────────────────────────────────
   { label: "Inventory", segment: "inventory", icon: Boxes, permission: INVENTORY_PERMISSIONS.stockRead, group: "Inventory" },
