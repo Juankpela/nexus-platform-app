@@ -4,12 +4,15 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 
 import { ActivityTimeline } from "@/components/crm/activity-timeline"
+import { RevenueTimeline } from "@/components/billing/revenue-timeline"
 import { PageHeader } from "@/components/layout/page-header"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
 import {
+  BILLING_PERMISSIONS,
   CRM_PERMISSIONS,
   hasPermission,
 } from "@/modules/authorization/domain/permission"
+import { getCustomerRevenueTimeline } from "@/modules/billing/composition"
 import {
   getCompanyRecord,
   listCompanyActivityTimeline,
@@ -68,11 +71,21 @@ export default async function CompanyDetailPage({
     CRM_PERMISSIONS.activitiesWrite,
   )
 
+  const canReadRevenue = hasPermission(
+    context.effectivePermissions,
+    BILLING_PERMISSIONS.invoicesRead,
+  )
+
   const filters = parseFilters(sp)
   const returnPath = `/app/${tenantSlug}/companies/${companyId}`
-  const activities = canReadActivities
-    ? await listCompanyActivityTimeline(context.tenantId, companyId, filters)
-    : []
+  const [activities, revenueTimeline] = await Promise.all([
+    canReadActivities
+      ? listCompanyActivityTimeline(context.tenantId, companyId, filters)
+      : Promise.resolve([]),
+    canReadRevenue
+      ? getCustomerRevenueTimeline(context.tenantId, companyId)
+      : Promise.resolve(null),
+  ])
 
   return (
     <>
@@ -117,6 +130,10 @@ export default async function CompanyDetailPage({
             </p>
           ) : null}
         </div>
+
+        {revenueTimeline ? (
+          <RevenueTimeline tenantSlug={tenantSlug} timeline={revenueTimeline} />
+        ) : null}
 
         {canReadActivities ? (
           <ActivityTimeline

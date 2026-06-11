@@ -32,6 +32,7 @@ import {
 } from "@/modules/billing/application/use-cases/void-invoice"
 import { SupabaseInvoiceRepository } from "@/modules/billing/infrastructure/supabase-invoice-repository"
 import { SupabasePaymentRepository } from "@/modules/billing/infrastructure/supabase-payment-repository"
+import { SupabaseRevenueTimelineRepository } from "@/modules/billing/infrastructure/supabase-revenue-timeline-repository"
 import {
   recordPayment,
   type RecordPaymentUseCaseInput,
@@ -91,6 +92,14 @@ export function voidInvoiceRecord(input: VoidInvoiceInput) {
 }
 
 // --- Invoice lines ---------------------------------------------------------
+// --- Revenue Timeline (E4) -------------------------------------------------
+export function getCustomerRevenueTimeline(tenantId: UUID, companyId: UUID) {
+  return new SupabaseRevenueTimelineRepository().getForCompany(
+    tenantId,
+    companyId,
+  )
+}
+
 // --- Payments (E3) ---------------------------------------------------------
 export function listTenantPayments(tenantId: UUID, query: PaymentListQuery) {
   return listPayments(paymentRepo(), tenantId, query)
