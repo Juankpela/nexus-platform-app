@@ -199,6 +199,18 @@ export default async function InvoiceDetailPage({
       )}
 
       {/* Actions */}
+      {invoice.status === "draft" && lines.length === 0 && (
+        <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm dark:border-amber-900/40 dark:bg-amber-950/20">
+          <p className="font-medium text-amber-800 dark:text-amber-300">
+            Esta factura no contiene líneas cobrables.
+          </p>
+          <p className="mt-1 text-amber-700 dark:text-amber-400">
+            La orden de trabajo no registró materiales ni horas. Agregue líneas
+            manualmente antes de emitir la factura.
+          </p>
+        </div>
+      )}
+
       <InvoiceDetailActions
         tenantSlug={tenantSlug}
         invoice={invoice}

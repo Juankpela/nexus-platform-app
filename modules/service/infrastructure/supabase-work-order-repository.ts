@@ -3,7 +3,10 @@ import "server-only"
 import { ApplicationError } from "@/lib/errors/application-error"
 import { createServerSupabaseClient } from "@/lib/supabase/server"
 import type { Paginated } from "@/modules/crm/domain/pagination"
-import type { WorkOrderRepository } from "@/modules/service/application/ports/work-order-repository"
+import type {
+  CreateFromQuoteResult,
+  WorkOrderRepository,
+} from "@/modules/service/application/ports/work-order-repository"
 import {
   WORK_ORDER_PRIORITIES,
   WORK_ORDER_STATUSES,
@@ -308,7 +311,7 @@ export class SupabaseWorkOrderRepository implements WorkOrderRepository {
   async createFromQuote(
     tenantId: UUID,
     params: { quoteId: UUID; createdBy: UUID; workOrderNumber: string },
-  ): Promise<WorkOrder> {
+  ): Promise<CreateFromQuoteResult> {
     const client = await createServerSupabaseClient()
 
     const { data: quote, error: qErr } = await client
@@ -335,6 +338,31 @@ export class SupabaseWorkOrderRepository implements WorkOrderRepository {
       )
     }
 
+    // Count service vs product lines: services flow to the WO, products wait for
+    // Sales Order (E6). A quote with NO service lines must NOT generate a WO.
+    const { data: qLines } = await client
+      .from("quote_lines")
+      .select("products(product_type)")
+      .eq("tenant_id", tenantId)
+      .eq("quote_id", params.quoteId)
+
+    let serviceLineCount = 0
+    let productLineCount = 0
+    for (const row of (qLines ?? []) as unknown as {
+      products: { product_type: string } | { product_type: string }[] | null
+    }[]) {
+      const prod = Array.isArray(row.products) ? row.products[0] : row.products
+      if (prod?.product_type === "service") serviceLineCount += 1
+      else productLineCount += 1
+    }
+
+    if (serviceLineCount === 0) {
+      throw new ApplicationError(
+        "This quote has no service lines, so it cannot generate a work order. A product-only quote should become a Sales Order.",
+        "QUOTE_NO_SERVICE_LINES",
+      )
+    }
+
     const { data, error } = await client
       .from("work_orders")
       .insert({
@@ -357,7 +385,11 @@ export class SupabaseWorkOrderRepository implements WorkOrderRepository {
         error,
       )
     }
-    return toWorkOrder(data as unknown as WorkOrderRowWithRefs)
+    return {
+      workOrder: toWorkOrder(data as unknown as WorkOrderRowWithRefs),
+      serviceLineCount,
+      productLineCount,
+    }
   }
 
   async setBillable(

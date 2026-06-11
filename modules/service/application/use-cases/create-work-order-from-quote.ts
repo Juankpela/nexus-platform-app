@@ -1,7 +1,9 @@
 import { ApplicationError } from "@/lib/errors/application-error"
 import type { AuditRepository } from "@/modules/audit/application/ports/audit-repository"
-import type { WorkOrderRepository } from "@/modules/service/application/ports/work-order-repository"
-import type { WorkOrder } from "@/modules/service/domain/work-order"
+import type {
+  CreateFromQuoteResult,
+  WorkOrderRepository,
+} from "@/modules/service/application/ports/work-order-repository"
 import type { UUID } from "@/types/shared"
 
 export type CreateWorkOrderFromQuoteDeps = {
@@ -25,7 +27,7 @@ export type CreateWorkOrderFromQuoteInput = {
 export async function createWorkOrderFromQuote(
   { workOrders, audit }: CreateWorkOrderFromQuoteDeps,
   input: CreateWorkOrderFromQuoteInput,
-): Promise<WorkOrder> {
+): Promise<CreateFromQuoteResult> {
   const existing = await workOrders.findByQuote(input.tenantId, input.quoteId)
   if (existing) {
     throw new ApplicationError(
@@ -35,7 +37,7 @@ export async function createWorkOrderFromQuote(
   }
 
   const workOrderNumber = await workOrders.nextWorkOrderNumber(input.tenantId)
-  const workOrder = await workOrders.createFromQuote(input.tenantId, {
+  const result = await workOrders.createFromQuote(input.tenantId, {
     quoteId: input.quoteId,
     createdBy: input.actorId,
     workOrderNumber,
@@ -48,11 +50,16 @@ export async function createWorkOrderFromQuote(
     actorId: input.actorId,
     tenantId: input.tenantId,
     subjectType: "work_order",
-    subjectId: workOrder.id,
-    metadata: { quoteId: input.quoteId, workOrderNumber },
+    subjectId: result.workOrder.id,
+    metadata: {
+      quoteId: input.quoteId,
+      workOrderNumber,
+      serviceLineCount: result.serviceLineCount,
+      productLineCount: result.productLineCount,
+    },
     requestId: input.requestId,
     source: "web",
   })
 
-  return workOrder
+  return result
 }

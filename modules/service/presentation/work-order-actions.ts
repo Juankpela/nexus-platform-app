@@ -130,6 +130,12 @@ function describeError(error: unknown): string {
   ) {
     return "Esta cotización ya tiene una orden de trabajo."
   }
+  if (
+    error instanceof ApplicationError &&
+    error.code === "QUOTE_NO_SERVICE_LINES"
+  ) {
+    return "Esta cotización no tiene líneas de servicio. Una cotización solo de productos debe convertirse en Sales Order (E6), no en orden de trabajo."
+  }
   return "No se pudo completar la acción."
 }
 
@@ -230,6 +236,8 @@ export async function setWorkOrderStatusAction(
 
 export type CreateWorkOrderFromQuoteState = ServiceActionState & {
   workOrderId?: string
+  serviceLineCount?: number
+  productLineCount?: number
 }
 
 export async function createWorkOrderFromQuoteAction(
@@ -244,15 +252,21 @@ export async function createWorkOrderFromQuoteAction(
       tenantSlug,
       SERVICE_PERMISSIONS.workOrdersWrite,
     )
-    const workOrder = await createWorkOrderFromQuoteRecord({
+    const result = await createWorkOrderFromQuoteRecord({
       actorId: context.userId,
       tenantId: context.tenantId,
       requestId: context.requestId,
       quoteId: id.data,
     })
-    revalidate(tenantSlug, workOrder.id)
+    revalidate(tenantSlug, result.workOrder.id)
     revalidatePath(`/app/${tenantSlug}/quotes/${quoteId}`)
-    return { error: null, ok: true, workOrderId: workOrder.id }
+    return {
+      error: null,
+      ok: true,
+      workOrderId: result.workOrder.id,
+      serviceLineCount: result.serviceLineCount,
+      productLineCount: result.productLineCount,
+    }
   } catch (error) {
     return fail(describeError(error))
   }

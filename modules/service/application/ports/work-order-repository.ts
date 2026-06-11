@@ -11,6 +11,13 @@ import type {
 } from "@/modules/service/domain/work-order-stats"
 import type { UUID } from "@/types/shared"
 
+/** Result of generating a Work Order from a Quote (E5 + hardening counts). */
+export type CreateFromQuoteResult = {
+  workOrder: WorkOrder
+  serviceLineCount: number
+  productLineCount: number
+}
+
 export interface WorkOrderRepository {
   list(
     tenantId: UUID,
@@ -52,7 +59,7 @@ export interface WorkOrderRepository {
   createFromQuote(
     tenantId: UUID,
     params: { quoteId: UUID; createdBy: UUID; workOrderNumber: string },
-  ): Promise<WorkOrder>
+  ): Promise<CreateFromQuoteResult>
   nextWorkOrderNumber(tenantId: UUID): Promise<string>
   getStats(tenantId: UUID): Promise<WorkOrderStats>
   getAssetServiceSummary(
