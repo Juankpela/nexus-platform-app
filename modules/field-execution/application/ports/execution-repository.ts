@@ -3,6 +3,7 @@ import type {
   ExecutionStatus,
   WorkerAssignment,
 } from "@/modules/field-execution/domain/execution"
+import type { FieldMonitorBoard } from "@/modules/field-execution/domain/field-monitor"
 import type { UUID } from "@/types/shared"
 
 /** Mutable execution fields the use-cases may set on a transition. */
@@ -51,4 +52,6 @@ export interface ExecutionRepository {
     id: UUID,
     patch: ExecutionPatch,
   ): Promise<Execution>
+  /** Oversight read model: each technician and their current field status. */
+  getFieldMonitor(tenantId: UUID): Promise<FieldMonitorBoard>
 }

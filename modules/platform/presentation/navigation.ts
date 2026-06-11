@@ -15,6 +15,7 @@ import {
   Package,
   PackageSearch,
   Radar,
+  Radio,
   Receipt,
   Settings,
   Wallet,
@@ -88,6 +89,7 @@ export const workspaceNavigation: NavigationItem[] = [
   { label: "Technicians", segment: "technicians", icon: HardHat, permission: SERVICE_PERMISSIONS.techniciansRead, group: "Field Service" },
   { label: "Schedule", segment: "schedule", icon: CalendarClock, permission: SERVICE_PERMISSIONS.schedulingRead, group: "Field Service" },
   { label: "Dispatch", segment: "dispatch", icon: Radar, permission: SERVICE_PERMISSIONS.dispatchRead, group: "Field Service" },
+  { label: "Monitor de Campo", segment: "field-monitor", icon: Radio, permission: SERVICE_PERMISSIONS.dispatchRead, group: "Field Service" },
   { label: "Calendar", segment: "calendar", icon: CalendarDays, permission: SERVICE_PERMISSIONS.schedulingRead, group: "Field Service" },
 
   // ── Revenue ──────────────────────────────────────────────────────────────

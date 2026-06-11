@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { z } from "zod"
 
 import { ApplicationError } from "@/lib/errors/application-error"
+import { broadcastFieldMonitorUpdate } from "@/lib/realtime/field-monitor-broadcast"
 import {
   SERVICE_PERMISSIONS,
   hasPermission,
@@ -92,6 +93,8 @@ async function transition(
       resolutionNotes: extras?.resolutionNotes,
       unableReason: extras?.unableReason,
     })
+    // Notify the tenant's Field Monitor (admin live view) to refresh.
+    await broadcastFieldMonitorUpdate(context.tenantId)
   } catch (error) {
     return { error: describe(error), ok: false }
   }

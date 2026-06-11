@@ -38,3 +38,7 @@ export function advanceExecutionRecord(input: AdvanceExecutionInput) {
     input,
   )
 }
+
+export function getFieldMonitorBoard(tenantId: UUID) {
+  return executionRepo().getFieldMonitor(tenantId)
+}

@@ -8,8 +8,15 @@ import type {
 } from "@/modules/field-execution/application/ports/execution-repository"
 import type {
   Execution,
+  ExecutionStatus,
   WorkerAssignment,
 } from "@/modules/field-execution/domain/execution"
+import {
+  ACTIVE_EXECUTION_STATUSES,
+  type FieldMonitorBoard,
+  type FieldMonitorEntry,
+  type FieldMonitorJob,
+} from "@/modules/field-execution/domain/field-monitor"
 import type { Database } from "@/types/database"
 import type { UUID } from "@/types/shared"
 
@@ -232,5 +239,144 @@ export class SupabaseExecutionRepository implements ExecutionRepository {
       )
     }
     return toExecution(data)
+  }
+
+  async getFieldMonitor(tenantId: UUID): Promise<FieldMonitorBoard> {
+    const client = await createServerSupabaseClient()
+
+    const [techRes, execRes] = await Promise.all([
+      client
+        .from("technicians")
+        .select("id, first_name, last_name, status")
+        .eq("tenant_id", tenantId)
+        .is("deleted_at", null)
+        .order("first_name", { ascending: true }),
+      client
+        .from("work_order_executions")
+        .select(
+          "assignment_id, work_order_id, technician_id, status, " +
+            "accepted_at, arrived_at, started_at, completed_at, " +
+            "unable_to_complete_at, updated_at, " +
+            "work_orders(work_order_number, subject, priority, companies(name))",
+        )
+        .eq("tenant_id", tenantId)
+        .order("updated_at", { ascending: false }),
+    ])
+
+    if (techRes.error) {
+      throw new ApplicationError(
+        "Unable to load technicians.",
+        "FIELD_MONITOR_FAILED",
+        techRes.error,
+      )
+    }
+    if (execRes.error) {
+      throw new ApplicationError(
+        "Unable to load field executions.",
+        "FIELD_MONITOR_FAILED",
+        execRes.error,
+      )
+    }
+
+    const startOfTodayUtc = new Date()
+    startOfTodayUtc.setUTCHours(0, 0, 0, 0)
+
+    const execRows = (execRes.data ?? []) as unknown as FieldExecutionRow[]
+    const byTechnician = new Map<
+      string,
+      { active: FieldMonitorJob | null; completedToday: number }
+    >()
+
+    for (const row of execRows) {
+      const bucket = byTechnician.get(row.technician_id) ?? {
+        active: null,
+        completedToday: 0,
+      }
+      if (
+        row.status === "completed" &&
+        row.completed_at &&
+        new Date(row.completed_at) >= startOfTodayUtc
+      ) {
+        bucket.completedToday += 1
+      }
+      // Rows arrive newest-first, so the first active one we see is the latest.
+      if (!bucket.active && ACTIVE_EXECUTION_STATUSES.includes(row.status)) {
+        bucket.active = toFieldMonitorJob(row)
+      }
+      byTechnician.set(row.technician_id, bucket)
+    }
+
+    const entries: FieldMonitorEntry[] = (techRes.data ?? []).map((t) => {
+      const bucket = byTechnician.get(t.id)
+      const name = [t.first_name, t.last_name].filter(Boolean).join(" ").trim()
+      return {
+        technicianId: t.id,
+        technicianName: name || "Técnico",
+        technicianStatus: t.status,
+        activeJob: bucket?.active ?? null,
+        completedToday: bucket?.completedToday ?? 0,
+      }
+    })
+
+    // Active technicians first, then by name (the map preserves insert order).
+    entries.sort((a, b) => {
+      const aActive = a.activeJob ? 0 : 1
+      const bActive = b.activeJob ? 0 : 1
+      if (aActive !== bActive) return aActive - bActive
+      return a.technicianName.localeCompare(b.technicianName)
+    })
+
+    return { generatedAt: new Date().toISOString(), entries }
+  }
+}
+
+type FieldExecutionRow = {
+  assignment_id: string | null
+  work_order_id: string
+  technician_id: string
+  status: ExecutionStatus
+  accepted_at: string | null
+  arrived_at: string | null
+  started_at: string | null
+  completed_at: string | null
+  unable_to_complete_at: string | null
+  updated_at: string
+  work_orders: {
+    work_order_number: string
+    subject: string
+    priority: string | null
+    companies: { name: string } | null
+  } | null
+}
+
+function sinceFor(row: FieldExecutionRow): string | null {
+  switch (row.status) {
+    case "accepted":
+      return row.accepted_at
+    case "on_site":
+      return row.arrived_at
+    case "working":
+      return row.started_at
+    case "completed":
+      return row.completed_at
+    case "unable_to_complete":
+      return row.unable_to_complete_at
+    default:
+      return null
+  }
+}
+
+function toFieldMonitorJob(row: FieldExecutionRow): FieldMonitorJob {
+  const wo = row.work_orders
+  return {
+    assignmentId: row.assignment_id,
+    workOrderId: row.work_order_id,
+    workOrderNumber: wo?.work_order_number ?? null,
+    workOrderSubject: wo?.subject ?? null,
+    companyName: wo?.companies?.name ?? null,
+    priority: wo?.priority ?? null,
+    executionStatus: row.status,
+    since: sinceFor(row),
+    updatedAt: row.updated_at,
   }
 }
