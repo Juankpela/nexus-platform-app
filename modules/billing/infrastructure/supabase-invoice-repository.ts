@@ -178,7 +178,7 @@ export class SupabaseInvoiceRepository implements InvoiceRepository {
     const { data: wo, error: woError } = await client
       .from("work_orders")
       .select(
-        "id, company_id, billable, billing_approved_at, status, labor_hours",
+        "id, company_id, billable, billing_approved_at, status, labor_hours, quote_id",
       )
       .eq("tenant_id", tenantId)
       .eq("id", workOrderId)
@@ -248,18 +248,83 @@ export class SupabaseInvoiceRepository implements InvoiceRepository {
 
     const invoice = toInvoice(data as unknown as Record<string, unknown>)
 
-    // E2-H2 — pre-populate draft lines from the WO's consumed materials and labor.
-    // Quantities are seeded; unit prices are 0 — the billing role sets the sale
-    // price in the draft (decision A, 2026-06-11). Totals stay 0 until then.
-    await this.seedLinesFromWorkOrder(
-      client,
-      tenantId,
-      invoice.id,
-      workOrderId,
-      wo.labor_hours,
-    )
+    if (wo.quote_id) {
+      // E5 — Quote origin: seed from the quote's SERVICE lines at their pre-agreed
+      // prices. Product lines wait for Sales Order (E6).
+      await this.seedLinesFromQuote(client, tenantId, invoice.id, wo.quote_id)
+    } else {
+      // E2-H2 — Case origin: seed quantities from consumed materials and labor;
+      // unit prices are 0 (the billing role sets the sale price in the draft).
+      await this.seedLinesFromWorkOrder(
+        client,
+        tenantId,
+        invoice.id,
+        workOrderId,
+        wo.labor_hours,
+      )
+    }
 
     return invoice
+  }
+
+  /** E5 — seed invoice_lines from a quote's service lines (pre-agreed prices). */
+  private async seedLinesFromQuote(
+    client: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+    tenantId: UUID,
+    invoiceId: UUID,
+    quoteId: UUID,
+  ): Promise<void> {
+    const { data: quoteLines } = await client
+      .from("quote_lines")
+      .select(
+        "product_id, quantity, unit_price, discount_amount, products(name, product_type)",
+      )
+      .eq("tenant_id", tenantId)
+      .eq("quote_id", quoteId)
+      .order("sort_order")
+
+    type Row = {
+      product_id: string
+      quantity: number
+      unit_price: number
+      discount_amount: number
+      products:
+        | { name: string; product_type: string }
+        | { name: string; product_type: string }[]
+        | null
+    }
+
+    const lines: InvoiceLineInsert[] = []
+    let sortOrder = 0
+
+    for (const row of (quoteLines ?? []) as unknown as Row[]) {
+      const prod = Array.isArray(row.products) ? row.products[0] : row.products
+      // Only SERVICE lines flow to the Work Order invoice (E5 decision).
+      if (prod?.product_type !== "service") continue
+
+      const qty = Number(row.quantity)
+      const unit = Number(row.unit_price)
+      const discount = Number(row.discount_amount)
+      const lineTotal = Math.max(0, qty * unit - discount)
+      lines.push({
+        tenant_id: tenantId,
+        invoice_id: invoiceId,
+        product_id: row.product_id,
+        description: prod?.name ?? "Servicio",
+        quantity: qty,
+        unit_price: unit,
+        discount_amount: discount,
+        tax_rate: 0,
+        tax_amount: 0,
+        line_total: lineTotal,
+        sort_order: sortOrder++,
+      })
+    }
+
+    if (lines.length > 0) {
+      await client.from("invoice_lines").insert(lines)
+      await this.recalculateTotals(tenantId, invoiceId)
+    }
   }
 
   /** E2-H2 — seed invoice_lines from consumed materials + labor (price 0). */

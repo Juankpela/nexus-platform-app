@@ -24,11 +24,12 @@ type WorkOrderRow = Database["public"]["Tables"]["work_orders"]["Row"]
 type WorkOrderRowWithRefs = WorkOrderRow & {
   companies: { name: string } | null
   cases: { case_number: string } | null
+  quotes: { quote_number: string } | null
   assets: { name: string; asset_number: string } | null
 }
 
 const SELECT_WITH_REFS =
-  "*, companies(name), cases(case_number), assets(name, asset_number)"
+  "*, companies(name), cases(case_number), quotes(quote_number), assets(name, asset_number)"
 
 function toWorkOrder(row: WorkOrderRowWithRefs): WorkOrder {
   return {
@@ -38,6 +39,8 @@ function toWorkOrder(row: WorkOrderRowWithRefs): WorkOrder {
     companyName: row.companies?.name ?? null,
     caseId: row.case_id,
     caseNumber: row.cases?.case_number ?? null,
+    quoteId: row.quote_id,
+    quoteNumber: row.quotes?.quote_number ?? null,
     assetId: row.asset_id,
     assetName: row.assets
       ? `${row.assets.asset_number} · ${row.assets.name}`
@@ -279,6 +282,82 @@ export class SupabaseWorkOrderRepository implements WorkOrderRepository {
         error,
       )
     }
+  }
+
+  async findByQuote(tenantId: UUID, quoteId: UUID): Promise<WorkOrder | null> {
+    const client = await createServerSupabaseClient()
+    const { data, error } = await client
+      .from("work_orders")
+      .select(SELECT_WITH_REFS)
+      .eq("tenant_id", tenantId)
+      .eq("quote_id", quoteId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (error) {
+      throw new ApplicationError(
+        "Unable to look up work order by quote.",
+        "WORK_ORDER_QUOTE_LOOKUP_FAILED",
+        error,
+      )
+    }
+    return data ? toWorkOrder(data as unknown as WorkOrderRowWithRefs) : null
+  }
+
+  async createFromQuote(
+    tenantId: UUID,
+    params: { quoteId: UUID; createdBy: UUID; workOrderNumber: string },
+  ): Promise<WorkOrder> {
+    const client = await createServerSupabaseClient()
+
+    const { data: quote, error: qErr } = await client
+      .from("quotes")
+      .select("id, company_id, status, quote_number")
+      .eq("tenant_id", tenantId)
+      .eq("id", params.quoteId)
+      .maybeSingle()
+
+    if (qErr) {
+      throw new ApplicationError(
+        "Unable to load quote.",
+        "QUOTE_LOAD_FAILED",
+        qErr,
+      )
+    }
+    if (!quote) {
+      throw new ApplicationError("Quote not found.", "QUOTE_NOT_FOUND")
+    }
+    if (quote.status !== "accepted") {
+      throw new ApplicationError(
+        "Only accepted quotes can generate a work order.",
+        "QUOTE_NOT_ACCEPTED",
+      )
+    }
+
+    const { data, error } = await client
+      .from("work_orders")
+      .insert({
+        tenant_id: tenantId,
+        created_by: params.createdBy,
+        work_order_number: params.workOrderNumber,
+        company_id: quote.company_id,
+        quote_id: params.quoteId,
+        subject: `Servicio · ${quote.quote_number}`,
+        priority: "medium",
+        billable: true,
+      })
+      .select(SELECT_WITH_REFS)
+      .single()
+
+    if (error || !data) {
+      throw new ApplicationError(
+        "Unable to create work order from quote.",
+        "WORK_ORDER_FROM_QUOTE_FAILED",
+        error,
+      )
+    }
+    return toWorkOrder(data as unknown as WorkOrderRowWithRefs)
   }
 
   async setBillable(

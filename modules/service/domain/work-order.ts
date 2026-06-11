@@ -70,6 +70,8 @@ export type WorkOrder = {
   companyName: string | null
   caseId: UUID | null
   caseNumber: string | null
+  quoteId: UUID | null
+  quoteNumber: string | null
   assetId: UUID | null
   assetName: string | null
   assignedTechnicianId: UUID | null

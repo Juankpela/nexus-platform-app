@@ -12,6 +12,7 @@ import {
   approveWorkOrderRecordBilling,
   assignWorkOrderRecordTechnician,
   changeWorkOrderRecordStatus,
+  createWorkOrderFromQuoteRecord,
   createWorkOrderRecord,
   setWorkOrderRecordBillable,
   updateWorkOrderRecord,
@@ -120,6 +121,15 @@ function describeError(error: unknown): string {
   ) {
     return "Solo las órdenes completadas pueden aprobarse para facturación."
   }
+  if (error instanceof ApplicationError && error.code === "QUOTE_NOT_ACCEPTED") {
+    return "Solo las cotizaciones aceptadas pueden generar una orden de trabajo."
+  }
+  if (
+    error instanceof ApplicationError &&
+    error.code === "QUOTE_ALREADY_HAS_WORK_ORDER"
+  ) {
+    return "Esta cotización ya tiene una orden de trabajo."
+  }
   return "No se pudo completar la acción."
 }
 
@@ -216,6 +226,36 @@ export async function setWorkOrderStatusAction(
 
   revalidate(tenantSlug, id.data)
   return { error: null, ok: true }
+}
+
+export type CreateWorkOrderFromQuoteState = ServiceActionState & {
+  workOrderId?: string
+}
+
+export async function createWorkOrderFromQuoteAction(
+  tenantSlug: string,
+  quoteId: string,
+): Promise<CreateWorkOrderFromQuoteState> {
+  const id = idSchema.safeParse(quoteId)
+  if (!tenantSlug || !id.success) return fail("Solicitud inválida.")
+
+  try {
+    const context = await requireServiceContext(
+      tenantSlug,
+      SERVICE_PERMISSIONS.workOrdersWrite,
+    )
+    const workOrder = await createWorkOrderFromQuoteRecord({
+      actorId: context.userId,
+      tenantId: context.tenantId,
+      requestId: context.requestId,
+      quoteId: id.data,
+    })
+    revalidate(tenantSlug, workOrder.id)
+    revalidatePath(`/app/${tenantSlug}/quotes/${quoteId}`)
+    return { error: null, ok: true, workOrderId: workOrder.id }
+  } catch (error) {
+    return fail(describeError(error))
+  }
 }
 
 export async function setWorkOrderBillableAction(

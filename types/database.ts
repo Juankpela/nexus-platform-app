@@ -2385,6 +2385,7 @@ export type Database = {
           id: string
           labor_hours: number | null
           priority: Database["public"]["Enums"]["work_order_priority"]
+          quote_id: string | null
           resolution_summary: string | null
           scheduled_end: string | null
           scheduled_start: string | null
@@ -2411,6 +2412,7 @@ export type Database = {
           id?: string
           labor_hours?: number | null
           priority?: Database["public"]["Enums"]["work_order_priority"]
+          quote_id?: string | null
           resolution_summary?: string | null
           scheduled_end?: string | null
           scheduled_start?: string | null
@@ -2437,6 +2439,7 @@ export type Database = {
           id?: string
           labor_hours?: number | null
           priority?: Database["public"]["Enums"]["work_order_priority"]
+          quote_id?: string | null
           resolution_summary?: string | null
           scheduled_end?: string | null
           scheduled_start?: string | null
@@ -2466,6 +2469,13 @@ export type Database = {
             columns: ["company_id", "tenant_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "work_orders_quote_id_tenant_id_fkey"
+            columns: ["quote_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
             referencedColumns: ["id", "tenant_id"]
           },
           {

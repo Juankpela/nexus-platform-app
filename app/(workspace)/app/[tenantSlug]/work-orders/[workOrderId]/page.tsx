@@ -260,6 +260,7 @@ export default async function WorkOrderDetailPage({
             <Detail label="Empresa" value={workOrder.companyName} />
             <Detail label="Activo" value={workOrder.assetName} />
             <Detail label="Caso origen" value={workOrder.caseNumber} />
+            <Detail label="Cotización origen" value={workOrder.quoteNumber} />
             <Detail label="Técnico asignado" value={technicianLabel} />
             <Detail label="Inicio programado" value={fmt(workOrder.scheduledStart)} />
             <Detail label="Fin programado" value={fmt(workOrder.scheduledEnd)} />

@@ -46,6 +46,13 @@ export interface WorkOrderRepository {
     approvedBy: UUID,
     approvedAt: string,
   ): Promise<void>
+  /** E5 — guard: an existing work order generated from this quote. */
+  findByQuote(tenantId: UUID, quoteId: UUID): Promise<WorkOrder | null>
+  /** E5 — create a billable work order from an accepted quote (service lines). */
+  createFromQuote(
+    tenantId: UUID,
+    params: { quoteId: UUID; createdBy: UUID; workOrderNumber: string },
+  ): Promise<WorkOrder>
   nextWorkOrderNumber(tenantId: UUID): Promise<string>
   getStats(tenantId: UUID): Promise<WorkOrderStats>
   getAssetServiceSummary(

@@ -51,6 +51,10 @@ import {
   createWorkOrder,
   type CreateWorkOrderInput,
 } from "@/modules/service/application/use-cases/create-work-order"
+import {
+  createWorkOrderFromQuote,
+  type CreateWorkOrderFromQuoteInput,
+} from "@/modules/service/application/use-cases/create-work-order-from-quote"
 import { listWorkOrders } from "@/modules/service/application/use-cases/list-work-orders"
 import {
   updateWorkOrder,
@@ -210,6 +214,15 @@ export function updateWorkOrderRecord(input: UpdateWorkOrderInput) {
 
 export function changeWorkOrderRecordStatus(input: ChangeWorkOrderStatusInput) {
   return changeWorkOrderStatus(
+    { workOrders: workOrderRepo(), audit: audit() },
+    input,
+  )
+}
+
+export function createWorkOrderFromQuoteRecord(
+  input: CreateWorkOrderFromQuoteInput,
+) {
+  return createWorkOrderFromQuote(
     { workOrders: workOrderRepo(), audit: audit() },
     input,
   )

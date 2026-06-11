@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
 import {
   CRM_PERMISSIONS,
+  SERVICE_PERMISSIONS,
   hasPermission,
 } from "@/modules/authorization/domain/permission"
 import {
@@ -25,6 +26,7 @@ import {
 } from "@/modules/crm/domain/quote"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 import { QuoteDetailActions } from "./_components/quote-detail-actions"
+import { GenerateWorkOrderButton } from "./_components/generate-work-order-button"
 
 export const metadata: Metadata = { title: "Quote Detail" }
 
@@ -40,6 +42,10 @@ export default async function QuoteDetailPage({
   const canWrite = hasPermission(
     context.effectivePermissions,
     CRM_PERMISSIONS.quotesWrite,
+  )
+  const canCreateWorkOrder = hasPermission(
+    context.effectivePermissions,
+    SERVICE_PERMISSIONS.workOrdersWrite,
   )
 
   const [quote, lines, companies, contacts, opportunities, priceBooks, auditEvents] =
@@ -90,15 +96,20 @@ export default async function QuoteDetailPage({
             </p>
           )}
         </div>
-        <Button asChild variant="outline" size="sm">
-          <Link
-            href={`/app/${tenantSlug}/quotes/${quoteId}/print`}
-            target="_blank"
-          >
-            <ExternalLink className="mr-2 h-4 w-4" />
-            Print / PDF
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          {canCreateWorkOrder && quote.status === "accepted" && (
+            <GenerateWorkOrderButton tenantSlug={tenantSlug} quoteId={quoteId} />
+          )}
+          <Button asChild variant="outline" size="sm">
+            <Link
+              href={`/app/${tenantSlug}/quotes/${quoteId}/print`}
+              target="_blank"
+            >
+              <ExternalLink className="mr-2 h-4 w-4" />
+              Print / PDF
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Status control + edit + revision */}
