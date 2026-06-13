@@ -1,7 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server"
 
 import { env } from "@/lib/config/env"
-import { runOverdueScanBatch } from "@/modules/scheduling/composition"
+import {
+  runOverdueScanBatch,
+  runRescheduleProposalsBatch,
+} from "@/modules/scheduling/composition"
 
 // Internal scheduled sweep (NOT a public API). Invoked only by Vercel Cron, which
 // sends `Authorization: Bearer <CRON_SECRET>`. Reconciles overdue/at-risk work
@@ -13,8 +16,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
   try {
-    const result = await runOverdueScanBatch()
-    return NextResponse.json({ ok: true, ...result })
+    // Same per-tenant sweep: SLA alerts (PR2) + dry-run reschedule proposals (PR5b).
+    const alerts = await runOverdueScanBatch()
+    const reschedule = await runRescheduleProposalsBatch()
+    return NextResponse.json({ ok: true, alerts, reschedule })
   } catch (e) {
     const message = e instanceof Error ? e.message : "Scan error"
     return NextResponse.json({ ok: false, error: message }, { status: 500 })

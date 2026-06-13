@@ -11,7 +11,9 @@ import { listAssignments } from "@/modules/scheduling/application/use-cases/list
 import { scanOverdueWorkOrders } from "@/modules/scheduling/application/use-cases/scan-overdue-work-orders"
 import { projectSlaAlertBoard } from "@/modules/scheduling/domain/sla-alert-board"
 import type { EligibilityRequirement } from "@/modules/scheduling/domain/eligibility"
+import { proposeReschedulesForTenant } from "@/modules/scheduling/application/use-cases/propose-reschedules"
 import { SupabaseEligibilityResolver } from "@/modules/scheduling/infrastructure/supabase-eligibility-resolver"
+import { SupabaseRescheduleCandidateReader } from "@/modules/scheduling/infrastructure/supabase-reschedule-candidate-reader"
 import {
   reassignWorkOrder,
   type ReassignWorkOrderInput,
@@ -134,4 +136,40 @@ export function runOverdueScanBatch() {
     requestId: crypto.randomUUID(),
     atRiskWindowMs: OVERDUE_AT_RISK_WINDOW_MS,
   })
+}
+
+/** How far ahead the reschedule engine searches for the next free slot. */
+const RESCHEDULE_HORIZON_DAYS = 14
+
+/**
+ * Dry-run auto-reschedule proposals (PR5b, ADR-029). Per-tenant sweep from the
+ * scanning cron, service role. Emits `scheduling.reschedule_proposed` audit
+ * events — WRITES NOTHING to assignments. Authorized only by disposition.
+ */
+export async function runRescheduleProposalsBatch() {
+  const admin = createAdminSupabaseClient()
+  const tenantIds = await new SupabaseOverdueScanRepository(admin).listActiveTenantIds()
+  const deps = {
+    reader: new SupabaseRescheduleCandidateReader(admin, TENANT_TIMEZONE),
+    audit: new SupabaseAuditRepository(() => admin),
+    nowMs: Date.now(),
+    requestId: crypto.randomUUID(),
+    timeZone: TENANT_TIMEZONE,
+    horizonDays: RESCHEDULE_HORIZON_DAYS,
+  }
+  const batch = { tenants: 0, evaluated: 0, proposed: 0, needsHuman: 0, noSlot: 0, errors: 0 }
+  for (const tenantId of tenantIds) {
+    try {
+      const r = await proposeReschedulesForTenant(deps, tenantId)
+      batch.tenants += 1
+      batch.evaluated += r.evaluated
+      batch.proposed += r.rescheduleProposals
+      batch.needsHuman += r.needsHuman
+      batch.noSlot += r.noSlot
+      batch.errors += r.errors
+    } catch {
+      batch.errors += 1
+    }
+  }
+  return batch
 }
