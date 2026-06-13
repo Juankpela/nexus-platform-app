@@ -126,6 +126,19 @@ export type WorkOrderInput = {
   completionNotes: string | null
 }
 
+/**
+ * Minimal read projection for live SLA-timing views (e.g. the dispatch alerts
+ * card). Only open WOs that carry an SLA deadline — see the PR1 partial index.
+ */
+export type WorkOrderSlaView = {
+  id: UUID
+  workOrderNumber: string
+  subject: string
+  status: WorkOrderStatus
+  scheduledEnd: string | null
+  slaDueAt: string
+}
+
 export type WorkOrderFilters = {
   search: string | null
   status: WorkOrderStatus | null

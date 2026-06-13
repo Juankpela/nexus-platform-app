@@ -3,6 +3,7 @@ import type {
   WorkOrder,
   WorkOrderFilters,
   WorkOrderInput,
+  WorkOrderSlaView,
   WorkOrderStatus,
 } from "@/modules/service/domain/work-order"
 import type {
@@ -28,6 +29,8 @@ export interface WorkOrderRepository {
   getById(tenantId: UUID, id: UUID): Promise<WorkOrder | null>
   listForCase(tenantId: UUID, caseId: UUID): Promise<WorkOrder[]>
   listForAsset(tenantId: UUID, assetId: UUID): Promise<WorkOrder[]>
+  /** Open WOs carrying an SLA deadline — for live SLA-timing views (dispatch card). */
+  listOpenWithSla(tenantId: UUID): Promise<WorkOrderSlaView[]>
   create(
     tenantId: UUID,
     params: { createdBy: UUID; workOrderNumber: string; input: WorkOrderInput },

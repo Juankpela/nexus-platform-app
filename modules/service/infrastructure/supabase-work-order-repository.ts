@@ -14,6 +14,7 @@ import {
   type WorkOrderFilters,
   type WorkOrderInput,
   type WorkOrderPriority,
+  type WorkOrderSlaView,
   type WorkOrderStatus,
 } from "@/modules/service/domain/work-order"
 import type {
@@ -163,6 +164,35 @@ export class SupabaseWorkOrderRepository implements WorkOrderRepository {
 
   async listForCase(tenantId: UUID, caseId: UUID): Promise<WorkOrder[]> {
     return this.listBy("case_id", tenantId, caseId)
+  }
+
+  async listOpenWithSla(tenantId: UUID): Promise<WorkOrderSlaView[]> {
+    const client = await createServerSupabaseClient()
+    // Same predicate as the PR1 partial index: open WOs that carry an SLA
+    // deadline. RLS (service.work_orders.read) applies — a user without it
+    // simply sees an empty card.
+    const { data, error } = await client
+      .from("work_orders")
+      .select("id, work_order_number, subject, status, scheduled_end, sla_due_at")
+      .eq("tenant_id", tenantId)
+      .not("sla_due_at", "is", null)
+      .not("status", "in", "(completed,cancelled)")
+
+    if (error) {
+      throw new ApplicationError(
+        "Unable to list work orders with SLA.",
+        "WORK_ORDER_SLA_LIST_FAILED",
+        error,
+      )
+    }
+    return (data ?? []).map((row) => ({
+      id: row.id,
+      workOrderNumber: row.work_order_number,
+      subject: row.subject,
+      status: row.status,
+      scheduledEnd: row.scheduled_end,
+      slaDueAt: row.sla_due_at as string,
+    }))
   }
 
   async listForAsset(tenantId: UUID, assetId: UUID): Promise<WorkOrder[]> {

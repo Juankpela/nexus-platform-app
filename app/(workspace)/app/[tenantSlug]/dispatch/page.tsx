@@ -12,6 +12,7 @@ import { EmptyState } from "@/components/layout/empty-state"
 import { PageHeader } from "@/components/layout/page-header"
 import { KpiCard } from "@/components/dashboard/kpi-card"
 import { RefreshBoardButton } from "@/components/dispatch/refresh-board-button"
+import { SlaAlertsCard } from "@/components/dispatch/sla-alerts-card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
@@ -20,6 +21,7 @@ import {
   getTenantDispatchBoard,
   getTenantDispatchStats,
 } from "@/modules/dispatch/composition"
+import { getTenantSlaAlerts } from "@/modules/scheduling/composition"
 import {
   WORKLOAD_STATUS_LABELS,
   type WorkloadStatus,
@@ -97,9 +99,10 @@ export default async function DispatchPage({
   const date = /^\d{4}-\d{2}-\d{2}$/.test(sp.date ?? "") ? sp.date! : todayUtc()
   const basePath = `/app/${tenantSlug}/dispatch`
 
-  const [board, stats] = await Promise.all([
+  const [board, stats, slaAlerts] = await Promise.all([
     getTenantDispatchBoard(context.tenantId, date),
     getTenantDispatchStats(context.tenantId, date),
+    getTenantSlaAlerts(context.tenantId),
   ])
 
   const tabClass = (t: Tab) =>
@@ -148,6 +151,8 @@ export default async function DispatchPage({
             <RefreshBoardButton tenantSlug={tenantSlug} />
           </div>
         </div>
+
+        <SlaAlertsCard board={slaAlerts} tenantSlug={tenantSlug} />
 
         {tab === "stats" ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

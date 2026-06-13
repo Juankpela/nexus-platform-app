@@ -9,6 +9,7 @@ import {
 import { getSchedulingStats } from "@/modules/scheduling/application/use-cases/get-scheduling-stats"
 import { listAssignments } from "@/modules/scheduling/application/use-cases/list-assignments"
 import { scanOverdueWorkOrders } from "@/modules/scheduling/application/use-cases/scan-overdue-work-orders"
+import { projectSlaAlertBoard } from "@/modules/scheduling/domain/sla-alert-board"
 import {
   reassignWorkOrder,
   type ReassignWorkOrderInput,
@@ -89,6 +90,20 @@ export function unassignWorkOrderRecord(input: UnassignWorkOrderInput) {
 
 /** At-risk lead time before SLA breach. Daily cron makes this best-effort (R4). */
 const OVERDUE_AT_RISK_WINDOW_MS = 2 * 60 * 60 * 1000
+
+/**
+ * Live SLA-alert projection for the dispatch card. Reads open WOs with an SLA
+ * through the user (RLS) client and classifies them in-request — stateless,
+ * derived, NOT backed by the scanner cursor or audit. Same SLA-only scope as
+ * the scanner so the durable signal and the visual view stay consistent.
+ */
+export async function getTenantSlaAlerts(tenantId: UUID) {
+  const rows = await workOrderReader().listOpenWithSla(tenantId)
+  return projectSlaAlertBoard(rows, {
+    nowMs: Date.now(),
+    atRiskWindowMs: OVERDUE_AT_RISK_WINDOW_MS,
+  })
+}
 
 /**
  * Periodic overdue/at-risk sweep. Runs from the cron with the SERVICE-ROLE
