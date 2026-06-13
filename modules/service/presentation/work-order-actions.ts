@@ -86,6 +86,7 @@ function readWorkOrderInput(formData: FormData): ParsedWorkOrder {
       assetId: assetParsed?.success ? assetParsed.data : null,
       scheduledStart: parseTimestamp(field(formData, "scheduled_start")),
       scheduledEnd: parseTimestamp(field(formData, "scheduled_end")),
+      slaDueAt: parseTimestamp(field(formData, "sla_due_at")),
       laborHours,
       resolutionSummary: field(formData, "resolution_summary"),
       completionNotes: field(formData, "completion_notes"),

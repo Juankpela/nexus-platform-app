@@ -209,6 +209,14 @@ export function WorkOrderFormDialog({
                 defaultValue={toLocalInput(workOrder?.scheduledEnd ?? null)}
               />
             </Field>
+            <Field label="Vencimiento SLA" htmlFor="sla_due_at">
+              <Input
+                id="sla_due_at"
+                name="sla_due_at"
+                type="datetime-local"
+                defaultValue={toLocalInput(workOrder?.slaDueAt ?? null)}
+              />
+            </Field>
             <Field label="Horas de trabajo" htmlFor="labor_hours">
               <Input
                 id="labor_hours"

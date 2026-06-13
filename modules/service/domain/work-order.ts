@@ -81,6 +81,8 @@ export type WorkOrder = {
   status: WorkOrderStatus
   scheduledStart: string | null
   scheduledEnd: string | null
+  /** SLA deadline — when the work must be finished by (distinct from the planned window). */
+  slaDueAt: string | null
   actualStart: string | null
   actualEnd: string | null
   laborHours: number | null
@@ -118,6 +120,7 @@ export type WorkOrderInput = {
   assetId: UUID | null
   scheduledStart: string | null
   scheduledEnd: string | null
+  slaDueAt: string | null
   laborHours: number | null
   resolutionSummary: string | null
   completionNotes: string | null

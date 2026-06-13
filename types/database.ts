@@ -2462,6 +2462,7 @@ export type Database = {
           resolution_summary: string | null
           scheduled_end: string | null
           scheduled_start: string | null
+          sla_due_at: string | null
           status: Database["public"]["Enums"]["work_order_status"]
           subject: string
           tenant_id: string
@@ -2489,6 +2490,7 @@ export type Database = {
           resolution_summary?: string | null
           scheduled_end?: string | null
           scheduled_start?: string | null
+          sla_due_at?: string | null
           status?: Database["public"]["Enums"]["work_order_status"]
           subject: string
           tenant_id: string
@@ -2516,6 +2518,7 @@ export type Database = {
           resolution_summary?: string | null
           scheduled_end?: string | null
           scheduled_start?: string | null
+          sla_due_at?: string | null
           status?: Database["public"]["Enums"]["work_order_status"]
           subject?: string
           tenant_id?: string
