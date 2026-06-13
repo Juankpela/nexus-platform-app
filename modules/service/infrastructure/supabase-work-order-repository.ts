@@ -110,8 +110,21 @@ export class SupabaseWorkOrderRepository implements WorkOrderRepository {
 
     if (filters.status) query = query.eq("status", filters.status)
     if (filters.priority) query = query.eq("priority", filters.priority)
-    if (filters.technicianId)
-      query = query.eq("assigned_technician_id", filters.technicianId)
+    if (filters.technicianId) {
+      // ADR-031: filter by the active assignment's technician (technicians.id),
+      // not the legacy assigned_technician_id. Resolve matching WO ids first.
+      const { data: asg } = await client
+        .from("work_order_assignments")
+        .select("work_order_id")
+        .eq("tenant_id", tenantId)
+        .eq("technician_id", filters.technicianId)
+        .in("status", ["scheduled", "in_progress"])
+      const ids = [...new Set((asg ?? []).map((r) => r.work_order_id))]
+      query = query.in(
+        "id",
+        ids.length > 0 ? ids : ["00000000-0000-0000-0000-000000000000"],
+      )
+    }
     if (filters.companyId) query = query.eq("company_id", filters.companyId)
     if (filters.assetId) query = query.eq("asset_id", filters.assetId)
     if (filters.dateFrom) query = query.gte("scheduled_start", filters.dateFrom)
@@ -293,27 +306,6 @@ export class SupabaseWorkOrderRepository implements WorkOrderRepository {
       throw new ApplicationError(
         "Unable to change work order status.",
         "WORK_ORDER_STATUS_FAILED",
-        error,
-      )
-    }
-  }
-
-  async setTechnician(
-    tenantId: UUID,
-    id: UUID,
-    technicianId: UUID | null,
-  ): Promise<void> {
-    const client = await createServerSupabaseClient()
-    const { error } = await client
-      .from("work_orders")
-      .update({ assigned_technician_id: technicianId })
-      .eq("tenant_id", tenantId)
-      .eq("id", id)
-
-    if (error) {
-      throw new ApplicationError(
-        "Unable to assign technician.",
-        "WORK_ORDER_TECH_FAILED",
         error,
       )
     }

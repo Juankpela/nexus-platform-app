@@ -10,7 +10,6 @@ import {
 } from "@/modules/authorization/domain/permission"
 import {
   approveWorkOrderRecordBilling,
-  assignWorkOrderRecordTechnician,
   changeWorkOrderRecordStatus,
   createWorkOrderFromQuoteRecord,
   createWorkOrderRecord,
@@ -321,42 +320,6 @@ export async function approveWorkOrderBillingAction(
       requestId: context.requestId,
       id: id.data,
       approvedAt: new Date().toISOString(),
-    })
-  } catch (error) {
-    return fail(describeError(error))
-  }
-
-  revalidate(tenantSlug, id.data)
-  return { error: null, ok: true }
-}
-
-export async function assignWorkOrderTechnicianAction(
-  _state: ServiceActionState,
-  formData: FormData,
-): Promise<ServiceActionState> {
-  const tenantSlug = field(formData, "tenantSlug")
-  const id = idSchema.safeParse(field(formData, "id"))
-  if (!tenantSlug || !id.success) return fail("Solicitud inválida.")
-
-  const techRaw = field(formData, "technician_id")
-  let technicianId: string | null = null
-  if (techRaw) {
-    const tech = idSchema.safeParse(techRaw)
-    if (!tech.success) return fail("Técnico inválido.")
-    technicianId = tech.data
-  }
-
-  try {
-    const context = await requireServiceContext(
-      tenantSlug,
-      SERVICE_PERMISSIONS.workOrdersWrite,
-    )
-    await assignWorkOrderRecordTechnician({
-      actorId: context.userId,
-      tenantId: context.tenantId,
-      requestId: context.requestId,
-      id: id.data,
-      technicianId,
     })
   } catch (error) {
     return fail(describeError(error))

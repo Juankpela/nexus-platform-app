@@ -32,10 +32,6 @@ import {
   type UpdateAssetInput,
 } from "@/modules/service/application/use-cases/update-asset"
 import {
-  assignWorkOrderTechnician,
-  type AssignWorkOrderTechnicianInput,
-} from "@/modules/service/application/use-cases/assign-work-order-technician"
-import {
   changeWorkOrderStatus,
   type ChangeWorkOrderStatusInput,
 } from "@/modules/service/application/use-cases/change-work-order-status"
@@ -279,14 +275,6 @@ export function approveWorkOrderRecordBilling(
   )
 }
 
-export function assignWorkOrderRecordTechnician(
-  input: AssignWorkOrderTechnicianInput,
-) {
-  return assignWorkOrderTechnician(
-    { workOrders: workOrderRepo(), audit: audit() },
-    input,
-  )
-}
 
 // --- Technicians -----------------------------------------------------------
 export function listTenantTechnicians(

@@ -19,8 +19,10 @@ import type { CompanyOption } from "@/modules/crm/domain/company"
 import {
   listAssetOptions,
   listTenantCases,
+  listTenantTechnicians,
   listTenantWorkOrders,
 } from "@/modules/service/composition"
+import { technicianFullName } from "@/modules/service/domain/technician"
 import { getActiveAssignmentsByWorkOrder } from "@/modules/scheduling/composition"
 import {
   WORK_ORDER_PRIORITIES,
@@ -31,7 +33,6 @@ import {
   type WorkOrderStatus,
 } from "@/modules/service/domain/work-order"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
-import { listCachedTenantMembers } from "@/modules/tenancy/composition"
 import { cn } from "@/lib/utils"
 
 export const metadata: Metadata = { title: "Work Orders" }
@@ -122,7 +123,7 @@ export default async function WorkOrdersPage({
     dateTo,
   }
 
-  const [result, members, companyOptions, assetOptions, caseResult] =
+  const [result, techPage, companyOptions, assetOptions, caseResult] =
     await Promise.all([
       listTenantWorkOrders(
         context.tenantId,
@@ -130,7 +131,13 @@ export default async function WorkOrdersPage({
         isKanban ? 1 : page,
         isKanban ? KANBAN_PAGE_SIZE : PAGE_SIZE,
       ),
-      listCachedTenantMembers(context.tenantId),
+      listTenantTechnicians(
+        context.tenantId,
+        { search: null, status: null },
+        "name",
+        1,
+        200,
+      ),
       canWrite
         ? listCompanyOptions(context.tenantId)
         : Promise.resolve([] as CompanyOption[]),
@@ -145,9 +152,9 @@ export default async function WorkOrdersPage({
         : Promise.resolve({ items: [], total: 0, page: 1, pageSize: 0 }),
     ])
 
-  const technicianOptions = members.map((m) => ({
-    id: m.userId,
-    label: m.fullName ?? m.email ?? m.userId,
+  const technicianOptions = techPage.items.map((t) => ({
+    id: t.id,
+    label: technicianFullName(t),
   }))
   // ADR-031: "current technician" derives from the active assignment, not the
   // legacy assigned_technician_id — so the list agrees with the dispatch board.
