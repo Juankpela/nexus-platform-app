@@ -78,6 +78,18 @@ import { archiveSkill, type ArchiveSkillInput } from "@/modules/service/applicat
 import { assignTechnicianSkill, type AssignTechnicianSkillInput } from "@/modules/service/application/use-cases/assign-technician-skill"
 import { createSkill, type CreateSkillInput } from "@/modules/service/application/use-cases/create-skill"
 import { removeTechnicianSkill, type RemoveTechnicianSkillInput } from "@/modules/service/application/use-cases/remove-technician-skill"
+import {
+  addAvailabilityException,
+  addAvailabilityWindow,
+  removeAvailabilityException,
+  removeAvailabilityWindow,
+  setTechnicianCapacity,
+  type AddExceptionInput,
+  type AddWindowInput,
+  type RemoveExceptionInput,
+  type RemoveWindowInput,
+  type SetCapacityInput,
+} from "@/modules/service/application/use-cases/availability-use-cases"
 import { archiveZone, type ArchiveZoneInput } from "@/modules/service/application/use-cases/archive-zone"
 import { assignTechnicianZone, type AssignTechnicianZoneInput } from "@/modules/service/application/use-cases/assign-technician-zone"
 import { createZone, type CreateZoneInput } from "@/modules/service/application/use-cases/create-zone"
@@ -86,6 +98,7 @@ import { SupabaseAssetRepository } from "@/modules/service/infrastructure/supaba
 import { SupabaseCaseRepository } from "@/modules/service/infrastructure/supabase-case-repository"
 import { SupabaseSkillRepository } from "@/modules/service/infrastructure/supabase-skill-repository"
 import { SupabaseTechnicianRepository } from "@/modules/service/infrastructure/supabase-technician-repository"
+import { SupabaseAvailabilityRepository } from "@/modules/service/infrastructure/supabase-availability-repository"
 import { SupabaseZoneRepository } from "@/modules/service/infrastructure/supabase-zone-repository"
 import { SupabaseWorkOrderRepository } from "@/modules/service/infrastructure/supabase-work-order-repository"
 import type { AssetFilters } from "@/modules/service/domain/asset"
@@ -119,6 +132,10 @@ function skillRepo() {
 
 function zoneRepo() {
   return new SupabaseZoneRepository()
+}
+
+function availabilityRepo() {
+  return new SupabaseAvailabilityRepository()
 }
 
 function audit() {
@@ -353,4 +370,37 @@ export function assignTechnicianZoneRecord(input: AssignTechnicianZoneInput) {
 
 export function removeTechnicianZoneRecord(input: RemoveTechnicianZoneInput) {
   return removeTechnicianZone({ zones: zoneRepo(), audit: audit() }, input)
+}
+
+// --- Availability & capacity (PR3B) ----------------------------------------
+export function listTechnicianAvailability(tenantId: UUID, technicianId: UUID) {
+  return availabilityRepo().listWindows(tenantId, technicianId)
+}
+
+export function listTechnicianExceptions(tenantId: UUID, technicianId: UUID) {
+  return availabilityRepo().listExceptions(tenantId, technicianId)
+}
+
+export function getTechnicianCapacity(tenantId: UUID, technicianId: UUID) {
+  return availabilityRepo().getCapacity(tenantId, technicianId)
+}
+
+function availabilityDeps() {
+  return { availability: availabilityRepo(), audit: audit() }
+}
+
+export function addAvailabilityWindowRecord(input: AddWindowInput) {
+  return addAvailabilityWindow(availabilityDeps(), input)
+}
+export function removeAvailabilityWindowRecord(input: RemoveWindowInput) {
+  return removeAvailabilityWindow(availabilityDeps(), input)
+}
+export function addAvailabilityExceptionRecord(input: AddExceptionInput) {
+  return addAvailabilityException(availabilityDeps(), input)
+}
+export function removeAvailabilityExceptionRecord(input: RemoveExceptionInput) {
+  return removeAvailabilityException(availabilityDeps(), input)
+}
+export function setTechnicianCapacityRecord(input: SetCapacityInput) {
+  return setTechnicianCapacity(availabilityDeps(), input)
 }

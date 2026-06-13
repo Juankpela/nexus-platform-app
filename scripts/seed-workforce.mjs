@@ -182,8 +182,43 @@ async function main() {
   }
   console.log(`  zonas asignadas: ${zoneAssignments}`)
 
+  // 6. Disponibilidad: Lun–Vie 08:00–17:00 (480–1020) + capacidad. Idempotente:
+  //    solo inserta ventanas si el técnico aún no tiene ninguna.
+  const WORK_DAYS = [1, 2, 3, 4, 5] // 1=Lun … 5=Vie (0=Dom..6=Sáb)
+  let windowsInserted = 0
+  for (const tech of technicians) {
+    const existing = await req(
+      `${SUPABASE_URL}/rest/v1/technician_availability?tenant_id=eq.${tenantId}&technician_id=eq.${tech.id}&select=id`,
+    )
+    if (existing.length === 0) {
+      const rows = WORK_DAYS.map((weekday) => ({
+        tenant_id: tenantId,
+        technician_id: tech.id,
+        weekday,
+        start_minute: 480,
+        end_minute: 1020,
+      }))
+      await req(`${SUPABASE_URL}/rest/v1/technician_availability`, {
+        method: "POST",
+        headers: { Prefer: "return=minimal" },
+        body: JSON.stringify(rows),
+      })
+      windowsInserted += rows.length
+    }
+    // Capacidad (idempotente vía PATCH).
+    await req(
+      `${SUPABASE_URL}/rest/v1/technicians?id=eq.${tech.id}&tenant_id=eq.${tenantId}`,
+      {
+        method: "PATCH",
+        headers: { Prefer: "return=minimal" },
+        body: JSON.stringify({ max_work_orders_per_day: 6, max_minutes_per_day: 480 }),
+      },
+    )
+  }
+  console.log(`  ventanas de disponibilidad insertadas: ${windowsInserted}`)
+
   console.log(
-    `\n✓ Listo. ${assignments} skills y ${zoneAssignments} zonas en ${technicians.length} técnicos.`,
+    `\n✓ Listo. ${assignments} skills, ${zoneAssignments} zonas y disponibilidad/capacidad en ${technicians.length} técnicos.`,
   )
 }
 

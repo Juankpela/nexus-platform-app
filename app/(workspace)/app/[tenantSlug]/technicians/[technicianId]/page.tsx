@@ -6,6 +6,7 @@ import { notFound } from "next/navigation"
 import { PageHeader } from "@/components/layout/page-header"
 import { TechnicianDeactivateButton } from "@/components/service/technician-deactivate-button"
 import { TechnicianFormDialog } from "@/components/service/technician-form-dialog"
+import { TechnicianAvailabilityCard } from "@/components/service/technician-availability-card"
 import { TechnicianSkillsCard } from "@/components/service/technician-skills-card"
 import { TechnicianZonesCard } from "@/components/service/technician-zones-card"
 import { Button } from "@/components/ui/button"
@@ -15,7 +16,10 @@ import {
   hasPermission,
 } from "@/modules/authorization/domain/permission"
 import {
+  getTechnicianCapacity,
   getTechnicianRecord,
+  listTechnicianAvailability,
+  listTechnicianExceptions,
   listTechnicianSkillsRecord,
   listTechnicianZonesRecord,
   listTenantSkills,
@@ -87,13 +91,23 @@ export default async function TechnicianDetailPage({
     SERVICE_PERMISSIONS.techniciansWrite,
   )
 
-  const [catalog, technicianSkills, zoneCatalog, technicianZones] =
-    await Promise.all([
-      listTenantSkills(context.tenantId),
-      listTechnicianSkillsRecord(context.tenantId, technician.id),
-      listTenantZones(context.tenantId),
-      listTechnicianZonesRecord(context.tenantId, technician.id),
-    ])
+  const [
+    catalog,
+    technicianSkills,
+    zoneCatalog,
+    technicianZones,
+    availabilityWindows,
+    availabilityExceptions,
+    capacity,
+  ] = await Promise.all([
+    listTenantSkills(context.tenantId),
+    listTechnicianSkillsRecord(context.tenantId, technician.id),
+    listTenantZones(context.tenantId),
+    listTechnicianZonesRecord(context.tenantId, technician.id),
+    listTechnicianAvailability(context.tenantId, technician.id),
+    listTechnicianExceptions(context.tenantId, technician.id),
+    getTechnicianCapacity(context.tenantId, technician.id),
+  ])
 
   return (
     <>
@@ -168,6 +182,16 @@ export default async function TechnicianDetailPage({
           technicianId={technician.id}
           catalog={zoneCatalog}
           technicianZones={technicianZones}
+          canWrite={canWrite}
+        />
+
+        {/* Availability & capacity (PR3B) */}
+        <TechnicianAvailabilityCard
+          tenantSlug={tenantSlug}
+          technicianId={technician.id}
+          windows={availabilityWindows}
+          exceptions={availabilityExceptions}
+          capacity={capacity}
           canWrite={canWrite}
         />
 

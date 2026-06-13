@@ -2186,6 +2186,111 @@ export type Database = {
           },
         ]
       }
+      technician_availability: {
+        Row: {
+          created_at: string
+          end_minute: number
+          id: string
+          start_minute: number
+          technician_id: string
+          tenant_id: string
+          updated_at: string
+          weekday: number
+        }
+        Insert: {
+          created_at?: string
+          end_minute: number
+          id?: string
+          start_minute: number
+          technician_id: string
+          tenant_id: string
+          updated_at?: string
+          weekday: number
+        }
+        Update: {
+          created_at?: string
+          end_minute?: number
+          id?: string
+          start_minute?: number
+          technician_id?: string
+          tenant_id?: string
+          updated_at?: string
+          weekday?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "technician_availability_technician_id_tenant_id_fkey"
+            columns: ["technician_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "technicians"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "technician_availability_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      technician_availability_exceptions: {
+        Row: {
+          created_at: string
+          date_from: string
+          date_to: string
+          end_minute: number | null
+          id: string
+          kind: string
+          note: string | null
+          start_minute: number | null
+          technician_id: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_from: string
+          date_to: string
+          end_minute?: number | null
+          id?: string
+          kind: string
+          note?: string | null
+          start_minute?: number | null
+          technician_id: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_from?: string
+          date_to?: string
+          end_minute?: number | null
+          id?: string
+          kind?: string
+          note?: string | null
+          start_minute?: number | null
+          technician_id?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "technician_availability_exc_technician_id_tenant_id_fkey"
+            columns: ["technician_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "technicians"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "technician_availability_exceptions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       technician_skills: {
         Row: {
           created_at: string
@@ -2290,6 +2395,8 @@ export type Database = {
           first_name: string
           id: string
           last_name: string
+          max_minutes_per_day: number | null
+          max_work_orders_per_day: number | null
           phone: string | null
           status: Database["public"]["Enums"]["technician_status"]
           tenant_id: string
@@ -2304,6 +2411,8 @@ export type Database = {
           first_name: string
           id?: string
           last_name: string
+          max_minutes_per_day?: number | null
+          max_work_orders_per_day?: number | null
           phone?: string | null
           status?: Database["public"]["Enums"]["technician_status"]
           tenant_id: string
@@ -2318,6 +2427,8 @@ export type Database = {
           first_name?: string
           id?: string
           last_name?: string
+          max_minutes_per_day?: number | null
+          max_work_orders_per_day?: number | null
           phone?: string | null
           status?: Database["public"]["Enums"]["technician_status"]
           tenant_id?: string
