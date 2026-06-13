@@ -78,10 +78,15 @@ import { archiveSkill, type ArchiveSkillInput } from "@/modules/service/applicat
 import { assignTechnicianSkill, type AssignTechnicianSkillInput } from "@/modules/service/application/use-cases/assign-technician-skill"
 import { createSkill, type CreateSkillInput } from "@/modules/service/application/use-cases/create-skill"
 import { removeTechnicianSkill, type RemoveTechnicianSkillInput } from "@/modules/service/application/use-cases/remove-technician-skill"
+import { archiveZone, type ArchiveZoneInput } from "@/modules/service/application/use-cases/archive-zone"
+import { assignTechnicianZone, type AssignTechnicianZoneInput } from "@/modules/service/application/use-cases/assign-technician-zone"
+import { createZone, type CreateZoneInput } from "@/modules/service/application/use-cases/create-zone"
+import { removeTechnicianZone, type RemoveTechnicianZoneInput } from "@/modules/service/application/use-cases/remove-technician-zone"
 import { SupabaseAssetRepository } from "@/modules/service/infrastructure/supabase-asset-repository"
 import { SupabaseCaseRepository } from "@/modules/service/infrastructure/supabase-case-repository"
 import { SupabaseSkillRepository } from "@/modules/service/infrastructure/supabase-skill-repository"
 import { SupabaseTechnicianRepository } from "@/modules/service/infrastructure/supabase-technician-repository"
+import { SupabaseZoneRepository } from "@/modules/service/infrastructure/supabase-zone-repository"
 import { SupabaseWorkOrderRepository } from "@/modules/service/infrastructure/supabase-work-order-repository"
 import type { AssetFilters } from "@/modules/service/domain/asset"
 import type { CaseFilters } from "@/modules/service/domain/case"
@@ -110,6 +115,10 @@ function technicianRepo() {
 
 function skillRepo() {
   return new SupabaseSkillRepository()
+}
+
+function zoneRepo() {
+  return new SupabaseZoneRepository()
 }
 
 function audit() {
@@ -319,4 +328,29 @@ export function assignTechnicianSkillRecord(input: AssignTechnicianSkillInput) {
 
 export function removeTechnicianSkillRecord(input: RemoveTechnicianSkillInput) {
   return removeTechnicianSkill({ skills: skillRepo(), audit: audit() }, input)
+}
+
+// --- Zones (PR3C) ----------------------------------------------------------
+export function listTenantZones(tenantId: UUID) {
+  return zoneRepo().listZones(tenantId)
+}
+
+export function listTechnicianZonesRecord(tenantId: UUID, technicianId: UUID) {
+  return zoneRepo().listTechnicianZones(tenantId, technicianId)
+}
+
+export function createZoneRecord(input: CreateZoneInput) {
+  return createZone({ zones: zoneRepo(), audit: audit() }, input)
+}
+
+export function archiveZoneRecord(input: ArchiveZoneInput) {
+  return archiveZone({ zones: zoneRepo(), audit: audit() }, input)
+}
+
+export function assignTechnicianZoneRecord(input: AssignTechnicianZoneInput) {
+  return assignTechnicianZone({ zones: zoneRepo(), audit: audit() }, input)
+}
+
+export function removeTechnicianZoneRecord(input: RemoveTechnicianZoneInput) {
+  return removeTechnicianZone({ zones: zoneRepo(), audit: audit() }, input)
 }

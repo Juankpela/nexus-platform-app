@@ -1,4 +1,4 @@
-import { Award, ArrowLeft, MapPin, Wrench } from "lucide-react"
+import { Award, ArrowLeft, Wrench } from "lucide-react"
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/layout/page-header"
 import { TechnicianDeactivateButton } from "@/components/service/technician-deactivate-button"
 import { TechnicianFormDialog } from "@/components/service/technician-form-dialog"
 import { TechnicianSkillsCard } from "@/components/service/technician-skills-card"
+import { TechnicianZonesCard } from "@/components/service/technician-zones-card"
 import { Button } from "@/components/ui/button"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
 import {
@@ -16,7 +17,9 @@ import {
 import {
   getTechnicianRecord,
   listTechnicianSkillsRecord,
+  listTechnicianZonesRecord,
   listTenantSkills,
+  listTenantZones,
 } from "@/modules/service/composition"
 import {
   TECHNICIAN_STATUS_LABELS,
@@ -84,10 +87,13 @@ export default async function TechnicianDetailPage({
     SERVICE_PERMISSIONS.techniciansWrite,
   )
 
-  const [catalog, technicianSkills] = await Promise.all([
-    listTenantSkills(context.tenantId),
-    listTechnicianSkillsRecord(context.tenantId, technician.id),
-  ])
+  const [catalog, technicianSkills, zoneCatalog, technicianZones] =
+    await Promise.all([
+      listTenantSkills(context.tenantId),
+      listTechnicianSkillsRecord(context.tenantId, technician.id),
+      listTenantZones(context.tenantId),
+      listTechnicianZonesRecord(context.tenantId, technician.id),
+    ])
 
   return (
     <>
@@ -156,17 +162,21 @@ export default async function TechnicianDetailPage({
           canWrite={canWrite}
         />
 
+        {/* Zones / coverage (PR3C) */}
+        <TechnicianZonesCard
+          tenantSlug={tenantSlug}
+          technicianId={technician.id}
+          catalog={zoneCatalog}
+          technicianZones={technicianZones}
+          canWrite={canWrite}
+        />
+
         {/* Future Field Service sections (structure ready, not yet implemented) */}
         <div className="grid gap-4 lg:grid-cols-2">
           <FuturePanel
             icon={Award}
             title="Certifications"
             description="Próximamente: certificaciones y vencimientos para cumplimiento."
-          />
-          <FuturePanel
-            icon={MapPin}
-            title="Territories"
-            description="Próximamente: zonas de cobertura para dispatch y optimización de rutas."
           />
           <FuturePanel
             icon={Wrench}

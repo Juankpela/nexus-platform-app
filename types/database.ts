@@ -2116,6 +2116,41 @@ export type Database = {
           },
         ]
       }
+      service_zones: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          id: string
+          name: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_zones_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       skills: {
         Row: {
           archived_at: string | null
@@ -2193,6 +2228,52 @@ export type Database = {
           },
           {
             foreignKeyName: "technician_skills_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      technician_zones: {
+        Row: {
+          created_at: string
+          tenant_id: string
+          technician_id: string
+          updated_at: string
+          zone_id: string
+        }
+        Insert: {
+          created_at?: string
+          tenant_id: string
+          technician_id: string
+          updated_at?: string
+          zone_id: string
+        }
+        Update: {
+          created_at?: string
+          tenant_id?: string
+          technician_id?: string
+          updated_at?: string
+          zone_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "technician_zones_zone_id_tenant_id_fkey"
+            columns: ["zone_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "service_zones"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "technician_zones_technician_id_tenant_id_fkey"
+            columns: ["technician_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "technicians"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "technician_zones_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"

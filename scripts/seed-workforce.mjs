@@ -11,8 +11,7 @@
 //   node scripts/seed-workforce.mjs <tenantSlug>
 //   node scripts/seed-workforce.mjs huella-global
 //
-// NOTA: PR3B (availability) y PR3C (zones) aún no están construidos; este seed
-// cubre skills. Se extenderá cuando esos slices existan.
+// Cubre PR3A (skills) y PR3C (zones). PR3B (availability) se añadirá cuando exista.
 
 import { readFileSync } from "node:fs"
 
@@ -61,6 +60,14 @@ const SKILL_CATALOG = [
   "Mecánica general",
 ]
 const LEVELS = ["junior", "mid", "senior", "expert"]
+const ZONE_CATALOG = [
+  "Medellín Norte",
+  "Medellín Sur",
+  "Medellín Centro",
+  "Envigado",
+  "Bello",
+  "Itagüí",
+]
 
 const baseHeaders = {
   apikey: SERVICE_ROLE,
@@ -141,7 +148,43 @@ async function main() {
     console.log(`  ${tech.first_name} ${tech.last_name}: ${count} skills`)
   }
 
-  console.log(`\n✓ Listo. ${assignments} asignaciones de skills en ${technicians.length} técnicos.`)
+  // 4. Catálogo de zonas (upsert por (tenant_id, name) activo).
+  const zoneIds = {}
+  for (const name of ZONE_CATALOG) {
+    const existing = await req(
+      `${SUPABASE_URL}/rest/v1/service_zones?tenant_id=eq.${tenantId}&name=eq.${encodeURIComponent(name)}&archived_at=is.null&select=id`,
+    )
+    if (existing.length) {
+      zoneIds[name] = existing[0].id
+    } else {
+      const created = await upsert("service_zones", { tenant_id: tenantId, name }, "id", "id")
+      zoneIds[name] = created.id
+    }
+  }
+  console.log(`  zonas en catálogo: ${Object.keys(zoneIds).length}`)
+
+  // 5. Asignar 1–2 zonas por técnico, rotando (idempotente).
+  const zoneNames = Object.keys(zoneIds)
+  let zoneAssignments = 0
+  for (let t = 0; t < technicians.length; t++) {
+    const tech = technicians[t]
+    const count = 1 + (t % 2) // 1 ó 2 zonas
+    for (let k = 0; k < count; k++) {
+      const name = zoneNames[(t + k) % zoneNames.length]
+      await upsert(
+        "technician_zones",
+        { tenant_id: tenantId, technician_id: tech.id, zone_id: zoneIds[name] },
+        "tenant_id,technician_id,zone_id",
+        "technician_id",
+      )
+      zoneAssignments++
+    }
+  }
+  console.log(`  zonas asignadas: ${zoneAssignments}`)
+
+  console.log(
+    `\n✓ Listo. ${assignments} skills y ${zoneAssignments} zonas en ${technicians.length} técnicos.`,
+  )
 }
 
 main().catch((error) => {
