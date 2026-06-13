@@ -2657,6 +2657,9 @@ export type Database = {
           completed_at: string | null
           created_at: string
           id: string
+          non_completion_reason:
+            | Database["public"]["Enums"]["non_completion_reason"]
+            | null
           resolution_notes: string | null
           started_at: string | null
           status: Database["public"]["Enums"]["execution_status"]
@@ -2674,6 +2677,9 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           id?: string
+          non_completion_reason?:
+            | Database["public"]["Enums"]["non_completion_reason"]
+            | null
           resolution_notes?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["execution_status"]
@@ -2691,6 +2697,9 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           id?: string
+          non_completion_reason?:
+            | Database["public"]["Enums"]["non_completion_reason"]
+            | null
           resolution_notes?: string | null
           started_at?: string | null
           status?: Database["public"]["Enums"]["execution_status"]
@@ -3116,6 +3125,14 @@ export type Database = {
         | "sent"
         | "accepted"
         | "expired"
+      non_completion_reason:
+        | "customer_absent"
+        | "missing_skill"
+        | "missing_part"
+        | "access_denied"
+        | "weather"
+        | "customer_cancelled"
+        | "other"
       skill_level: "junior" | "mid" | "senior" | "expert"
       technician_status: "active" | "inactive" | "on_leave"
       tenant_status: "active" | "suspended" | "archived"
@@ -3349,6 +3366,15 @@ export const Constants = {
         "sent",
         "accepted",
         "expired",
+      ],
+      non_completion_reason: [
+        "customer_absent",
+        "missing_skill",
+        "missing_part",
+        "access_denied",
+        "weather",
+        "customer_cancelled",
+        "other",
       ],
       skill_level: ["junior", "mid", "senior", "expert"],
       technician_status: ["active", "inactive", "on_leave"],
