@@ -1,4 +1,4 @@
-import { Award, ArrowLeft, MapPin, Wrench, Sparkles } from "lucide-react"
+import { Award, ArrowLeft, MapPin, Wrench } from "lucide-react"
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
@@ -6,13 +6,18 @@ import { notFound } from "next/navigation"
 import { PageHeader } from "@/components/layout/page-header"
 import { TechnicianDeactivateButton } from "@/components/service/technician-deactivate-button"
 import { TechnicianFormDialog } from "@/components/service/technician-form-dialog"
+import { TechnicianSkillsCard } from "@/components/service/technician-skills-card"
 import { Button } from "@/components/ui/button"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
 import {
   SERVICE_PERMISSIONS,
   hasPermission,
 } from "@/modules/authorization/domain/permission"
-import { getTechnicianRecord } from "@/modules/service/composition"
+import {
+  getTechnicianRecord,
+  listTechnicianSkillsRecord,
+  listTenantSkills,
+} from "@/modules/service/composition"
 import {
   TECHNICIAN_STATUS_LABELS,
   technicianFullName,
@@ -79,6 +84,11 @@ export default async function TechnicianDetailPage({
     SERVICE_PERMISSIONS.techniciansWrite,
   )
 
+  const [catalog, technicianSkills] = await Promise.all([
+    listTenantSkills(context.tenantId),
+    listTechnicianSkillsRecord(context.tenantId, technician.id),
+  ])
+
   return (
     <>
       <PageHeader
@@ -137,13 +147,17 @@ export default async function TechnicianDetailPage({
           </dl>
         </div>
 
+        {/* Skills (PR3A) */}
+        <TechnicianSkillsCard
+          tenantSlug={tenantSlug}
+          technicianId={technician.id}
+          catalog={catalog}
+          technicianSkills={technicianSkills}
+          canWrite={canWrite}
+        />
+
         {/* Future Field Service sections (structure ready, not yet implemented) */}
         <div className="grid gap-4 lg:grid-cols-2">
-          <FuturePanel
-            icon={Sparkles}
-            title="Skills"
-            description="Próximamente: habilidades técnicas para el matching de órdenes de trabajo."
-          />
           <FuturePanel
             icon={Award}
             title="Certifications"

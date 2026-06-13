@@ -74,8 +74,13 @@ import {
   updateTechnician,
   type UpdateTechnicianInput,
 } from "@/modules/service/application/use-cases/update-technician"
+import { archiveSkill, type ArchiveSkillInput } from "@/modules/service/application/use-cases/archive-skill"
+import { assignTechnicianSkill, type AssignTechnicianSkillInput } from "@/modules/service/application/use-cases/assign-technician-skill"
+import { createSkill, type CreateSkillInput } from "@/modules/service/application/use-cases/create-skill"
+import { removeTechnicianSkill, type RemoveTechnicianSkillInput } from "@/modules/service/application/use-cases/remove-technician-skill"
 import { SupabaseAssetRepository } from "@/modules/service/infrastructure/supabase-asset-repository"
 import { SupabaseCaseRepository } from "@/modules/service/infrastructure/supabase-case-repository"
+import { SupabaseSkillRepository } from "@/modules/service/infrastructure/supabase-skill-repository"
 import { SupabaseTechnicianRepository } from "@/modules/service/infrastructure/supabase-technician-repository"
 import { SupabaseWorkOrderRepository } from "@/modules/service/infrastructure/supabase-work-order-repository"
 import type { AssetFilters } from "@/modules/service/domain/asset"
@@ -101,6 +106,10 @@ function workOrderRepo() {
 
 function technicianRepo() {
   return new SupabaseTechnicianRepository()
+}
+
+function skillRepo() {
+  return new SupabaseSkillRepository()
 }
 
 function audit() {
@@ -285,4 +294,29 @@ export function deactivateTechnicianRecord(input: DeactivateTechnicianInput) {
     { technicians: technicianRepo(), audit: audit() },
     input,
   )
+}
+
+// --- Skills (PR3A) ---------------------------------------------------------
+export function listTenantSkills(tenantId: UUID) {
+  return skillRepo().listSkills(tenantId)
+}
+
+export function listTechnicianSkillsRecord(tenantId: UUID, technicianId: UUID) {
+  return skillRepo().listTechnicianSkills(tenantId, technicianId)
+}
+
+export function createSkillRecord(input: CreateSkillInput) {
+  return createSkill({ skills: skillRepo(), audit: audit() }, input)
+}
+
+export function archiveSkillRecord(input: ArchiveSkillInput) {
+  return archiveSkill({ skills: skillRepo(), audit: audit() }, input)
+}
+
+export function assignTechnicianSkillRecord(input: AssignTechnicianSkillInput) {
+  return assignTechnicianSkill({ skills: skillRepo(), audit: audit() }, input)
+}
+
+export function removeTechnicianSkillRecord(input: RemoveTechnicianSkillInput) {
+  return removeTechnicianSkill({ skills: skillRepo(), audit: audit() }, input)
 }
