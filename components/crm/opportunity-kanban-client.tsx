@@ -11,7 +11,6 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core"
-import { CSS } from "@dnd-kit/utilities"
 import { GripVertical } from "lucide-react"
 import Link from "next/link"
 import { startTransition, useOptimistic, useState } from "react"
@@ -99,11 +98,9 @@ function isTerminal(status: OpportunityStatus) {
 
 function CardContent({
   opp,
-  basePath,
   dimmed = false,
 }: {
   opp: Opportunity
-  basePath: string
   dimmed?: boolean
 }) {
   return (
@@ -202,7 +199,7 @@ function DraggableCard({
         draggable={false}
         onPointerDown={terminal ? undefined : (e) => e.stopPropagation()}
       >
-        <CardContent opp={opp} basePath={basePath} dimmed={isActive} />
+        <CardContent opp={opp} dimmed={isActive} />
       </Link>
 
       {/* Invisible drag surface that sits on top, doesn't block Link clicks */}
@@ -421,7 +418,7 @@ export function OpportunityKanbanClient({
         <DragOverlay dropAnimation={null}>
           {activeOpp ? (
             <div className="w-[264px] rotate-1 opacity-95 shadow-soft-lg">
-              <CardContent opp={activeOpp} basePath={basePath} />
+              <CardContent opp={activeOpp} />
             </div>
           ) : null}
         </DragOverlay>

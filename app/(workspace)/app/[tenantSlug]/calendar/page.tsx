@@ -13,7 +13,6 @@ import {
   hasPermission,
 } from "@/modules/authorization/domain/permission"
 import {
-  DAY_HOURS,
   filterAssignments,
   groupByHour,
   groupByTechnician,

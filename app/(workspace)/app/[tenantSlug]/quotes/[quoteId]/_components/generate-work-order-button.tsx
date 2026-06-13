@@ -54,8 +54,8 @@ export function GenerateWorkOrderButton({
         {p > 0 && (
           <p className="mt-1 text-emerald-700 dark:text-emerald-400">
             {p} línea{p !== 1 ? "s" : ""} de producto se factura
-            {p !== 1 ? "n" : ""} directamente desde la cotización (botón "Generar
-            factura").
+            {p !== 1 ? "n" : ""} directamente desde la cotización (botón
+            &quot;Generar factura&quot;).
           </p>
         )}
         <Button
