@@ -6,6 +6,7 @@ import type * as React from "react"
 import { AppHeader } from "@/components/layout/app-header"
 import { AppSidebar } from "@/components/layout/app-sidebar"
 import { Breadcrumbs } from "@/components/layout/breadcrumbs"
+import type { Notification } from "@/modules/notifications/domain/notification"
 
 /**
  * Renders the back-office shell (sidebar + header + breadcrumbs) for workspace
@@ -18,12 +19,16 @@ export function WorkspaceChrome({
   tenantSlug,
   permissions,
   userEmail,
+  notifications,
+  unreadCount,
   children,
 }: {
   tenantName: string
   tenantSlug: string
   permissions: readonly string[]
   userEmail: string | null
+  notifications: Notification[]
+  unreadCount: number
   children: React.ReactNode
 }) {
   const pathname = usePathname()
@@ -43,6 +48,8 @@ export function WorkspaceChrome({
           tenantName={tenantName}
           tenantSlug={tenantSlug}
           userEmail={userEmail}
+          notifications={notifications}
+          unreadCount={unreadCount}
         />
         <Breadcrumbs tenantSlug={tenantSlug} />
         <main className="flex-1">{children}</main>

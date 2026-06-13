@@ -1,5 +1,9 @@
 import { WorkspaceChrome } from "@/components/layout/workspace-chrome"
 import { getCachedCurrentUser } from "@/modules/identity/composition"
+import {
+  countMyUnread,
+  listMyNotifications,
+} from "@/modules/notifications/composition"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 
 export default async function WorkspaceLayout({
@@ -14,6 +18,10 @@ export default async function WorkspaceLayout({
     getRequestContext(tenantSlug),
     getCachedCurrentUser(),
   ])
+  const [notifications, unreadCount] = await Promise.all([
+    listMyNotifications(context.tenantId, context.userId),
+    countMyUnread(context.tenantId, context.userId),
+  ])
 
   return (
     <WorkspaceChrome
@@ -21,6 +29,8 @@ export default async function WorkspaceLayout({
       tenantSlug={context.tenant.slug}
       permissions={context.effectivePermissions}
       userEmail={user?.email ?? null}
+      notifications={notifications}
+      unreadCount={unreadCount}
     >
       {children}
     </WorkspaceChrome>

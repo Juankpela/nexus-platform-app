@@ -1,8 +1,10 @@
 import { ChevronsUpDown, LogOut, Plus, Search } from "lucide-react"
 import Link from "next/link"
 
+import { NotificationBell } from "@/components/layout/notification-bell"
 import { ThemeSwitcher } from "@/components/theme-switcher"
 import { Button } from "@/components/ui/button"
+import type { Notification } from "@/modules/notifications/domain/notification"
 import { logoutAction } from "@/modules/identity/presentation/actions"
 
 function initialOf(value: string | null) {
@@ -13,10 +15,14 @@ export function AppHeader({
   tenantName,
   tenantSlug,
   userEmail,
+  notifications,
+  unreadCount,
 }: {
   tenantName: string
   tenantSlug: string
   userEmail: string | null
+  notifications: Notification[]
+  unreadCount: number
 }) {
   return (
     <header
@@ -65,6 +71,11 @@ export function AppHeader({
         >
           <Plus />
         </Button>
+        <NotificationBell
+          tenantSlug={tenantSlug}
+          notifications={notifications}
+          unreadCount={unreadCount}
+        />
         <ThemeSwitcher />
         <div className="mx-1.5 hidden h-5 w-px bg-border sm:block" />
         <Link
