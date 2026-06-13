@@ -2,6 +2,10 @@ import "server-only"
 
 import { createAdminSupabaseClient } from "@/lib/supabase/admin"
 import { SupabaseAuditRepository } from "@/modules/audit/infrastructure/supabase-audit-repository"
+import { SERVICE_PERMISSIONS } from "@/modules/authorization/domain/permission"
+import { notifyAudience } from "@/modules/notifications/application/use-cases/notify-audience"
+import { SupabaseNotificationRepository } from "@/modules/notifications/infrastructure/supabase-notification-repository"
+import { SupabaseRecipientResolver } from "@/modules/notifications/infrastructure/supabase-recipient-resolver"
 import {
   assignWorkOrder,
   type AssignWorkOrderInput,
@@ -154,12 +158,29 @@ export async function getTenantSlaAlerts(tenantId: UUID) {
  */
 export function runOverdueScanBatch() {
   const admin = createAdminSupabaseClient()
+  const notifyDeps = {
+    notifications: new SupabaseNotificationRepository(() => admin),
+    recipients: new SupabaseRecipientResolver(admin),
+  }
   return scanOverdueWorkOrders({
     repo: new SupabaseOverdueScanRepository(admin),
     audit: new SupabaseAuditRepository(() => admin),
     nowMs: Date.now(),
     requestId: crypto.randomUUID(),
     atRiskWindowMs: OVERDUE_AT_RISK_WINDOW_MS,
+    // PR6.2: notify the scheduling audience once per real SLA transition.
+    onAlert: async ({ tenantId, workOrderId, severity }) => {
+      await notifyAudience(notifyDeps, {
+        tenantId,
+        permissionKey: SERVICE_PERMISSIONS.schedulingRead,
+        type: "sla_alert",
+        title:
+          severity === "critical"
+            ? "Orden de trabajo vencida (SLA)"
+            : "Orden en riesgo de SLA",
+        link: `work-orders/${workOrderId}`,
+      })
+    },
   })
 }
 

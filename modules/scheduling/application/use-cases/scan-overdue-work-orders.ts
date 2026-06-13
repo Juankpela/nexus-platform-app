@@ -18,6 +18,16 @@ export type ScanDeps = {
   /** Correlates every emission of a single batch. */
   requestId: UUID
   atRiskWindowMs?: number
+  /**
+   * Optional notification hook, fired ONCE per real SLA transition (alongside
+   * the audit emission). Isolated/swallow-on-error (ADR-030): a notification
+   * failure never affects the scan or the cursor.
+   */
+  onAlert?: (params: {
+    tenantId: UUID
+    workOrderId: UUID
+    severity: AlertSeverity
+  }) => Promise<void>
 }
 
 export type TenantScanResult = {
@@ -70,6 +80,14 @@ async function emit(
     requestId: deps.requestId,
     source: "scheduling-scan",
   })
+
+  if (deps.onAlert) {
+    try {
+      await deps.onAlert({ tenantId, workOrderId, severity })
+    } catch {
+      // Notification failure must never affect the scan or the cursor (ADR-030).
+    }
+  }
 }
 
 /**

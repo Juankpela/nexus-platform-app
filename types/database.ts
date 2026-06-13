@@ -3047,6 +3047,10 @@ export type Database = {
       next_payment_number: { Args: { p_tenant_id: string }; Returns: string }
       next_quote_number: { Args: { p_tenant_id: string }; Returns: string }
       next_work_order_number: { Args: { p_tenant_id: string }; Returns: string }
+      tenant_users_with_permission: {
+        Args: { p_permission_key: string; p_tenant_id: string }
+        Returns: string[]
+      }
       provision_organization: {
         Args: { p_name: string; p_slug: string; p_user_id: string }
         Returns: string
