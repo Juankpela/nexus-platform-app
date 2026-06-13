@@ -15,6 +15,15 @@ export interface SchedulingRepository {
   ): Promise<Paginated<WorkOrderAssignment>>
   getById(tenantId: UUID, id: UUID): Promise<WorkOrderAssignment | null>
   /**
+   * Active assignments (scheduled/in_progress) for the given work orders, newest
+   * first. Powers the derived "current technician" (ADR-031), replacing the
+   * legacy assigned_technician_id.
+   */
+  findActiveByWorkOrders(
+    tenantId: UUID,
+    workOrderIds: UUID[],
+  ): Promise<WorkOrderAssignment[]>
+  /**
    * Active assignments for a technician overlapping [start, end).
    * `excludeId` skips a given assignment (used on reassign/reschedule).
    */

@@ -21,6 +21,7 @@ import {
   listTenantCases,
   listTenantWorkOrders,
 } from "@/modules/service/composition"
+import { getActiveAssignmentsByWorkOrder } from "@/modules/scheduling/composition"
 import {
   WORK_ORDER_PRIORITIES,
   WORK_ORDER_PRIORITY_LABELS,
@@ -148,8 +149,11 @@ export default async function WorkOrdersPage({
     id: m.userId,
     label: m.fullName ?? m.email ?? m.userId,
   }))
-  const technicianLabels = new Map(
-    technicianOptions.map((t) => [t.id, t.label]),
+  // ADR-031: "current technician" derives from the active assignment, not the
+  // legacy assigned_technician_id — so the list agrees with the dispatch board.
+  const activeAssignments = await getActiveAssignmentsByWorkOrder(
+    context.tenantId,
+    result.items.map((wo) => wo.id),
   )
   const caseOptions = caseResult.items.map((c) => ({
     id: c.id,
@@ -321,9 +325,7 @@ export default async function WorkOrdersPage({
                         {wo.companyName ?? "—"}
                       </td>
                       <td className="px-4 py-4 text-muted-foreground">
-                        {wo.assignedTechnicianId
-                          ? (technicianLabels.get(wo.assignedTechnicianId) ?? "—")
-                          : "Sin asignar"}
+                        {activeAssignments.get(wo.id)?.technicianName ?? "Sin asignar"}
                       </td>
                       <td className="px-4 py-4">
                         <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${priorityStyles[wo.priority]}`}>

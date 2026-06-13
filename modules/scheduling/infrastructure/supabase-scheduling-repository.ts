@@ -105,6 +105,30 @@ export class SupabaseSchedulingRepository implements SchedulingRepository {
     return data ? toAssignment(data as unknown as AssignmentRowWithRefs) : null
   }
 
+  async findActiveByWorkOrders(
+    tenantId: UUID,
+    workOrderIds: UUID[],
+  ): Promise<WorkOrderAssignment[]> {
+    if (workOrderIds.length === 0) return []
+    const client = await createServerSupabaseClient()
+    const { data, error } = await client
+      .from("work_order_assignments")
+      .select(SELECT_WITH_REFS)
+      .eq("tenant_id", tenantId)
+      .in("work_order_id", workOrderIds)
+      .in("status", ACTIVE_ASSIGNMENT_STATUSES)
+      .order("scheduled_start", { ascending: false })
+
+    if (error) {
+      throw new ApplicationError(
+        "Unable to load active assignments.",
+        "ASSIGNMENT_ACTIVE_LOAD_FAILED",
+        error,
+      )
+    }
+    return (data as unknown as AssignmentRowWithRefs[]).map(toAssignment)
+  }
+
   async findOverlapping(
     tenantId: UUID,
     technicianId: UUID,

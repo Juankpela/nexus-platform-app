@@ -31,7 +31,10 @@ import {
 } from "@/modules/scheduling/application/use-cases/unassign-work-order"
 import { SupabaseOverdueScanRepository } from "@/modules/scheduling/infrastructure/supabase-overdue-scan-repository"
 import { SupabaseSchedulingRepository } from "@/modules/scheduling/infrastructure/supabase-scheduling-repository"
-import type { AssignmentFilters } from "@/modules/scheduling/domain/work-order-assignment"
+import type {
+  AssignmentFilters,
+  WorkOrderAssignment,
+} from "@/modules/scheduling/domain/work-order-assignment"
 import { SupabaseTechnicianRepository } from "@/modules/service/infrastructure/supabase-technician-repository"
 import { SupabaseWorkOrderRepository } from "@/modules/service/infrastructure/supabase-work-order-repository"
 import type { UUID } from "@/types/shared"
@@ -63,6 +66,21 @@ export function listTenantAssignments(
 
 export function getAssignmentRecord(tenantId: UUID, id: UUID) {
   return schedulingRepo().getById(tenantId, id)
+}
+
+/**
+ * Derived "current technician" per work order (ADR-031): map of workOrderId →
+ * active assignment (most recent). Replaces the legacy assigned_technician_id as
+ * the UI source.
+ */
+export async function getActiveAssignmentsByWorkOrder(
+  tenantId: UUID,
+  workOrderIds: UUID[],
+): Promise<Map<UUID, WorkOrderAssignment>> {
+  const rows = await schedulingRepo().findActiveByWorkOrders(tenantId, workOrderIds)
+  const map = new Map<UUID, WorkOrderAssignment>()
+  for (const a of rows) if (!map.has(a.workOrderId)) map.set(a.workOrderId, a)
+  return map
 }
 
 export function getTenantSchedulingStats(tenantId: UUID) {
