@@ -34,15 +34,17 @@ import {
   listAssetOptions,
   listTenantCases,
   listTenantSkills,
+  listTenantTechnicians,
   listTenantZones,
 } from "@/modules/service/composition"
+import { getActiveAssignmentsByWorkOrder } from "@/modules/scheduling/composition"
 import {
   WORK_ORDER_PRIORITY_LABELS,
   WORK_ORDER_STATUS_LABELS,
   isWorkOrderInvoiceable,
 } from "@/modules/service/domain/work-order"
+import { technicianFullName } from "@/modules/service/domain/technician"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
-import { listCachedTenantMembers } from "@/modules/tenancy/composition"
 import { WorkOrderBillingControls } from "./_components/work-order-billing-controls"
 
 export const metadata: Metadata = { title: "Work Order" }
@@ -116,9 +118,15 @@ export default async function WorkOrderDetailPage({
   const filters = parseActivityFilters(sp)
   const returnPath = `/app/${tenantSlug}/work-orders/${workOrderId}`
 
-  const [members, companyOptions, assetOptions, caseResult, activities, auditEvents, skillCatalog, zoneCatalog] =
+  const [techPage, companyOptions, assetOptions, caseResult, activities, auditEvents, skillCatalog, zoneCatalog, activeAssignmentMap] =
     await Promise.all([
-      listCachedTenantMembers(context.tenantId),
+      listTenantTechnicians(
+        context.tenantId,
+        { search: null, status: null },
+        "name",
+        1,
+        200,
+      ),
       canWrite
         ? listCompanyOptions(context.tenantId)
         : Promise.resolve([] as CompanyOption[]),
@@ -139,16 +147,25 @@ export default async function WorkOrderDetailPage({
         : Promise.resolve([]),
       listTenantSkills(context.tenantId),
       listTenantZones(context.tenantId),
+      getActiveAssignmentsByWorkOrder(context.tenantId, [workOrder.id]),
     ])
 
-  const technicianOptions = members.map((m) => ({
-    id: m.userId,
-    label: m.fullName ?? m.email ?? m.userId,
+  // ADR-031: technician + assignment derive from the scheduling aggregate.
+  const technicianOptions = techPage.items.map((t) => ({
+    id: t.id,
+    label: technicianFullName(t),
   }))
-  const technicianLabel = workOrder.assignedTechnicianId
-    ? (technicianOptions.find((t) => t.id === workOrder.assignedTechnicianId)
-        ?.label ?? "Asignado")
-    : "Sin asignar"
+  const active = activeAssignmentMap.get(workOrder.id) ?? null
+  const activeAssignment = active
+    ? {
+        id: active.id,
+        technicianId: active.technicianId,
+        technicianName: active.technicianName,
+        scheduledStart: active.scheduledStart,
+        scheduledEnd: active.scheduledEnd,
+      }
+    : null
+  const technicianLabel = activeAssignment?.technicianName ?? "Sin asignar"
   const caseOptions = caseResult.items.map((c) => ({
     id: c.id,
     label: `${c.caseNumber} · ${c.subject}`,
@@ -250,8 +267,10 @@ export default async function WorkOrderDetailPage({
                 />
                 <WorkOrderTechnicianAssign
                   tenantSlug={tenantSlug}
-                  id={workOrder.id}
-                  technicianId={workOrder.assignedTechnicianId}
+                  workOrderId={workOrder.id}
+                  woStart={workOrder.scheduledStart}
+                  woEnd={workOrder.scheduledEnd}
+                  activeAssignment={activeAssignment}
                   technicianOptions={technicianOptions}
                 />
               </div>
