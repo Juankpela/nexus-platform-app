@@ -13,15 +13,23 @@ import { PageHeader } from "@/components/layout/page-header"
 import { KpiCard } from "@/components/dashboard/kpi-card"
 import { RefreshBoardButton } from "@/components/dispatch/refresh-board-button"
 import { SlaAlertsCard } from "@/components/dispatch/sla-alerts-card"
+import { RescheduleProposalsCard } from "@/components/scheduling/reschedule-proposals-card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
-import { SERVICE_PERMISSIONS } from "@/modules/authorization/domain/permission"
+import {
+  FOUNDATION_PERMISSIONS,
+  SERVICE_PERMISSIONS,
+  hasPermission,
+} from "@/modules/authorization/domain/permission"
 import {
   getTenantDispatchBoard,
   getTenantDispatchStats,
 } from "@/modules/dispatch/composition"
-import { getTenantSlaAlerts } from "@/modules/scheduling/composition"
+import {
+  getTenantSlaAlerts,
+  listRecentRescheduleProposals,
+} from "@/modules/scheduling/composition"
 import {
   WORKLOAD_STATUS_LABELS,
   type WorkloadStatus,
@@ -99,10 +107,17 @@ export default async function DispatchPage({
   const date = /^\d{4}-\d{2}-\d{2}$/.test(sp.date ?? "") ? sp.date! : todayUtc()
   const basePath = `/app/${tenantSlug}/dispatch`
 
-  const [board, stats, slaAlerts] = await Promise.all([
+  const canReadAudit = hasPermission(
+    context.effectivePermissions,
+    FOUNDATION_PERMISSIONS.auditRead,
+  )
+  const [board, stats, slaAlerts, proposals] = await Promise.all([
     getTenantDispatchBoard(context.tenantId, date),
     getTenantDispatchStats(context.tenantId, date),
     getTenantSlaAlerts(context.tenantId),
+    canReadAudit
+      ? listRecentRescheduleProposals(context.tenantId)
+      : Promise.resolve([]),
   ])
 
   const tabClass = (t: Tab) =>
@@ -153,6 +168,10 @@ export default async function DispatchPage({
         </div>
 
         <SlaAlertsCard board={slaAlerts} tenantSlug={tenantSlug} />
+
+        {canReadAudit ? (
+          <RescheduleProposalsCard proposals={proposals} tenantSlug={tenantSlug} />
+        ) : null}
 
         {tab === "stats" ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

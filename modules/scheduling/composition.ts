@@ -11,7 +11,14 @@ import { listAssignments } from "@/modules/scheduling/application/use-cases/list
 import { scanOverdueWorkOrders } from "@/modules/scheduling/application/use-cases/scan-overdue-work-orders"
 import { projectSlaAlertBoard } from "@/modules/scheduling/domain/sla-alert-board"
 import type { EligibilityRequirement } from "@/modules/scheduling/domain/eligibility"
-import { proposeReschedulesForTenant } from "@/modules/scheduling/application/use-cases/propose-reschedules"
+import {
+  proposeReschedulesForTenant,
+  RESCHEDULE_PROPOSED_EVENT,
+} from "@/modules/scheduling/application/use-cases/propose-reschedules"
+import type {
+  ProposalOutcome,
+  RescheduleProposalView,
+} from "@/modules/scheduling/domain/reschedule-proposal"
 import { SupabaseEligibilityResolver } from "@/modules/scheduling/infrastructure/supabase-eligibility-resolver"
 import { SupabaseRescheduleCandidateReader } from "@/modules/scheduling/infrastructure/supabase-reschedule-candidate-reader"
 import {
@@ -172,4 +179,39 @@ export async function runRescheduleProposalsBatch() {
     }
   }
   return batch
+}
+
+/**
+ * Read-only feed of the latest dry-run reschedule proposal per work order, read
+ * back from the audit trail (RLS: requires tenant.audit.read). Dedups by WO
+ * keeping the newest. Powers the dispatch "Propuestas de reagendamiento" panel.
+ */
+export async function listRecentRescheduleProposals(
+  tenantId: UUID,
+): Promise<RescheduleProposalView[]> {
+  const entries = await new SupabaseAuditRepository().listRecentByEventType(
+    tenantId,
+    RESCHEDULE_PROPOSED_EVENT,
+    100,
+  )
+  const seen = new Set<string>()
+  const views: RescheduleProposalView[] = []
+  for (const e of entries) {
+    if (!e.subjectId || seen.has(e.subjectId)) continue
+    seen.add(e.subjectId)
+    const m = (e.metadata ?? {}) as Record<string, unknown>
+    views.push({
+      workOrderId: e.subjectId,
+      outcome: (m.outcome as ProposalOutcome) ?? "no_action",
+      disposition: (m.disposition as RescheduleProposalView["disposition"]) ?? null,
+      nonCompletionReason:
+        (m.nonCompletionReason as RescheduleProposalView["nonCompletionReason"]) ?? null,
+      technicianName: (m.technicianName as string | null) ?? null,
+      proposedDate: (m.proposedDate as string | null) ?? null,
+      proposedStartMinute: (m.proposedStartMinute as number | null) ?? null,
+      proposedEndMinute: (m.proposedEndMinute as number | null) ?? null,
+      occurredAt: e.occurredAt,
+    })
+  }
+  return views
 }

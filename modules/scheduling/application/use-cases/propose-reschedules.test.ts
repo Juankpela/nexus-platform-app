@@ -47,6 +47,9 @@ class FakeAudit {
   async listBySubject() {
     return []
   }
+  async listRecentByEventType() {
+    return []
+  }
 }
 
 function deps(reader: RescheduleCandidateReader, audit: FakeAudit): ProposeReschedulesDeps {

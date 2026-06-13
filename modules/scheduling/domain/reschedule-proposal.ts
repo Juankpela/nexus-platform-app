@@ -54,6 +54,19 @@ export type RescheduleProposal = {
   slot: LocalSlot | null
 }
 
+/** Display projection of a proposal read back from the audit feed (PR5b panel). */
+export type RescheduleProposalView = {
+  workOrderId: UUID
+  outcome: ProposalOutcome
+  disposition: Disposition | null
+  nonCompletionReason: NonCompletionReason | null
+  technicianName: string | null
+  proposedDate: string | null
+  proposedStartMinute: number | null
+  proposedEndMinute: number | null
+  occurredAt: string
+}
+
 export type BuildProposalOptions = {
   fromDate: string
   fromMinute: number

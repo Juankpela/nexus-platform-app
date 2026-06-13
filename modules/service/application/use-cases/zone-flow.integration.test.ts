@@ -61,6 +61,9 @@ class FakeAudit {
   async listBySubject() {
     return []
   }
+  async listRecentByEventType() {
+    return []
+  }
 }
 
 describe("zone flow (integration over use-cases)", () => {

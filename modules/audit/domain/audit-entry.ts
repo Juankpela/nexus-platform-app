@@ -10,3 +10,8 @@ export type AuditEntry = {
   metadata: Json
   occurredAt: string
 }
+
+/** Audit entry including the subject it concerns (for event-type feeds). */
+export type AuditEntryWithSubject = AuditEntry & {
+  subjectId: string | null
+}

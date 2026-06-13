@@ -67,6 +67,9 @@ class FakeAudit {
   async listBySubject() {
     return []
   }
+  async listRecentByEventType() {
+    return []
+  }
 }
 
 describe("availability flow (integration over use-cases)", () => {
