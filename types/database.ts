@@ -2116,6 +2116,90 @@ export type Database = {
           },
         ]
       }
+      skills: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          id: string
+          name: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skills_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      technician_skills: {
+        Row: {
+          created_at: string
+          level: Database["public"]["Enums"]["skill_level"]
+          skill_id: string
+          technician_id: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          level?: Database["public"]["Enums"]["skill_level"]
+          skill_id: string
+          technician_id: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          level?: Database["public"]["Enums"]["skill_level"]
+          skill_id?: string
+          technician_id?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "technician_skills_skill_id_tenant_id_fkey"
+            columns: ["skill_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "technician_skills_technician_id_tenant_id_fkey"
+            columns: ["technician_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "technicians"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "technician_skills_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       technicians: {
         Row: {
           created_at: string
@@ -2840,6 +2924,7 @@ export type Database = {
         | "sent"
         | "accepted"
         | "expired"
+      skill_level: "junior" | "mid" | "senior" | "expert"
       technician_status: "active" | "inactive" | "on_leave"
       tenant_status: "active" | "suspended" | "archived"
       work_order_priority: "low" | "medium" | "high" | "critical"
@@ -3073,6 +3158,7 @@ export const Constants = {
         "accepted",
         "expired",
       ],
+      skill_level: ["junior", "mid", "senior", "expert"],
       technician_status: ["active", "inactive", "on_leave"],
       tenant_status: ["active", "suspended", "archived"],
       work_order_priority: ["low", "medium", "high", "critical"],
