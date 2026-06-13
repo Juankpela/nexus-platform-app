@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/layout/page-header"
 import { WorkOrderFormDialog } from "@/components/service/work-order-form-dialog"
 import { WorkOrderStatusControl } from "@/components/service/work-order-status-control"
 import { WorkOrderTechnicianAssign } from "@/components/service/work-order-technician-assign"
+import { WorkOrderEligibilityPanel } from "@/components/scheduling/work-order-eligibility-panel"
 import { Button } from "@/components/ui/button"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
 import {
@@ -32,6 +33,8 @@ import {
   getWorkOrderRecord,
   listAssetOptions,
   listTenantCases,
+  listTenantSkills,
+  listTenantZones,
 } from "@/modules/service/composition"
 import {
   WORK_ORDER_PRIORITY_LABELS,
@@ -113,7 +116,7 @@ export default async function WorkOrderDetailPage({
   const filters = parseActivityFilters(sp)
   const returnPath = `/app/${tenantSlug}/work-orders/${workOrderId}`
 
-  const [members, companyOptions, assetOptions, caseResult, activities, auditEvents] =
+  const [members, companyOptions, assetOptions, caseResult, activities, auditEvents, skillCatalog, zoneCatalog] =
     await Promise.all([
       listCachedTenantMembers(context.tenantId),
       canWrite
@@ -134,6 +137,8 @@ export default async function WorkOrderDetailPage({
       canReadAudit
         ? listSubjectAuditEvents(context.tenantId, workOrderId, 20)
         : Promise.resolve([]),
+      listTenantSkills(context.tenantId),
+      listTenantZones(context.tenantId),
     ])
 
   const technicianOptions = members.map((m) => ({
@@ -291,6 +296,15 @@ export default async function WorkOrderDetailPage({
             </div>
           ) : null}
         </div>
+
+        {/* Eligibility suggestion (PR4) — read-only, never assigns */}
+        <WorkOrderEligibilityPanel
+          tenantSlug={tenantSlug}
+          workOrderId={workOrder.id}
+          hasWindow={Boolean(workOrder.scheduledStart && workOrder.scheduledEnd)}
+          skills={skillCatalog}
+          zones={zoneCatalog}
+        />
 
         {canWrite || canInvoice ? (
           <WorkOrderBillingControls

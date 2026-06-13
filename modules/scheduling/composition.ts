@@ -10,6 +10,8 @@ import { getSchedulingStats } from "@/modules/scheduling/application/use-cases/g
 import { listAssignments } from "@/modules/scheduling/application/use-cases/list-assignments"
 import { scanOverdueWorkOrders } from "@/modules/scheduling/application/use-cases/scan-overdue-work-orders"
 import { projectSlaAlertBoard } from "@/modules/scheduling/domain/sla-alert-board"
+import type { EligibilityRequirement } from "@/modules/scheduling/domain/eligibility"
+import { SupabaseEligibilityResolver } from "@/modules/scheduling/infrastructure/supabase-eligibility-resolver"
 import {
   reassignWorkOrder,
   type ReassignWorkOrderInput,
@@ -90,6 +92,18 @@ export function unassignWorkOrderRecord(input: UnassignWorkOrderInput) {
 
 /** At-risk lead time before SLA breach. Daily cron makes this best-effort (R4). */
 const OVERDUE_AT_RISK_WINDOW_MS = 2 * 60 * 60 * 1000
+
+/** Single timezone config point (ADR-028). tenant.timezone column deferred. */
+const TENANT_TIMEZONE = "America/Bogota"
+
+/**
+ * Read-only technician eligibility (PR4, ADR-028). Returns candidates evaluated
+ * against deterministic hard filters, ordered by lighter day-load. Suggestion
+ * only — writes nothing; manual assignment is unchanged.
+ */
+export function findEligibleTechnicians(tenantId: UUID, requirement: EligibilityRequirement) {
+  return new SupabaseEligibilityResolver(TENANT_TIMEZONE).findEligible(tenantId, requirement)
+}
 
 /**
  * Live SLA-alert projection for the dispatch card. Reads open WOs with an SLA
