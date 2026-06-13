@@ -9,6 +9,7 @@ import {
   type Execution,
   type ExecutionStatus,
 } from "@/modules/field-execution/domain/execution"
+import type { NonCompletionReason } from "@/modules/field-execution/domain/disposition"
 import {
   FIELD_EXECUTION_EVENTS,
   type FieldExecutionEvent,
@@ -30,6 +31,7 @@ export type AdvanceExecutionInput = {
   target: Exclude<ExecutionStatus, "pending">
   resolutionNotes?: string | null
   unableReason?: string | null
+  nonCompletionReason?: NonCompletionReason | null
 }
 
 const EVENT_BY_TARGET: Record<
@@ -114,6 +116,9 @@ export async function advanceExecution(
       ...(input.unableReason !== undefined
         ? { unableReason: input.unableReason }
         : {}),
+      ...(input.nonCompletionReason !== undefined
+        ? { nonCompletionReason: input.nonCompletionReason }
+        : {}),
     })
   }
 
@@ -131,6 +136,9 @@ export async function advanceExecution(
       workOrderId: input.workOrderId,
       from,
       to: input.target,
+      ...(input.nonCompletionReason
+        ? { nonCompletionReason: input.nonCompletionReason }
+        : {}),
     },
     requestId: input.requestId,
     source: "field",

@@ -5,6 +5,10 @@ import { useActionState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import {
+  NON_COMPLETION_REASONS,
+  NON_COMPLETION_REASON_LABELS,
+} from "@/modules/field-execution/domain/disposition"
 import type { ExecutionStatus } from "@/modules/field-execution/domain/execution"
 import {
   acceptAssignmentAction,
@@ -114,9 +118,21 @@ export function ExecutionActions({
           icon={XCircle}
           variant="outline"
         >
+          <select
+            name="non_completion_reason"
+            defaultValue="customer_absent"
+            className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none transition-shadow focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30"
+            aria-label="Motivo de no completar"
+          >
+            {NON_COMPLETION_REASONS.map((r) => (
+              <option key={r} value={r}>
+                {NON_COMPLETION_REASON_LABELS[r]}
+              </option>
+            ))}
+          </select>
           <Textarea
             name="unable_reason"
-            placeholder="Motivo (cliente ausente, sin acceso, falta material…)"
+            placeholder="Detalle adicional (opcional)"
             rows={2}
           />
         </ActionForm>

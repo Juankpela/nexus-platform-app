@@ -1,3 +1,4 @@
+import type { NonCompletionReason } from "@/modules/field-execution/domain/disposition"
 import type { UUID } from "@/types/shared"
 
 export type ExecutionStatus =
@@ -62,6 +63,7 @@ export type Execution = {
   unableToCompleteAt: string | null
   resolutionNotes: string | null
   unableReason: string | null
+  nonCompletionReason: NonCompletionReason | null
   createdAt: string
   updatedAt: string
 }

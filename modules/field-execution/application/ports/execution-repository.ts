@@ -1,3 +1,4 @@
+import type { NonCompletionReason } from "@/modules/field-execution/domain/disposition"
 import type {
   Execution,
   ExecutionStatus,
@@ -16,6 +17,7 @@ export type ExecutionPatch = {
   unableToCompleteAt?: string | null
   resolutionNotes?: string | null
   unableReason?: string | null
+  nonCompletionReason?: NonCompletionReason | null
 }
 
 export interface ExecutionRepository {

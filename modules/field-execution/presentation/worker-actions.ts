@@ -15,12 +15,17 @@ import {
   projectExecution,
   resolveCurrentTechnician,
 } from "@/modules/field-execution/composition"
+import {
+  NON_COMPLETION_REASONS,
+  type NonCompletionReason,
+} from "@/modules/field-execution/domain/disposition"
 import type { ExecutionStatus } from "@/modules/field-execution/domain/execution"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 
 export type WorkerActionState = { error: string | null; ok: boolean }
 
 const idSchema = z.uuid()
+const reasonSchema = z.enum(NON_COMPLETION_REASONS)
 
 function field(formData: FormData, name: string): string | null {
   const value = formData.get(name)
@@ -50,7 +55,11 @@ function describe(error: unknown): string {
 async function transition(
   formData: FormData,
   target: Exclude<ExecutionStatus, "pending">,
-  extras?: { resolutionNotes?: string | null; unableReason?: string | null },
+  extras?: {
+    resolutionNotes?: string | null
+    unableReason?: string | null
+    nonCompletionReason?: NonCompletionReason | null
+  },
 ): Promise<WorkerActionState> {
   const tenantSlug = field(formData, "tenantSlug")
   const assignmentId = idSchema.safeParse(field(formData, "assignment_id"))
@@ -93,6 +102,7 @@ async function transition(
       target,
       resolutionNotes: extras?.resolutionNotes,
       unableReason: extras?.unableReason,
+      nonCompletionReason: extras?.nonCompletionReason,
     })
 
     // Project the transition onto the Work Order + assignment so the WO detail
@@ -156,7 +166,9 @@ export async function reportUnableAction(
   _state: WorkerActionState,
   formData: FormData,
 ): Promise<WorkerActionState> {
+  const reasonParsed = reasonSchema.safeParse(field(formData, "non_completion_reason"))
   return transition(formData, "unable_to_complete", {
     unableReason: field(formData, "unable_reason"),
+    nonCompletionReason: reasonParsed.success ? reasonParsed.data : null,
   })
 }

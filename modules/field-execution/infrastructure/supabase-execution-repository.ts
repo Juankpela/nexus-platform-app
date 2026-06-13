@@ -62,6 +62,7 @@ function toExecution(row: ExecutionRow): Execution {
     unableToCompleteAt: row.unable_to_complete_at,
     resolutionNotes: row.resolution_notes,
     unableReason: row.unable_reason,
+    nonCompletionReason: row.non_completion_reason,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }
@@ -97,6 +98,8 @@ function patchToRow(patch: ExecutionPatch) {
     row.unable_to_complete_at = patch.unableToCompleteAt
   if ("resolutionNotes" in patch) row.resolution_notes = patch.resolutionNotes
   if ("unableReason" in patch) row.unable_reason = patch.unableReason
+  if ("nonCompletionReason" in patch)
+    row.non_completion_reason = patch.nonCompletionReason
   return row
 }
 
