@@ -76,6 +76,26 @@ describe("classifyWorkOrderTiming", () => {
     expect(t).toEqual({ isOpen: true, scheduleSlipped: false, sla: "none", severity: "ok" })
   })
 
+  it("pauses the SLA clock for on_hold even with a breached deadline (R1 stop-the-clock)", () => {
+    const t = classify({ status: "on_hold", scheduledEnd: iso(-4 * HOUR), slaDueAt: iso(-2 * HOUR) })
+    expect(t.isOpen).toBe(true)
+    expect(t.sla).toBe("paused")
+    expect(t.scheduleSlipped).toBe(false)
+    expect(t.severity).toBe("ok")
+  })
+
+  it("reports on_hold without an SLA as paused-but-none", () => {
+    const t = classify({ status: "on_hold", scheduledEnd: iso(-4 * HOUR), slaDueAt: null })
+    expect(t.sla).toBe("none")
+    expect(t.severity).toBe("ok")
+  })
+
+  it("does not alert an on_hold WO that is merely at-risk", () => {
+    const t = classify({ status: "on_hold", scheduledEnd: null, slaDueAt: iso(1 * HOUR) })
+    expect(t.sla).toBe("paused")
+    expect(t.severity).toBe("ok")
+  })
+
   it("needsAttention is true for anything above ok", () => {
     expect(needsAttention({ isOpen: true, scheduleSlipped: false, sla: "ok", severity: "ok" })).toBe(false)
     expect(needsAttention({ isOpen: true, scheduleSlipped: true, sla: "none", severity: "warning" })).toBe(true)

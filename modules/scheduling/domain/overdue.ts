@@ -21,7 +21,7 @@ export type WorkOrderTimingView = {
   slaDueAt: string | null
 }
 
-export type SlaState = "none" | "ok" | "at_risk" | "breached"
+export type SlaState = "none" | "ok" | "at_risk" | "breached" | "paused"
 
 /** Escalation ladder consumed by alerts/UI. Maps to a single actionable level. */
 export type TimingSeverity = "ok" | "warning" | "critical"
@@ -36,6 +36,19 @@ export type WorkOrderTiming = {
 
 /** Statuses that close a work order — no further timing pressure applies. */
 const TERMINAL_STATUSES = new Set(["completed", "cancelled"])
+
+/**
+ * Statuses that PAUSE SLA pressure (stop-the-clock, ADR-pending R1). While a WO
+ * is on hold (waiting on parts, customer, etc.) it should not raise SLA/slip
+ * alerts — that is alert fatigue.
+ *
+ * MVP scope: this SUPPRESSES alerting while paused. It does NOT shift the
+ * deadline by the paused duration — true clock arithmetic needs an
+ * `on_hold_since` + accumulated-pause accounting and is deferred. Consequence:
+ * a WO resuming from a long hold may surface as already breached on the next
+ * scan, which is acceptable (the commitment never actually moved).
+ */
+const PAUSED_STATUSES = new Set(["on_hold"])
 
 export type ClassifyOptions = {
   /** Evaluation instant (ms epoch). Injected for determinism/testability. */
@@ -59,6 +72,19 @@ export function classifyWorkOrderTiming(
   const isOpen = !TERMINAL_STATUSES.has(view.status)
   if (!isOpen) {
     return { isOpen: false, scheduleSlipped: false, sla: "none", severity: "ok" }
+  }
+
+  // Paused (on_hold): open, but the SLA clock is stopped — no alert. We still
+  // report sla="paused" (vs "ok"/"none") so the dispatch view can show it as
+  // distinct from a healthy WO.
+  if (PAUSED_STATUSES.has(view.status)) {
+    const hasSla = toMs(view.slaDueAt) !== null
+    return {
+      isOpen: true,
+      scheduleSlipped: false,
+      sla: hasSla ? "paused" : "none",
+      severity: "ok",
+    }
   }
 
   const atRiskWindowMs = options.atRiskWindowMs ?? DEFAULT_AT_RISK_WINDOW_MS
