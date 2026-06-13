@@ -1,15 +1,31 @@
 import "server-only"
 
+import type { SupabaseClient } from "@supabase/supabase-js"
+
 import { ApplicationError } from "@/lib/errors/application-error"
 import { createServerSupabaseClient } from "@/lib/supabase/server"
 import type { AuditRepository } from "@/modules/audit/application/ports/audit-repository"
 import type { AuditEntry } from "@/modules/audit/domain/audit-entry"
 import type { AuditEvent } from "@/modules/audit/domain/audit-event"
+import type { Database } from "@/types/database"
 import type { UUID } from "@/types/shared"
 
+type AuditClientFactory = () =>
+  | Promise<SupabaseClient<Database>>
+  | SupabaseClient<Database>
+
 export class SupabaseAuditRepository implements AuditRepository {
+  /**
+   * Defaults to the cookie-based server client (user-initiated writes). Pass an
+   * admin-client factory for service-role contexts with no user session (e.g.
+   * the overdue scanner cron), where the server client cannot satisfy RLS.
+   */
+  constructor(
+    private readonly createClient: AuditClientFactory = createServerSupabaseClient,
+  ) {}
+
   async append(event: AuditEvent): Promise<void> {
-    const client = await createServerSupabaseClient()
+    const client = await this.createClient()
     const { error } = await client.from("audit_events").insert({
       event_type: event.eventType,
       actor_type: event.actorType,
@@ -37,7 +53,7 @@ export class SupabaseAuditRepository implements AuditRepository {
     subjectId: string,
     limit: number,
   ): Promise<AuditEntry[]> {
-    const client = await createServerSupabaseClient()
+    const client = await this.createClient()
     const { data, error } = await client
       .from("audit_events")
       .select(

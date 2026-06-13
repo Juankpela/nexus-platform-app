@@ -112,3 +112,19 @@ export function classifyWorkOrderTiming(
 export function needsAttention(timing: WorkOrderTiming): boolean {
   return timing.severity !== "ok"
 }
+
+/** Tier persisted by the overdue scanner's dedup cursor. */
+export type AlertSeverity = "warning" | "critical"
+
+/**
+ * Maps the SLA state to the durable alert tier the scanner emits.
+ *
+ * DURABLE emission is SLA-driven ONLY (decision D-A): schedule slip and the
+ * composite `severity` are for the live dispatch card, not for the cursor/audit.
+ * Returns null for states that must NOT produce a durable alert (ok/none/paused).
+ */
+export function slaAlertSeverity(sla: SlaState): AlertSeverity | null {
+  if (sla === "breached") return "critical"
+  if (sla === "at_risk") return "warning"
+  return null
+}

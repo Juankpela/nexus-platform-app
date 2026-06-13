@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/export-worker",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/scheduling-scan",
+      "schedule": "0 7 * * *"
     }
   ]
 }
