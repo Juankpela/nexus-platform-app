@@ -2270,6 +2270,48 @@ export type Database = {
         }
         Relationships: []
       }
+      work_order_alert_state: {
+        Row: {
+          created_at: string
+          last_alerted_at: string
+          last_alerted_severity: string
+          tenant_id: string
+          updated_at: string
+          work_order_id: string
+        }
+        Insert: {
+          created_at?: string
+          last_alerted_at: string
+          last_alerted_severity: string
+          tenant_id: string
+          updated_at?: string
+          work_order_id: string
+        }
+        Update: {
+          created_at?: string
+          last_alerted_at?: string
+          last_alerted_severity?: string
+          tenant_id?: string
+          updated_at?: string
+          work_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_order_alert_state_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_order_alert_state_work_order_id_tenant_id_fkey"
+            columns: ["work_order_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id", "tenant_id"]
+          },
+        ]
+      }
       work_order_assignments: {
         Row: {
           created_at: string
