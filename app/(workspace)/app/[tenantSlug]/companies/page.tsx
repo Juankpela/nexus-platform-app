@@ -65,7 +65,7 @@ export default async function CompaniesPage({
         description="Manage the companies in your workspace."
       />
       <div className="space-y-4 px-5 py-6 sm:px-8">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <form action={basePath} className="w-full max-w-xs">
             <Input
               type="search"
@@ -74,7 +74,7 @@ export default async function CompaniesPage({
               placeholder="Search companies..."
             />
           </form>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
             <ExportButton tenantSlug={tenantSlug} object="accounts" filters={{ search }} />
             {canWrite ? (
               <>
