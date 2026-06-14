@@ -87,6 +87,10 @@ import {
   type CreateContactInput,
 } from "@/modules/crm/application/use-cases/create-contact"
 import {
+  importContacts,
+  type ImportContactsInput,
+} from "@/modules/crm/application/use-cases/import-contacts"
+import {
   listCompanyActivities,
   listContactActivities,
 } from "@/modules/crm/application/use-cases/list-activities"
@@ -232,6 +236,10 @@ export function updateContactRecord(input: UpdateContactInput) {
 
 export function changeContactRecordStatus(input: ChangeContactStatusInput) {
   return changeContactStatus({ contacts: contactRepo(), audit: audit() }, input)
+}
+
+export function importContactRecords(input: ImportContactsInput) {
+  return importContacts({ contacts: contactRepo(), audit: audit() }, input)
 }
 
 // --- Activities ------------------------------------------------------------

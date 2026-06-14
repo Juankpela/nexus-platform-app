@@ -1,9 +1,11 @@
+import type { ImportResult } from "@/lib/csv/import-result"
 import type { CrmStatus } from "@/modules/crm/domain/company"
 import type {
   Contact,
   ContactInput,
   ContactOption,
 } from "@/modules/crm/domain/contact"
+import type { ContactImportRow } from "@/modules/crm/domain/contact-import"
 import type { ListQuery, Paginated } from "@/modules/crm/domain/pagination"
 import type { UUID } from "@/types/shared"
 
@@ -14,4 +16,6 @@ export interface ContactRepository {
   update(tenantId: UUID, id: UUID, input: ContactInput): Promise<Contact>
   setStatus(tenantId: UUID, id: UUID, status: CrmStatus): Promise<void>
   listActiveOptions(tenantId: UUID): Promise<ContactOption[]>
+  /** Bulk CSV import: resolves the company link, skips duplicates, inserts. */
+  importBatch(tenantId: UUID, rows: ContactImportRow[]): Promise<ImportResult>
 }

@@ -1,7 +1,8 @@
-import { Plus } from "lucide-react"
+import { Plus, Upload } from "lucide-react"
 import type { Metadata } from "next"
 import Link from "next/link"
 
+import { ContactCsvImport } from "@/components/crm/contact-csv-import"
 import { ContactFormDialog } from "@/components/crm/contact-form-dialog"
 import { CrmStatusToggle } from "@/components/crm/crm-status-toggle"
 import { Pagination } from "@/components/crm/pagination"
@@ -81,16 +82,27 @@ export default async function ContactsPage({
           <div className="flex items-center gap-2">
             <ExportButton tenantSlug={tenantSlug} object="contacts" filters={{ search }} />
             {canWrite ? (
-              <ContactFormDialog
-                tenantSlug={tenantSlug}
-                companyOptions={companyOptions}
-                trigger={
-                  <Button>
-                    <Plus />
-                    New contact
-                  </Button>
-                }
-              />
+              <>
+                <ContactCsvImport
+                  tenantSlug={tenantSlug}
+                  trigger={
+                    <Button variant="outline">
+                      <Upload />
+                      Importar contactos
+                    </Button>
+                  }
+                />
+                <ContactFormDialog
+                  tenantSlug={tenantSlug}
+                  companyOptions={companyOptions}
+                  trigger={
+                    <Button>
+                      <Plus />
+                      New contact
+                    </Button>
+                  }
+                />
+              </>
             ) : null}
           </div>
         </div>

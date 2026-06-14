@@ -1,13 +1,23 @@
 import "server-only"
 
+import type { ImportResult } from "@/lib/csv/import-result"
 import { ApplicationError } from "@/lib/errors/application-error"
 import { createServerSupabaseClient } from "@/lib/supabase/server"
 import type { ContactRepository } from "@/modules/crm/application/ports/contact-repository"
 import type { CrmStatus } from "@/modules/crm/domain/company"
+import { companyDedupKey } from "@/modules/crm/domain/company-import"
 import type { Contact, ContactInput } from "@/modules/crm/domain/contact"
+import {
+  contactDedupKey,
+  hasCompanyReference,
+  type ContactImportRow,
+} from "@/modules/crm/domain/contact-import"
 import type { ListQuery, Paginated } from "@/modules/crm/domain/pagination"
 import type { Database } from "@/types/database"
 import type { UUID } from "@/types/shared"
+
+/** Max rows per insert call — keeps a single failing row from sinking the file. */
+const IMPORT_CHUNK_SIZE = 500
 
 type ContactRow = Database["public"]["Tables"]["contacts"]["Row"]
 type ContactRowWithCompany = ContactRow & {
@@ -179,6 +189,127 @@ export class SupabaseContactRepository implements ContactRepository {
       name: [row.first_name, row.last_name].filter(Boolean).join(" "),
       companyId: row.company_id,
     }))
+  }
+
+  async importBatch(
+    tenantId: UUID,
+    rows: ContactImportRow[],
+  ): Promise<ImportResult> {
+    const errors: ImportResult["errors"] = []
+    let skipped = 0
+
+    const client = await createServerSupabaseClient()
+
+    // Index existing companies by business key (NIT→name) for relation lookup.
+    const { data: companies, error: companiesError } = await client
+      .from("companies")
+      .select("id, name, tax_id")
+      .eq("tenant_id", tenantId)
+    if (companiesError) {
+      throw new ApplicationError(
+        "Unable to read companies for contact import.",
+        "CONTACT_IMPORT_COMPANY_READ_FAILED",
+        companiesError,
+      )
+    }
+    const companyIndex = new Map<string, UUID>()
+    for (const c of companies ?? []) {
+      const key = companyDedupKey({ name: c.name, taxId: c.tax_id })
+      if (key && !companyIndex.has(key)) companyIndex.set(key, c.id)
+    }
+
+    // Seed the dedup set from existing contacts (by email — the strong key).
+    const { data: existing, error: contactsError } = await client
+      .from("contacts")
+      .select("email")
+      .eq("tenant_id", tenantId)
+      .not("email", "is", null)
+    if (contactsError) {
+      throw new ApplicationError(
+        "Unable to read contacts for import.",
+        "CONTACT_IMPORT_READ_FAILED",
+        contactsError,
+      )
+    }
+    const seen = new Set<string>()
+    for (const c of existing ?? []) {
+      if (c.email) seen.add(`email:${c.email.trim().toLowerCase()}`)
+    }
+
+    const toInsert: { row: number; record: ReturnType<typeof toRow> }[] = []
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i]
+      const rowNum = i + 1
+      const firstName = row.firstName?.trim()
+      if (!firstName) {
+        errors.push({ row: rowNum, message: "El nombre es obligatorio." })
+        continue
+      }
+
+      // Resolve the company link (optional). A reference that matches nothing
+      // is a broken relation → quarantine the row.
+      let companyId: UUID | null = null
+      let companyKey: string | null = null
+      if (hasCompanyReference(row)) {
+        companyKey = companyDedupKey({
+          name: row.companyName ?? "",
+          taxId: row.companyTaxId,
+        })
+        const resolved = companyKey ? companyIndex.get(companyKey) : undefined
+        if (!resolved) {
+          errors.push({
+            row: rowNum,
+            message: `Empresa no encontrada: "${row.companyTaxId ?? row.companyName}". Impórtala primero o corrige el dato.`,
+          })
+          continue
+        }
+        companyId = resolved
+      }
+
+      const key = contactDedupKey({
+        firstName,
+        lastName: row.lastName,
+        email: row.email,
+        companyKey,
+      })
+      if (key && seen.has(key)) {
+        skipped += 1
+        continue
+      }
+      if (key) seen.add(key)
+
+      toInsert.push({
+        row: rowNum,
+        record: toRow(tenantId, {
+          companyId,
+          firstName,
+          lastName: row.lastName,
+          email: row.email,
+          phone: row.phone,
+          mobile: row.mobile,
+          title: row.title,
+          department: row.department,
+          notes: row.notes,
+        }),
+      })
+    }
+
+    let imported = 0
+    for (let i = 0; i < toInsert.length; i += IMPORT_CHUNK_SIZE) {
+      const chunk = toInsert.slice(i, i + IMPORT_CHUNK_SIZE)
+      const { error } = await client
+        .from("contacts")
+        .insert(chunk.map((c) => c.record))
+      if (error) {
+        for (const c of chunk) {
+          errors.push({ row: c.row, message: "No se pudo guardar esta fila." })
+        }
+      } else {
+        imported += chunk.length
+      }
+    }
+
+    return { imported, skipped, errors }
   }
 
   async setStatus(tenantId: UUID, id: UUID, status: CrmStatus): Promise<void> {
