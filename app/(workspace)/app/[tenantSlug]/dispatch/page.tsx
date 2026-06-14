@@ -88,7 +88,14 @@ function fmtTime(iso: string): string {
   })
 }
 function todayUtc(): string {
-  return new Date().toISOString().slice(0, 10)
+  // Tenant-local "today" (America/Bogota), so the default board day matches the
+  // timezone the user thinks in — consistent with the tz-aware day window.
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Bogota",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date())
 }
 
 export default async function DispatchPage({
