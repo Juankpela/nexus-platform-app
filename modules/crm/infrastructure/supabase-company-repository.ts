@@ -1,5 +1,6 @@
 import "server-only"
 
+import type { ImportResult } from "@/lib/csv/import-result"
 import { ApplicationError } from "@/lib/errors/application-error"
 import { createServerSupabaseClient } from "@/lib/supabase/server"
 import type { CompanyRepository } from "@/modules/crm/application/ports/company-repository"
@@ -9,9 +10,16 @@ import type {
   CompanyOption,
   CrmStatus,
 } from "@/modules/crm/domain/company"
+import {
+  companyDedupKey,
+  type CompanyImportRow,
+} from "@/modules/crm/domain/company-import"
 import type { ListQuery, Paginated } from "@/modules/crm/domain/pagination"
 import type { Database } from "@/types/database"
 import type { UUID } from "@/types/shared"
+
+/** Max rows per insert call — keeps a single failing row from sinking the file. */
+const IMPORT_CHUNK_SIZE = 500
 
 type CompanyRow = Database["public"]["Tables"]["companies"]["Row"]
 
@@ -172,6 +180,88 @@ export class SupabaseCompanyRepository implements CompanyRepository {
         error,
       )
     }
+  }
+
+  async importBatch(
+    tenantId: UUID,
+    rows: CompanyImportRow[],
+  ): Promise<ImportResult> {
+    const errors: ImportResult["errors"] = []
+    let skipped = 0
+
+    const client = await createServerSupabaseClient()
+
+    // One indexed read to build the set of existing business keys (NIT/name).
+    const { data: existing, error: readError } = await client
+      .from("companies")
+      .select("name, tax_id")
+      .eq("tenant_id", tenantId)
+    if (readError) {
+      throw new ApplicationError(
+        "Unable to read companies for import.",
+        "COMPANY_IMPORT_READ_FAILED",
+        readError,
+      )
+    }
+    const seen = new Set<string>()
+    for (const c of existing ?? []) {
+      const key = companyDedupKey({ name: c.name, taxId: c.tax_id })
+      if (key) seen.add(key)
+    }
+
+    const toInsert: { row: number; record: ReturnType<typeof toRow> }[] = []
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i]
+      const rowNum = i + 1
+      const name = row.name?.trim()
+      if (!name) {
+        errors.push({ row: rowNum, message: "El nombre de la empresa es obligatorio." })
+        continue
+      }
+      if (name.length > 200) {
+        errors.push({ row: rowNum, message: "El nombre supera los 200 caracteres." })
+        continue
+      }
+      const key = companyDedupKey({ name, taxId: row.taxId })
+      if (key && seen.has(key)) {
+        skipped += 1
+        continue
+      }
+      if (key) seen.add(key)
+      toInsert.push({
+        row: rowNum,
+        record: toRow(tenantId, {
+          name,
+          taxId: row.taxId,
+          industry: row.industry,
+          website: row.website,
+          phone: row.phone,
+          address: row.address,
+          city: row.city,
+          state: row.state,
+          country: row.country,
+          notes: row.notes,
+        }),
+      })
+    }
+
+    let imported = 0
+    for (let i = 0; i < toInsert.length; i += IMPORT_CHUNK_SIZE) {
+      const chunk = toInsert.slice(i, i + IMPORT_CHUNK_SIZE)
+      const { error } = await client
+        .from("companies")
+        .insert(chunk.map((c) => c.record))
+      if (error) {
+        // Whole chunk failed — report its rows and keep going with the rest.
+        for (const c of chunk) {
+          errors.push({ row: c.row, message: "No se pudo guardar esta fila." })
+        }
+      } else {
+        imported += chunk.length
+      }
+    }
+
+    return { imported, skipped, errors }
   }
 
   async listActiveOptions(tenantId: UUID): Promise<CompanyOption[]> {

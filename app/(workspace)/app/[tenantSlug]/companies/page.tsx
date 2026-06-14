@@ -1,7 +1,8 @@
-import { Plus } from "lucide-react"
+import { Plus, Upload } from "lucide-react"
 import type { Metadata } from "next"
 import Link from "next/link"
 
+import { CompanyCsvImport } from "@/components/crm/company-csv-import"
 import { CompanyFormDialog } from "@/components/crm/company-form-dialog"
 import { CrmStatusToggle } from "@/components/crm/crm-status-toggle"
 import { Pagination } from "@/components/crm/pagination"
@@ -76,15 +77,26 @@ export default async function CompaniesPage({
           <div className="flex items-center gap-2">
             <ExportButton tenantSlug={tenantSlug} object="accounts" filters={{ search }} />
             {canWrite ? (
-              <CompanyFormDialog
-                tenantSlug={tenantSlug}
-                trigger={
-                  <Button>
-                    <Plus />
-                    New company
-                  </Button>
-                }
-              />
+              <>
+                <CompanyCsvImport
+                  tenantSlug={tenantSlug}
+                  trigger={
+                    <Button variant="outline">
+                      <Upload />
+                      Importar empresas
+                    </Button>
+                  }
+                />
+                <CompanyFormDialog
+                  tenantSlug={tenantSlug}
+                  trigger={
+                    <Button>
+                      <Plus />
+                      New company
+                    </Button>
+                  }
+                />
+              </>
             ) : null}
           </div>
         </div>

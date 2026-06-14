@@ -21,3 +21,13 @@ export type ImportResult = {
 export function emptyImportResult(): ImportResult {
   return { imported: 0, skipped: 0, errors: [] }
 }
+
+/**
+ * Server-action return shape for an import. Shared by the import card so the
+ * same component can drive Companies today and Contacts/Assets later.
+ */
+export type ImportActionState = {
+  ok: boolean
+  error: string | null
+  result: ImportResult | null
+}

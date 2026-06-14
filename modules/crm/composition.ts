@@ -79,6 +79,10 @@ import {
   type CreateCompanyInput,
 } from "@/modules/crm/application/use-cases/create-company"
 import {
+  importCompanies,
+  type ImportCompaniesInput,
+} from "@/modules/crm/application/use-cases/import-companies"
+import {
   createContact,
   type CreateContactInput,
 } from "@/modules/crm/application/use-cases/create-contact"
@@ -199,6 +203,10 @@ export function updateCompanyRecord(input: UpdateCompanyInput) {
 
 export function changeCompanyRecordStatus(input: ChangeCompanyStatusInput) {
   return changeCompanyStatus({ companies: companyRepo(), audit: audit() }, input)
+}
+
+export function importCompanyRecords(input: ImportCompaniesInput) {
+  return importCompanies({ companies: companyRepo(), audit: audit() }, input)
 }
 
 // --- Contacts --------------------------------------------------------------
