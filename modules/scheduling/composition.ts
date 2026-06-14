@@ -1,6 +1,11 @@
 import "server-only"
 
 import { createAdminSupabaseClient } from "@/lib/supabase/admin"
+import { createServerSupabaseClient } from "@/lib/supabase/server"
+import {
+  planReschedule,
+  type RescheduleMode,
+} from "@/modules/scheduling/application/use-cases/plan-reschedule"
 import { SupabaseAuditRepository } from "@/modules/audit/infrastructure/supabase-audit-repository"
 import { SERVICE_PERMISSIONS } from "@/modules/authorization/domain/permission"
 import { notifyAudience } from "@/modules/notifications/application/use-cases/notify-audience"
@@ -218,6 +223,57 @@ export async function runRescheduleProposalsBatch() {
     }
   }
   return batch
+}
+
+/**
+ * Human-triggered reschedule (ADR-032): recompute the plan fresh, then write via
+ * the validated assign/reassign use-cases. Reads use the user (RLS) client; the
+ * action gate (schedulingWrite) authorizes it.
+ */
+export async function applyRescheduleRecord(input: {
+  actorId: UUID
+  tenantId: UUID
+  requestId: UUID
+  workOrderId: UUID
+  mode: RescheduleMode
+}) {
+  const client = await createServerSupabaseClient()
+  const plan = await planReschedule(
+    {
+      candidates: new SupabaseRescheduleCandidateReader(client, TENANT_TIMEZONE),
+      scheduling: schedulingRepo(),
+      resolver: new SupabaseEligibilityResolver(TENANT_TIMEZONE),
+      nowMs: Date.now(),
+      timeZone: TENANT_TIMEZONE,
+      horizonDays: RESCHEDULE_HORIZON_DAYS,
+    },
+    { tenantId: input.tenantId, workOrderId: input.workOrderId, mode: input.mode },
+  )
+
+  if (plan.activeAssignmentId) {
+    await reassignWorkOrderRecord({
+      actorId: input.actorId,
+      tenantId: input.tenantId,
+      requestId: input.requestId,
+      id: plan.activeAssignmentId,
+      technicianId: plan.technicianId,
+      scheduledStart: plan.startsAt,
+      scheduledEnd: plan.endsAt,
+    })
+  } else {
+    await assignWorkOrderRecord({
+      actorId: input.actorId,
+      tenantId: input.tenantId,
+      requestId: input.requestId,
+      data: {
+        workOrderId: input.workOrderId,
+        technicianId: plan.technicianId,
+        scheduledStart: plan.startsAt,
+        scheduledEnd: plan.endsAt,
+      },
+    })
+  }
+  return plan
 }
 
 /**

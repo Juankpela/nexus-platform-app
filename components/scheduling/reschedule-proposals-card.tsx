@@ -1,6 +1,7 @@
 import { CalendarClock, UserCog, Clock4 } from "lucide-react"
 import Link from "next/link"
 
+import { RescheduleProposalActions } from "@/components/scheduling/reschedule-proposal-actions"
 import { NON_COMPLETION_REASON_LABELS } from "@/modules/field-execution/domain/disposition"
 import { minutesToHHMM } from "@/modules/service/domain/availability"
 import type { RescheduleProposalView } from "@/modules/scheduling/domain/reschedule-proposal"
@@ -47,21 +48,30 @@ export function RescheduleProposalsCard({
                 <Clock4 className="size-3.5" /> Reagendar (mismo técnico)
               </p>
               <ul className="space-y-1.5">
-                {reschedule.map((p) => (
-                  <li key={p.workOrderId}>
-                    <Link
-                      href={`/app/${tenantSlug}/work-orders/${p.workOrderId}`}
-                      className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-muted/20 px-2.5 py-1.5 text-xs hover:bg-muted/40"
+                {reschedule.map((p) => {
+                  const slotLabel = `${p.proposedDate ?? ""} ${p.proposedStartMinute !== null ? minutesToHHMM(p.proposedStartMinute) : ""}–${p.proposedEndMinute !== null ? minutesToHHMM(p.proposedEndMinute) : ""}`.trim()
+                  return (
+                    <li
+                      key={p.workOrderId}
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-muted/20 px-2.5 py-2 text-xs"
                     >
-                      <span className="font-medium text-foreground">{p.technicianName ?? "—"}</span>
-                      <span className="tabular-nums text-muted-foreground">
-                        {p.proposedDate} · {p.proposedStartMinute !== null ? minutesToHHMM(p.proposedStartMinute) : "—"}
-                        –{p.proposedEndMinute !== null ? minutesToHHMM(p.proposedEndMinute) : "—"}
-                      </span>
-                      <span className="text-muted-foreground/70">{reasonLabel(p)}</span>
-                    </Link>
-                  </li>
-                ))}
+                      <Link
+                        href={`/app/${tenantSlug}/work-orders/${p.workOrderId}`}
+                        className="flex flex-1 flex-wrap items-center gap-2 hover:underline"
+                      >
+                        <span className="font-medium text-foreground">{p.technicianName ?? "—"}</span>
+                        <span className="tabular-nums text-muted-foreground">{slotLabel}</span>
+                        <span className="text-muted-foreground/70">{reasonLabel(p)}</span>
+                      </Link>
+                      <RescheduleProposalActions
+                        tenantSlug={tenantSlug}
+                        workOrderId={p.workOrderId}
+                        technicianName={p.technicianName}
+                        slotLabel={slotLabel}
+                      />
+                    </li>
+                  )
+                })}
               </ul>
             </div>
           ) : null}

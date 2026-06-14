@@ -6,10 +6,12 @@ import { z } from "zod"
 import { ApplicationError } from "@/lib/errors/application-error"
 import { SERVICE_PERMISSIONS } from "@/modules/authorization/domain/permission"
 import {
+  applyRescheduleRecord,
   assignWorkOrderRecord,
   reassignWorkOrderRecord,
   unassignWorkOrderRecord,
 } from "@/modules/scheduling/composition"
+import type { RescheduleMode } from "@/modules/scheduling/application/use-cases/plan-reschedule"
 import {
   fail,
   field,
@@ -42,6 +44,12 @@ function describeError(error: unknown): string {
         return "La hora de fin debe ser posterior a la de inicio."
       case "ASSIGNMENT_NOT_FOUND":
         return "Asignación no encontrada."
+      case "NO_RESCHEDULE_CANDIDATE":
+        return "Esta orden no es candidata a reagendar (sin ejecución fallida con motivo reagendable)."
+      case "NO_SLOT":
+        return "No hay cupo disponible en el horizonte."
+      case "NO_ALTERNATIVE_TECHNICIAN":
+        return "No hay técnico alternativo disponible para ese horario."
     }
   }
   return "No se pudo completar la acción."
@@ -87,6 +95,49 @@ export async function assignWorkOrderAction(
 
   revalidate(tenantSlug)
   return { error: null, ok: true }
+}
+
+async function applyReschedule(
+  formData: FormData,
+  mode: RescheduleMode,
+): Promise<SchedulingActionState> {
+  const tenantSlug = field(formData, "tenantSlug")
+  const workOrderId = idSchema.safeParse(field(formData, "work_order_id"))
+  if (!tenantSlug || !workOrderId.success) return fail("Solicitud inválida.")
+
+  try {
+    const context = await requireSchedulingContext(
+      tenantSlug,
+      SERVICE_PERMISSIONS.schedulingWrite,
+    )
+    await applyRescheduleRecord({
+      actorId: context.userId,
+      tenantId: context.tenantId,
+      requestId: context.requestId,
+      workOrderId: workOrderId.data,
+      mode,
+    })
+  } catch (error) {
+    return fail(describeError(error))
+  }
+
+  revalidatePath(`/app/${tenantSlug}/dispatch`)
+  revalidatePath(`/app/${tenantSlug}/work-orders/${workOrderId.data}`)
+  return { error: null, ok: true }
+}
+
+export async function applyRescheduleSameTechAction(
+  _state: SchedulingActionState,
+  formData: FormData,
+): Promise<SchedulingActionState> {
+  return applyReschedule(formData, "same_tech")
+}
+
+export async function applyRescheduleSuggestedAction(
+  _state: SchedulingActionState,
+  formData: FormData,
+): Promise<SchedulingActionState> {
+  return applyReschedule(formData, "suggested")
 }
 
 export async function reassignWorkOrderAction(

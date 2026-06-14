@@ -30,3 +30,40 @@ export function localDateMinute(
   if (hour === 24) hour = 0
   return { date: `${year}-${pad(month)}-${pad(day)}`, minute: hour * 60 + minute }
 }
+
+/** Offset (minutes) of a timezone from UTC at a given instant. */
+export function zoneOffsetMinutes(instant: Date, timeZone: string): number {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      hour12: false,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    })
+      .formatToParts(instant)
+      .map((p) => [p.type, p.value]),
+  )
+  let hour = Number(parts.hour)
+  if (hour === 24) hour = 0
+  const asUtc = Date.UTC(
+    Number(parts.year),
+    Number(parts.month) - 1,
+    Number(parts.day),
+    hour,
+    Number(parts.minute),
+    Number(parts.second),
+  )
+  return (asUtc - instant.getTime()) / 60_000
+}
+
+/** Convert a local wall-clock slot (date + minute-of-day in `timeZone`) to a UTC ISO instant. */
+export function localSlotToIso(date: string, minute: number, timeZone: string): string {
+  const [y, mo, d] = date.split("-").map(Number)
+  const guess = new Date(Date.UTC(y, mo - 1, d))
+  const offset = zoneOffsetMinutes(guess, timeZone)
+  return new Date(Date.UTC(y, mo - 1, d) + minute * 60_000 - offset * 60_000).toISOString()
+}
