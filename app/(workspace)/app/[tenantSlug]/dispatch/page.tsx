@@ -1,24 +1,23 @@
 import {
+  AlertTriangle,
   CheckCircle2,
   Gauge,
   LayoutGrid,
   Users,
-  AlertTriangle,
 } from "lucide-react"
 import type { Metadata } from "next"
 import Link from "next/link"
 
-import { EmptyState } from "@/components/layout/empty-state"
-import { PageHeader } from "@/components/layout/page-header"
+import { AssignTechnicianDialog } from "@/components/dispatch/assign-technician-dialog"
+import { AssignmentActions } from "@/components/dispatch/assignment-actions"
 import { KpiCard } from "@/components/dashboard/kpi-card"
 import { RefreshBoardButton } from "@/components/dispatch/refresh-board-button"
-import { SlaAlertsCard } from "@/components/dispatch/sla-alerts-card"
-import { RescheduleProposalsCard } from "@/components/scheduling/reschedule-proposals-card"
-import { Input } from "@/components/ui/input"
+import { EmptyState } from "@/components/layout/empty-state"
+import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
 import {
-  FOUNDATION_PERMISSIONS,
   SERVICE_PERMISSIONS,
   hasPermission,
 } from "@/modules/authorization/domain/permission"
@@ -26,18 +25,21 @@ import {
   getTenantDispatchBoard,
   getTenantDispatchStats,
 } from "@/modules/dispatch/composition"
-import {
-  getTenantSlaAlerts,
-  listRecentRescheduleProposals,
-} from "@/modules/scheduling/composition"
+import { selectUnassignedWorkOrders } from "@/modules/dispatch/application/select-unassigned"
 import {
   WORKLOAD_STATUS_LABELS,
   type WorkloadStatus,
 } from "@/modules/dispatch/domain/technician-workload"
+import { getActiveAssignmentsByWorkOrder } from "@/modules/scheduling/composition"
 import {
   ASSIGNMENT_STATUS_LABELS,
   type AssignmentStatus,
 } from "@/modules/scheduling/domain/work-order-assignment"
+import { listTenantTechnicians, listTenantWorkOrders } from "@/modules/service/composition"
+import {
+  WORK_ORDER_PRIORITY_LABELS,
+  type WorkOrder,
+} from "@/modules/service/domain/work-order"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 import { cn } from "@/lib/utils"
 
@@ -47,24 +49,11 @@ const VALID_TABS = ["board", "stats"] as const
 type Tab = (typeof VALID_TABS)[number]
 
 const workloadStyles: Record<WorkloadStatus, { badge: string; bar: string }> = {
-  overloaded: {
-    badge: "bg-red-500/10 text-red-600 dark:text-red-400",
-    bar: "bg-red-500",
-  },
-  busy: {
-    badge: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-    bar: "bg-amber-500",
-  },
-  available: {
-    badge: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-    bar: "bg-emerald-500",
-  },
-  unavailable: {
-    badge: "bg-muted text-muted-foreground",
-    bar: "bg-muted-foreground/40",
-  },
+  overloaded: { badge: "bg-red-500/10 text-red-600 dark:text-red-400", bar: "bg-red-500" },
+  busy: { badge: "bg-amber-500/10 text-amber-600 dark:text-amber-400", bar: "bg-amber-500" },
+  available: { badge: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400", bar: "bg-emerald-500" },
+  unavailable: { badge: "bg-muted text-muted-foreground", bar: "bg-muted-foreground/40" },
 }
-
 const assignmentStyles: Record<AssignmentStatus, string> = {
   scheduled: "bg-sky-500/10 text-sky-600 dark:text-sky-400",
   in_progress: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
@@ -87,15 +76,19 @@ function fmtTime(iso: string): string {
     timeZone: "America/Bogota",
   })
 }
-function todayUtc(): string {
-  // Tenant-local "today" (America/Bogota), so the default board day matches the
-  // timezone the user thinks in — consistent with the tz-aware day window.
+function todayLocal(): string {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Bogota",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
   }).format(new Date())
+}
+/** Assign window from the WO: its scheduled window, defaulting end to start + 1h. */
+function woWindow(wo: WorkOrder): { start: string; end: string } | null {
+  if (!wo.scheduledStart) return null
+  const end = wo.scheduledEnd ?? new Date(new Date(wo.scheduledStart).getTime() + 3_600_000).toISOString()
+  return { start: wo.scheduledStart, end }
 }
 
 export default async function DispatchPage({
@@ -111,74 +104,76 @@ export default async function DispatchPage({
   requirePermission(context.effectivePermissions, SERVICE_PERMISSIONS.dispatchRead)
 
   const tab = parseTab(sp.tab)
-  const date = /^\d{4}-\d{2}-\d{2}$/.test(sp.date ?? "") ? sp.date! : todayUtc()
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(sp.date ?? "") ? sp.date! : todayLocal()
   const basePath = `/app/${tenantSlug}/dispatch`
 
-  const canReadAudit = hasPermission(
-    context.effectivePermissions,
-    FOUNDATION_PERMISSIONS.auditRead,
-  )
-  const [board, stats, slaAlerts, proposals] = await Promise.all([
+  const canSchedule = hasPermission(context.effectivePermissions, SERVICE_PERMISSIONS.schedulingWrite)
+  const canWoWrite = hasPermission(context.effectivePermissions, SERVICE_PERMISSIONS.workOrdersWrite)
+
+  // scheduled_start is a UTC timestamp; bound the filter to the selected day in
+  // tenant time (America/Bogota, no DST) so afternoon work orders aren't missed.
+  const dayStartUtc = new Date(`${date}T00:00:00-05:00`).toISOString()
+  const dayEndUtc = new Date(`${date}T23:59:59.999-05:00`).toISOString()
+
+  const [board, stats, todayWos, technicianPage] = await Promise.all([
     getTenantDispatchBoard(context.tenantId, date),
     getTenantDispatchStats(context.tenantId, date),
-    getTenantSlaAlerts(context.tenantId),
-    canReadAudit
-      ? listRecentRescheduleProposals(context.tenantId)
-      : Promise.resolve([]),
+    listTenantWorkOrders(
+      context.tenantId,
+      { search: null, status: null, priority: null, technicianId: null, companyId: null, assetId: null, dateFrom: dayStartUtc, dateTo: dayEndUtc },
+      1,
+      500,
+    ),
+    canSchedule
+      ? listTenantTechnicians(context.tenantId, { search: null, status: "active" }, "name", 1, 200)
+      : Promise.resolve(null),
   ])
+
+  const technicians = (technicianPage?.items ?? []).map((t) => ({
+    id: t.id,
+    name: `${t.firstName} ${t.lastName}`.trim(),
+  }))
+
+  // Today's work orders → which already have an active assignment (ADR-031).
+  const activeMap = await getActiveAssignmentsByWorkOrder(
+    context.tenantId,
+    todayWos.items.map((w) => w.id),
+  )
+  const assignedIds = new Set(activeMap.keys())
+  const unassigned = selectUnassignedWorkOrders(todayWos.items, assignedIds)
+  const woById = new Map(todayWos.items.map((w) => [w.id, w]))
 
   const tabClass = (t: Tab) =>
     cn(
       "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-      tab === t
-        ? "bg-card text-foreground shadow-sm"
-        : "text-muted-foreground hover:text-foreground",
+      tab === t ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
     )
 
   return (
     <>
       <PageHeader
         title="Tablero de despacho"
-        description="Operación diaria de Field Service — carga y disponibilidad por técnico."
+        description="Tu día de operación: asigna, reasigna y avanza las órdenes."
       />
       <div className="space-y-4 px-5 py-6 sm:px-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-1 rounded-lg border bg-muted/40 p-0.5">
             <Link href={`${basePath}?date=${date}`} className={tabClass("board")}>
-              <LayoutGrid className="size-3.5" /> Board
+              <LayoutGrid className="size-3.5" /> Tablero
             </Link>
-            <Link
-              href={`${basePath}?tab=stats&date=${date}`}
-              className={tabClass("stats")}
-            >
-              Stats
+            <Link href={`${basePath}?tab=stats&date=${date}`} className={tabClass("stats")}>
+              Métricas
             </Link>
           </div>
-
           <div className="flex items-center gap-2">
             <form action={basePath} className="flex items-center gap-2">
-              {tab === "stats" ? (
-                <input type="hidden" name="tab" value="stats" />
-              ) : null}
-              <Input
-                type="date"
-                name="date"
-                defaultValue={date}
-                className="w-40"
-              />
-              <Button type="submit" variant="outline" size="sm">
-                Ver
-              </Button>
+              {tab === "stats" ? <input type="hidden" name="tab" value="stats" /> : null}
+              <Input type="date" name="date" defaultValue={date} className="w-40" />
+              <Button type="submit" variant="outline" size="sm">Ver</Button>
             </form>
             <RefreshBoardButton tenantSlug={tenantSlug} />
           </div>
         </div>
-
-        <SlaAlertsCard board={slaAlerts} tenantSlug={tenantSlug} />
-
-        {canReadAudit ? (
-          <RescheduleProposalsCard proposals={proposals} tenantSlug={tenantSlug} />
-        ) : null}
 
         {tab === "stats" ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -187,92 +182,121 @@ export default async function DispatchPage({
             <KpiCard label="Disponibles" value={stats.availableTechnicians} icon={CheckCircle2} accent="emerald" />
             <KpiCard label="Ocupados" value={stats.busyTechnicians} icon={Gauge} accent="orange" />
             <KpiCard label="Sobrecargados" value={stats.overloadedTechnicians} icon={AlertTriangle} accent="orange" />
-            <KpiCard
-              label="Utilización promedio"
-              value={stats.averageUtilization != null ? `${stats.averageUtilization}%` : "—"}
-              icon={Gauge}
-              accent="silver"
-            />
+            <KpiCard label="Utilización promedio" value={stats.averageUtilization != null ? `${stats.averageUtilization}%` : "—"} icon={Gauge} accent="silver" />
           </div>
-        ) : board.entries.length === 0 ? (
-          <EmptyState
-            title="Sin técnicos"
-            description="Registra técnicos para ver su carga en el tablero."
-          />
         ) : (
-          <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-            {board.entries.map((entry) => {
-              const w = entry.workload
-              const style = workloadStyles[w.status]
-              return (
-                <div key={w.technicianId} className="rounded-xl border bg-card p-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className="font-semibold text-foreground">
-                        {w.technicianName}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {w.assignmentCount} órdenes · {fmtHours(w.scheduledMinutes)} programadas
-                      </p>
-                    </div>
-                    <span
-                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${style.badge}`}
-                    >
-                      {WORKLOAD_STATUS_LABELS[w.status]}
-                    </span>
-                  </div>
-
-                  {/* Utilization bar */}
-                  <div className="mt-3">
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span>Utilización</span>
-                      <span className="font-semibold tabular-nums text-foreground">
-                        {w.utilizationPercent}%
-                      </span>
-                    </div>
-                    <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                      <div
-                        className={cn("h-full rounded-full", style.bar)}
-                        style={{ width: `${Math.min(100, w.utilizationPercent)}%` }}
-                      />
-                    </div>
-                    <p className="mt-1 text-[11px] text-muted-foreground">
-                      Capacidad restante: {fmtHours(w.availableMinutes)}
-                    </p>
-                  </div>
-
-                  {/* Day's work orders */}
-                  <div className="mt-3 space-y-1.5">
-                    {entry.assignments.length === 0 ? (
-                      <p className="text-xs text-muted-foreground/70">
-                        Sin órdenes asignadas hoy.
-                      </p>
-                    ) : (
-                      entry.assignments.map((a) => (
-                        <Link
-                          key={a.id}
-                          href={`/app/${tenantSlug}/schedule/${a.id}`}
-                          className="flex items-center justify-between gap-2 rounded-lg border bg-muted/20 px-2.5 py-1.5 text-xs hover:bg-muted/40"
-                        >
-                          <span className="font-medium text-foreground">
-                            {a.workOrderNumber}
-                          </span>
-                          <span className="text-muted-foreground">
-                            {fmtTime(a.scheduledStart)}–{fmtTime(a.scheduledEnd)}
-                          </span>
-                          <span
-                            className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium ${assignmentStyles[a.status]}`}
-                          >
-                            {ASSIGNMENT_STATUS_LABELS[a.status]}
-                          </span>
+          <>
+            {/* Sin asignar hoy — prioridad visual */}
+            <div className="rounded-xl border bg-card p-4">
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="text-base font-semibold">Sin asignar hoy</h2>
+                <span className="text-xs text-muted-foreground">{unassigned.length} orden(es)</span>
+              </div>
+              {unassigned.length === 0 ? (
+                <p className="mt-2 text-sm text-muted-foreground">Todo lo de hoy está asignado. 🎉</p>
+              ) : (
+                <ul className="mt-3 space-y-1.5">
+                  {unassigned.map((wo) => {
+                    const win = woWindow(wo)
+                    return (
+                      <li
+                        key={wo.id}
+                        className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-muted/20 px-2.5 py-2 text-sm"
+                      >
+                        <Link href={`/app/${tenantSlug}/work-orders/${wo.id}`} className="flex flex-1 flex-wrap items-center gap-2 hover:underline">
+                          <span className="font-medium text-foreground">{wo.workOrderNumber}</span>
+                          <span className="text-muted-foreground">{wo.subject}</span>
+                          {wo.companyName ? <span className="text-xs text-muted-foreground/70">{wo.companyName}</span> : null}
+                          {win ? <span className="text-xs tabular-nums text-muted-foreground/70">{fmtTime(win.start)}</span> : null}
+                          <span className="text-[10px] uppercase tracking-wide text-muted-foreground/60">{WORK_ORDER_PRIORITY_LABELS[wo.priority]}</span>
                         </Link>
-                      ))
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+                        {canSchedule && win ? (
+                          <AssignTechnicianDialog
+                            mode="assign"
+                            tenantSlug={tenantSlug}
+                            targetId={wo.id}
+                            scheduledStart={win.start}
+                            scheduledEnd={win.end}
+                            technicians={technicians}
+                          />
+                        ) : null}
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+            </div>
+
+            {/* Técnicos y su carga del día */}
+            {board.entries.length === 0 ? (
+              <EmptyState title="Sin técnicos" description="Registra técnicos para ver su carga en el tablero." />
+            ) : (
+              <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+                {board.entries.map((entry) => {
+                  const w = entry.workload
+                  const style = workloadStyles[w.status]
+                  return (
+                    <div key={w.technicianId} className="rounded-xl border bg-card p-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="font-semibold text-foreground">{w.technicianName}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {w.assignmentCount} órdenes · {fmtHours(w.scheduledMinutes)} programadas
+                          </p>
+                        </div>
+                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${style.badge}`}>
+                          {WORKLOAD_STATUS_LABELS[w.status]}
+                        </span>
+                      </div>
+
+                      <div className="mt-3">
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <span>Utilización</span>
+                          <span className="font-semibold tabular-nums text-foreground">{w.utilizationPercent}%</span>
+                        </div>
+                        <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                          <div className={cn("h-full rounded-full", style.bar)} style={{ width: `${Math.min(100, w.utilizationPercent)}%` }} />
+                        </div>
+                        <p className="mt-1 text-[11px] text-muted-foreground">Capacidad restante: {fmtHours(w.availableMinutes)}</p>
+                      </div>
+
+                      <div className="mt-3 space-y-1.5">
+                        {entry.assignments.length === 0 ? (
+                          <p className="text-xs text-muted-foreground/70">Sin órdenes asignadas hoy.</p>
+                        ) : (
+                          entry.assignments.map((a) => (
+                            <div key={a.id} className="rounded-lg border bg-muted/20 px-2.5 py-2 text-xs">
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <Link href={`/app/${tenantSlug}/work-orders/${a.workOrderId}`} className="flex flex-wrap items-center gap-2 hover:underline">
+                                  <span className="font-medium text-foreground">{a.workOrderNumber}</span>
+                                  <span className="tabular-nums text-muted-foreground">{fmtTime(a.scheduledStart)}–{fmtTime(a.scheduledEnd)}</span>
+                                  <span className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium ${assignmentStyles[a.status]}`}>
+                                    {ASSIGNMENT_STATUS_LABELS[a.status]}
+                                  </span>
+                                </Link>
+                                {canSchedule ? (
+                                  <AssignmentActions
+                                    tenantSlug={tenantSlug}
+                                    assignmentId={a.id}
+                                    workOrderId={a.workOrderId}
+                                    scheduledStart={a.scheduledStart}
+                                    scheduledEnd={a.scheduledEnd}
+                                    currentTechnicianId={a.technicianId}
+                                    technicians={technicians}
+                                    workOrderStatus={canWoWrite ? woById.get(a.workOrderId)?.status : undefined}
+                                  />
+                                ) : null}
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </>
         )}
       </div>
     </>
