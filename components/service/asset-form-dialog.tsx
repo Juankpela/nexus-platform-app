@@ -29,6 +29,7 @@ import {
 } from "@/modules/service/domain/asset"
 import {
   createAssetAction,
+  loadAssetFormOptionsAction,
   updateAssetAction,
 } from "@/modules/service/presentation/asset-actions"
 import type { ServiceActionState } from "@/modules/service/presentation/require-service-context"
@@ -71,9 +72,14 @@ export function AssetFormDialog({
   trigger,
 }: {
   tenantSlug: string
-  companyOptions: CompanyOption[]
-  productOptions: ProductOption[]
-  parentOptions: AssetOption[]
+  /**
+   * Dropdown options. Optional: when omitted (e.g. the assets list page), the
+   * dialog loads them client-side on open to keep them out of the page's RSC
+   * payload (see loadAssetFormOptionsAction).
+   */
+  companyOptions?: CompanyOption[]
+  productOptions?: ProductOption[]
+  parentOptions?: AssetOption[]
   asset?: Asset
   trigger: React.ReactNode
 }) {
@@ -84,6 +90,28 @@ export function AssetFormDialog({
     initialState,
   )
 
+  const [companies, setCompanies] = useState<CompanyOption[]>(companyOptions ?? [])
+  const [products, setProducts] = useState<ProductOption[]>(productOptions ?? [])
+  const [parents, setParents] = useState<AssetOption[]>(parentOptions ?? [])
+  const [loadingOptions, setLoadingOptions] = useState(false)
+  const optionsLoaded = useRef(Boolean(companyOptions))
+
+  async function handleOpenChange(next: boolean) {
+    setOpen(next)
+    if (next && !optionsLoaded.current && !loadingOptions) {
+      setLoadingOptions(true)
+      try {
+        const opts = await loadAssetFormOptionsAction(tenantSlug)
+        setCompanies(opts.companies)
+        setProducts(opts.products)
+        setParents(opts.parents)
+        optionsLoaded.current = true
+      } finally {
+        setLoadingOptions(false)
+      }
+    }
+  }
+
   const wasPending = useRef(false)
   useEffect(() => {
     if (wasPending.current && !pending && state.ok) setOpen(false)
@@ -91,7 +119,7 @@ export function AssetFormDialog({
   }, [pending, state.ok])
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="max-h-[85vh] overflow-y-auto">
         <DialogHeader>
@@ -177,8 +205,8 @@ export function AssetFormDialog({
                 defaultValue={asset?.companyId ?? ""}
                 className={selectClass}
               >
-                <option value="">Sin empresa</option>
-                {companyOptions.map((o) => (
+                <option value="">{loadingOptions ? "Cargando…" : "Sin empresa"}</option>
+                {companies.map((o) => (
                   <option key={o.id} value={o.id}>
                     {o.name}
                   </option>
@@ -193,7 +221,7 @@ export function AssetFormDialog({
                 className={selectClass}
               >
                 <option value="">Sin producto</option>
-                {productOptions.map((o) => (
+                {products.map((o) => (
                   <option key={o.id} value={o.id}>
                     {o.name}
                   </option>
@@ -208,7 +236,7 @@ export function AssetFormDialog({
                 className={selectClass}
               >
                 <option value="">Ninguno</option>
-                {parentOptions
+                {parents
                   .filter((o) => o.id !== asset?.id)
                   .map((o) => (
                     <option key={o.id} value={o.id}>

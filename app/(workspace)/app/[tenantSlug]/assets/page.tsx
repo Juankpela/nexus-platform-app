@@ -1,10 +1,11 @@
-import { Plus } from "lucide-react"
+import { Plus, Upload } from "lucide-react"
 import type { Metadata } from "next"
 import Link from "next/link"
 
 import { Pagination } from "@/components/crm/pagination"
 import { EmptyState } from "@/components/layout/empty-state"
 import { PageHeader } from "@/components/layout/page-header"
+import { AssetCsvImport } from "@/components/service/asset-csv-import"
 import { AssetFormDialog } from "@/components/service/asset-form-dialog"
 import { HealthScoreBadge } from "@/components/service/health-score-badge"
 import { Button } from "@/components/ui/button"
@@ -14,9 +15,7 @@ import {
   SERVICE_PERMISSIONS,
   hasPermission,
 } from "@/modules/authorization/domain/permission"
-import { listCompanyOptions, listProductOptions } from "@/modules/crm/composition"
-import type { CompanyOption } from "@/modules/crm/domain/company"
-import { listAssetOptions, listTenantAssets } from "@/modules/service/composition"
+import { listTenantAssets } from "@/modules/service/composition"
 import {
   ASSET_CATEGORIES,
   ASSET_CATEGORY_LABELS,
@@ -27,7 +26,6 @@ import {
   ASSET_TYPE_LABELS,
   type AssetCategory,
   type AssetCriticality,
-  type AssetOption,
   type AssetStatus,
 } from "@/modules/service/domain/asset"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
@@ -97,26 +95,12 @@ export default async function AssetsPage({
   const page = Number.isFinite(pageRaw) && pageRaw > 0 ? pageRaw : 1
   const basePath = `/app/${tenantSlug}/assets`
 
-  const [result, companyOptions, productOptions, parentOptions] =
-    await Promise.all([
-      listTenantAssets(
-        context.tenantId,
-        { search, status, category, criticality, companyId: null },
-        page,
-        PAGE_SIZE,
-      ),
-      canWrite
-        ? listCompanyOptions(context.tenantId)
-        : Promise.resolve([] as CompanyOption[]),
-      canWrite
-        ? listProductOptions(context.tenantId)
-        : Promise.resolve([]),
-      canWrite
-        ? listAssetOptions(context.tenantId)
-        : Promise.resolve([] as AssetOption[]),
-    ])
-
-  const productSelect = productOptions.map((p) => ({ id: p.id, name: p.name }))
+  const result = await listTenantAssets(
+    context.tenantId,
+    { search, status, category, criticality, companyId: null },
+    page,
+    PAGE_SIZE,
+  )
 
   const selectClass =
     "h-9 rounded-lg border border-input bg-background px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30"
@@ -175,18 +159,26 @@ export default async function AssetsPage({
           </form>
 
           {canWrite ? (
-            <AssetFormDialog
-              tenantSlug={tenantSlug}
-              companyOptions={companyOptions}
-              productOptions={productSelect}
-              parentOptions={parentOptions}
-              trigger={
-                <Button>
-                  <Plus />
-                  Nuevo activo
-                </Button>
-              }
-            />
+            <div className="flex flex-wrap items-center gap-2">
+              <AssetCsvImport
+                tenantSlug={tenantSlug}
+                trigger={
+                  <Button variant="outline">
+                    <Upload />
+                    Importar activos
+                  </Button>
+                }
+              />
+              <AssetFormDialog
+                tenantSlug={tenantSlug}
+                trigger={
+                  <Button>
+                    <Plus />
+                    Nuevo activo
+                  </Button>
+                }
+              />
+            </div>
           ) : null}
         </div>
 

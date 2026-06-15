@@ -1,5 +1,6 @@
 import "server-only"
 
+import type { ImportResult } from "@/lib/csv/import-result"
 import { ApplicationError } from "@/lib/errors/application-error"
 import { createServerSupabaseClient } from "@/lib/supabase/server"
 import type { Paginated } from "@/modules/crm/domain/pagination"
@@ -11,10 +12,23 @@ import type {
   AssetOption,
   AssetStatus,
 } from "@/modules/service/domain/asset"
+import {
+  assetCompanyKey,
+  assetDedupKey,
+  hasCompanyReference,
+  resolveAssetCategory,
+  resolveAssetCriticality,
+  resolveAssetType,
+  type AssetImportRow,
+} from "@/modules/service/domain/asset-import"
 import type { Database } from "@/types/database"
 import type { UUID } from "@/types/shared"
 
+/** Max rows per insert call — keeps a single failing row from sinking the file. */
+const IMPORT_CHUNK_SIZE = 500
+
 type AssetRow = Database["public"]["Tables"]["assets"]["Row"]
+type AssetInsert = Database["public"]["Tables"]["assets"]["Insert"]
 type AssetRowWithRefs = AssetRow & {
   products: { name: string } | null
   companies: { name: string } | null
@@ -239,6 +253,151 @@ export class SupabaseAssetRepository implements AssetRepository {
         error,
       )
     }
+  }
+
+  async importBatch(
+    tenantId: UUID,
+    params: { createdBy: UUID; rows: AssetImportRow[] },
+  ): Promise<ImportResult> {
+    const { createdBy, rows } = params
+    const errors: ImportResult["errors"] = []
+    let skipped = 0
+    const client = await createServerSupabaseClient()
+
+    // Index existing companies by BOTH tax and name keys so a row referencing
+    // either resolves (first match wins on collisions).
+    const { data: companies, error: companiesError } = await client
+      .from("companies")
+      .select("id, name, tax_id")
+      .eq("tenant_id", tenantId)
+    if (companiesError) {
+      throw new ApplicationError(
+        "Unable to read companies for asset import.",
+        "ASSET_IMPORT_COMPANY_READ_FAILED",
+        companiesError,
+      )
+    }
+    const companyIndex = new Map<string, UUID>()
+    for (const c of companies ?? []) {
+      const tax = c.tax_id?.toLowerCase().replace(/[^a-z0-9]/g, "")
+      if (tax && !companyIndex.has(`tax:${tax}`)) companyIndex.set(`tax:${tax}`, c.id)
+      const name = c.name?.trim().toLowerCase().replace(/\s+/g, " ")
+      if (name && !companyIndex.has(`name:${name}`)) companyIndex.set(`name:${name}`, c.id)
+    }
+
+    // Seed dedup from existing serial numbers (the strong key).
+    const { data: existing, error: assetsError } = await client
+      .from("assets")
+      .select("serial_number")
+      .eq("tenant_id", tenantId)
+      .not("serial_number", "is", null)
+    if (assetsError) {
+      throw new ApplicationError(
+        "Unable to read assets for import.",
+        "ASSET_IMPORT_READ_FAILED",
+        assetsError,
+      )
+    }
+    const seen = new Set<string>()
+    for (const a of existing ?? []) {
+      if (a.serial_number) seen.add(`serial:${a.serial_number.trim().toLowerCase()}`)
+    }
+
+    type Pending = { row: number; build: (assetNumber: string) => AssetInsert }
+    const pending: Pending[] = []
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i]
+      const rowNum = i + 1
+      const name = row.name?.trim()
+      if (!name) {
+        errors.push({ row: rowNum, message: "El nombre del activo es obligatorio." })
+        continue
+      }
+      const assetType = resolveAssetType(row.assetType)
+      if (!assetType) {
+        errors.push({ row: rowNum, message: `Tipo inválido: "${row.assetType}".` })
+        continue
+      }
+      const assetCategory = resolveAssetCategory(row.assetCategory)
+      if (!assetCategory) {
+        errors.push({ row: rowNum, message: `Categoría inválida: "${row.assetCategory}".` })
+        continue
+      }
+      const criticality = resolveAssetCriticality(row.criticality)
+      if (!criticality) {
+        errors.push({ row: rowNum, message: `Criticidad inválida: "${row.criticality}".` })
+        continue
+      }
+
+      let companyId: UUID | null = null
+      let companyKey: string | null = null
+      if (hasCompanyReference(row)) {
+        companyKey = assetCompanyKey(row)
+        const resolved = companyKey ? companyIndex.get(companyKey) : undefined
+        if (!resolved) {
+          errors.push({
+            row: rowNum,
+            message: `Empresa no encontrada: "${row.companyTaxId ?? row.companyName}". Impórtala primero o corrige el dato.`,
+          })
+          continue
+        }
+        companyId = resolved
+      }
+
+      const key = assetDedupKey({ name, serialNumber: row.serialNumber, companyKey })
+      if (key && seen.has(key)) {
+        skipped += 1
+        continue
+      }
+      if (key) seen.add(key)
+
+      pending.push({
+        row: rowNum,
+        build: (assetNumber) => ({
+          tenant_id: tenantId,
+          created_by: createdBy,
+          asset_number: assetNumber,
+          name,
+          asset_type: assetType,
+          asset_category: assetCategory,
+          criticality,
+          serial_number: row.serialNumber,
+          manufacturer: row.manufacturer,
+          model: row.model,
+          location: row.location,
+          company_id: companyId,
+          notes: row.notes,
+        }),
+      })
+    }
+
+    // Generate one asset number per valid row (atomic sequence via RPC).
+    const records: { row: number; record: AssetInsert }[] = []
+    for (const p of pending) {
+      const { data: num, error: numError } = await client.rpc("next_asset_number", {
+        p_tenant_id: tenantId,
+      })
+      if (numError || !num) {
+        errors.push({ row: p.row, message: "No se pudo generar el número de activo." })
+        continue
+      }
+      records.push({ row: p.row, record: p.build(num as string) })
+    }
+
+    let imported = 0
+    for (let i = 0; i < records.length; i += IMPORT_CHUNK_SIZE) {
+      const chunk = records.slice(i, i + IMPORT_CHUNK_SIZE)
+      const { error } = await client.from("assets").insert(chunk.map((c) => c.record))
+      if (error) {
+        for (const c of chunk) {
+          errors.push({ row: c.row, message: "No se pudo guardar esta fila." })
+        }
+      } else {
+        imported += chunk.length
+      }
+    }
+
+    return { imported, skipped, errors }
   }
 
   async nextAssetNumber(tenantId: UUID): Promise<string> {

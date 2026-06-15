@@ -26,6 +26,10 @@ import {
   createAsset,
   type CreateAssetInput,
 } from "@/modules/service/application/use-cases/create-asset"
+import {
+  importAssets,
+  type ImportAssetsInput,
+} from "@/modules/service/application/use-cases/import-assets"
 import { listAssets } from "@/modules/service/application/use-cases/list-assets"
 import {
   updateAsset,
@@ -195,6 +199,10 @@ export function listAssetOptions(tenantId: UUID) {
 
 export function createAssetRecord(input: CreateAssetInput) {
   return createAsset({ assets: assetRepo(), audit: audit() }, input)
+}
+
+export function importAssetRecords(input: ImportAssetsInput) {
+  return importAssets({ assets: assetRepo(), audit: audit() }, input)
 }
 
 export function updateAssetRecord(input: UpdateAssetInput) {

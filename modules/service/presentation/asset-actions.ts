@@ -3,13 +3,19 @@
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 
+import type { ImportActionState } from "@/lib/csv/import-result"
 import { ApplicationError } from "@/lib/errors/application-error"
 import { SERVICE_PERMISSIONS } from "@/modules/authorization/domain/permission"
+import { listCompanyOptions, listProductOptions } from "@/modules/crm/composition"
+import type { CompanyOption } from "@/modules/crm/domain/company"
 import {
   changeAssetRecordStatus,
   createAssetRecord,
+  importAssetRecords,
+  listAssetOptions,
   updateAssetRecord,
 } from "@/modules/service/composition"
+import type { AssetOption } from "@/modules/service/domain/asset"
 import {
   ASSET_CATEGORIES,
   ASSET_CRITICALITIES,
@@ -17,6 +23,10 @@ import {
   ASSET_TYPES,
   type AssetInput,
 } from "@/modules/service/domain/asset"
+import {
+  ASSET_REQUIRED_COLUMNS,
+  mapRowsToAssetImport,
+} from "@/modules/service/domain/asset-import"
 import {
   fail,
   field,
@@ -149,6 +159,118 @@ export async function createAssetAction(
 
   revalidate(tenantSlug)
   return { error: null, ok: true }
+}
+
+export type AssetFormOptions = {
+  companies: CompanyOption[]
+  products: { id: string; name: string }[]
+  parents: AssetOption[]
+}
+
+/**
+ * Loads the create/edit dropdown options client-side (on dialog open) instead of
+ * serializing them into the assets page RSC payload — same Next 16 payload-size
+ * mitigation used for opportunities (see loadOpportunityFormOptionsAction).
+ */
+export async function loadAssetFormOptionsAction(
+  tenantSlug: string,
+): Promise<AssetFormOptions> {
+  const context = await requireServiceContext(
+    tenantSlug,
+    SERVICE_PERMISSIONS.assetsWrite,
+  )
+  const [companies, products, parents] = await Promise.all([
+    listCompanyOptions(context.tenantId),
+    listProductOptions(context.tenantId),
+    listAssetOptions(context.tenantId),
+  ])
+  return {
+    companies,
+    products: products.map((p) => ({ id: p.id, name: p.name })),
+    parents,
+  }
+}
+
+const MAX_IMPORT_ROWS = 5000
+
+/**
+ * CSV import (Inc 3). Same shape as Companies/Contacts: re-checks the required
+ * column, maps rows and delegates. Company links + enum defaults + dedup by
+ * serial happen in the repository.
+ */
+export async function importAssetsAction(
+  _state: ImportActionState,
+  formData: FormData,
+): Promise<ImportActionState> {
+  const tenantSlug = field(formData, "tenantSlug")
+  const headersJson = formData.get("headers")
+  const rowsJson = formData.get("rows")
+  if (
+    !tenantSlug ||
+    typeof headersJson !== "string" ||
+    typeof rowsJson !== "string"
+  ) {
+    return { ok: false, error: "Solicitud inválida.", result: null }
+  }
+
+  let headers: unknown
+  let rows: unknown
+  try {
+    headers = JSON.parse(headersJson)
+    rows = JSON.parse(rowsJson)
+  } catch {
+    return { ok: false, error: "El archivo no se pudo leer.", result: null }
+  }
+
+  if (!Array.isArray(headers) || !Array.isArray(rows)) {
+    return { ok: false, error: "El archivo no tiene el formato esperado.", result: null }
+  }
+  if (rows.length === 0) {
+    return { ok: false, error: "El archivo no tiene filas para importar.", result: null }
+  }
+  if (rows.length > MAX_IMPORT_ROWS) {
+    return {
+      ok: false,
+      error: `El archivo supera el máximo de ${MAX_IMPORT_ROWS} filas. Divídelo en partes.`,
+      result: null,
+    }
+  }
+
+  const headerList = headers as string[]
+  const missing = ASSET_REQUIRED_COLUMNS.filter((col) => !headerList.includes(col))
+  if (missing.length > 0) {
+    return {
+      ok: false,
+      error: `Falta la columna obligatoria: ${missing.join(", ")}. Descarga la plantilla y úsala como base.`,
+      result: null,
+    }
+  }
+
+  try {
+    const context = await requireServiceContext(
+      tenantSlug,
+      SERVICE_PERMISSIONS.assetsWrite,
+    )
+    const mapped = mapRowsToAssetImport(headerList, rows as string[][])
+    const result = await importAssetRecords({
+      actorId: context.userId,
+      tenantId: context.tenantId,
+      requestId: context.requestId,
+      rows: mapped,
+    })
+
+    revalidatePath(`/app/${tenantSlug}/assets`)
+    return { ok: true, error: null, result }
+  } catch (error) {
+    return {
+      ok: false,
+      error:
+        error instanceof ApplicationError && error.code === "FORBIDDEN"
+          ? "No tienes permiso para importar activos."
+          : "La importación falló. Inténtalo de nuevo.",
+      result: null,
+    }
+  }
 }
 
 export async function updateAssetAction(
