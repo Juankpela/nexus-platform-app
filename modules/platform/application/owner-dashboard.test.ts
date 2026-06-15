@@ -70,7 +70,7 @@ describe("buildOwnerDashboard — sales this month", () => {
       ],
       acceptedQuotes: null,
       openWorkOrders: null,
-      unscheduledWorkOrders: 0,
+      unassignedWorkOrders: 0,
       todayISO: TODAY,
     })
     expect(r.salesThisMonth).toBe(1500)
@@ -88,7 +88,7 @@ describe("buildOwnerDashboard — receivable & overdue", () => {
       ],
       acceptedQuotes: null,
       openWorkOrders: null,
-      unscheduledWorkOrders: 0,
+      unassignedWorkOrders: 0,
       todayISO: TODAY,
     })
     expect(r.receivable).toBe(1100)
@@ -105,7 +105,7 @@ describe("buildOwnerDashboard — quotes ready to invoice", () => {
       ],
       acceptedQuotes: [quote({ id: "q1" }), quote({ id: "q2" }), quote({ id: "q3" })],
       openWorkOrders: null,
-      unscheduledWorkOrders: 0,
+      unassignedWorkOrders: 0,
       todayISO: TODAY,
     })
     expect(r.quotesReadyToInvoice).toBe(2) // q2 (void invoice) + q3 (none)
@@ -118,11 +118,11 @@ describe("buildOwnerDashboard — attention & nulls", () => {
       invoices: [inv({ status: "issued", balance: 10, dueDate: "2026-06-01" })],
       acceptedQuotes: [quote({ id: "q9" })],
       openWorkOrders: 4,
-      unscheduledWorkOrders: 2,
+      unassignedWorkOrders: 2,
       todayISO: TODAY,
     })
     expect(r.activeWorkOrders).toBe(4)
-    expect(r.attention.map((a) => a.key)).toEqual(["overdue", "ready", "unscheduled"])
+    expect(r.attention.map((a) => a.key)).toEqual(["overdue", "ready", "unassigned"])
   })
 
   it("returns nulls and empty attention for an empty tenant", () => {
@@ -130,7 +130,7 @@ describe("buildOwnerDashboard — attention & nulls", () => {
       invoices: null,
       acceptedQuotes: null,
       openWorkOrders: null,
-      unscheduledWorkOrders: 0,
+      unassignedWorkOrders: 0,
       todayISO: TODAY,
     })
     expect(r).toMatchObject({

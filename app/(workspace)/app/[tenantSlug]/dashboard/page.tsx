@@ -33,8 +33,10 @@ import {
   listTenantQuotes,
 } from "@/modules/crm/composition"
 import { getTenantDispatchStats } from "@/modules/dispatch/composition"
+import { selectUnassignedWorkOrders } from "@/modules/dispatch/application/select-unassigned"
 import { getTenantRevenueMetrics } from "@/modules/forecasting/composition"
 import { getCachedCurrentUser } from "@/modules/identity/composition"
+import { getActiveAssignmentsByWorkOrder } from "@/modules/scheduling/composition"
 import { buildOwnerDashboard } from "@/modules/platform/application/owner-dashboard"
 import {
   buildAttentionItems,
@@ -43,6 +45,7 @@ import {
 import {
   getTenantCaseStats,
   getTenantWorkOrderStats,
+  listTenantWorkOrders,
 } from "@/modules/service/composition"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 
@@ -96,6 +99,7 @@ export default async function MissionControlPage({
     topOpps,
     invoicesPage,
     acceptedQuotesPage,
+    allWorkOrdersPage,
   ] = await Promise.all([
     getCachedCurrentUser(),
     getTenantDashboardStats(context.tenantId),
@@ -114,7 +118,29 @@ export default async function MissionControlPage({
     canQuotes
       ? listTenantQuotes(context.tenantId, { search: null, status: "accepted", companyId: null, page: 1, pageSize: OWNER_PAGE_SIZE })
       : Promise.resolve(null),
+    canWorkOrders
+      ? listTenantWorkOrders(
+          context.tenantId,
+          { search: null, status: null, priority: null, technicianId: null, companyId: null, assetId: null, dateFrom: null, dateTo: null },
+          1,
+          OWNER_PAGE_SIZE,
+        )
+      : Promise.resolve(null),
   ])
+
+  // Open work orders without an active assignment (ADR-031): aligns the owner's
+  // "Órdenes sin asignar" alert with what the Dispatch board surfaces.
+  let unassignedWorkOrders = 0
+  if (allWorkOrdersPage) {
+    const activeMap = await getActiveAssignmentsByWorkOrder(
+      context.tenantId,
+      allWorkOrdersPage.items.map((w) => w.id),
+    )
+    unassignedWorkOrders = selectUnassignedWorkOrders(
+      allWorkOrdersPage.items,
+      new Set(activeMap.keys()),
+    ).length
+  }
 
   // ── Owner block (Tu negocio hoy) ─────────────────────────────────────────────
   const todayISO = new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" })
@@ -122,7 +148,7 @@ export default async function MissionControlPage({
     invoices: invoicesPage?.items ?? null,
     acceptedQuotes: acceptedQuotesPage?.items ?? null,
     openWorkOrders: woStats?.openCount ?? null,
-    unscheduledWorkOrders: woStats?.byStatus.new ?? 0,
+    unassignedWorkOrders,
     todayISO,
   })
 

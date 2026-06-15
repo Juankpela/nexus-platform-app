@@ -1,5 +1,6 @@
 import {
   AlertTriangle,
+  CalendarPlus,
   CheckCircle2,
   Gauge,
   LayoutGrid,
@@ -10,6 +11,7 @@ import Link from "next/link"
 
 import { AssignTechnicianDialog } from "@/components/dispatch/assign-technician-dialog"
 import { AssignmentActions } from "@/components/dispatch/assignment-actions"
+import { QuickAssignButton } from "@/components/dispatch/quick-assign-button"
 import { KpiCard } from "@/components/dashboard/kpi-card"
 import { RefreshBoardButton } from "@/components/dispatch/refresh-board-button"
 import { EmptyState } from "@/components/layout/empty-state"
@@ -30,7 +32,10 @@ import {
   WORKLOAD_STATUS_LABELS,
   type WorkloadStatus,
 } from "@/modules/dispatch/domain/technician-workload"
-import { getActiveAssignmentsByWorkOrder } from "@/modules/scheduling/composition"
+import {
+  findEligibleTechnicians,
+  getActiveAssignmentsByWorkOrder,
+} from "@/modules/scheduling/composition"
 import {
   ASSIGNMENT_STATUS_LABELS,
   type AssignmentStatus,
@@ -76,6 +81,15 @@ function fmtTime(iso: string): string {
     timeZone: "America/Bogota",
   })
 }
+function fmtDateTime(iso: string): string {
+  return new Date(iso).toLocaleString("es-CO", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "America/Bogota",
+  })
+}
 function todayLocal(): string {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Bogota",
@@ -110,17 +124,12 @@ export default async function DispatchPage({
   const canSchedule = hasPermission(context.effectivePermissions, SERVICE_PERMISSIONS.schedulingWrite)
   const canWoWrite = hasPermission(context.effectivePermissions, SERVICE_PERMISSIONS.workOrdersWrite)
 
-  // scheduled_start is a UTC timestamp; bound the filter to the selected day in
-  // tenant time (America/Bogota, no DST) so afternoon work orders aren't missed.
-  const dayStartUtc = new Date(`${date}T00:00:00-05:00`).toISOString()
-  const dayEndUtc = new Date(`${date}T23:59:59.999-05:00`).toISOString()
-
-  const [board, stats, todayWos, technicianPage] = await Promise.all([
+  const [board, stats, allWos, technicianPage] = await Promise.all([
     getTenantDispatchBoard(context.tenantId, date),
     getTenantDispatchStats(context.tenantId, date),
     listTenantWorkOrders(
       context.tenantId,
-      { search: null, status: null, priority: null, technicianId: null, companyId: null, assetId: null, dateFrom: dayStartUtc, dateTo: dayEndUtc },
+      { search: null, status: null, priority: null, technicianId: null, companyId: null, assetId: null, dateFrom: null, dateTo: null },
       1,
       500,
     ),
@@ -134,14 +143,43 @@ export default async function DispatchPage({
     name: `${t.firstName} ${t.lastName}`.trim(),
   }))
 
-  // Today's work orders → which already have an active assignment (ADR-031).
+  // Work orders that already have an active assignment (ADR-031).
   const activeMap = await getActiveAssignmentsByWorkOrder(
     context.tenantId,
-    todayWos.items.map((w) => w.id),
+    allWos.items.map((w) => w.id),
   )
   const assignedIds = new Set(activeMap.keys())
-  const unassigned = selectUnassignedWorkOrders(todayWos.items, assignedIds)
-  const woById = new Map(todayWos.items.map((w) => [w.id, w]))
+  const woById = new Map(allWos.items.map((w) => [w.id, w]))
+
+  // Pending to assign = open WOs without an active assignment. Dated orders come
+  // first (soonest required date), then orders with no scheduled window.
+  const unassigned = selectUnassignedWorkOrders(allWos.items, assignedIds).sort((a, b) => {
+    if (a.scheduledStart && b.scheduledStart) return a.scheduledStart < b.scheduledStart ? -1 : 1
+    if (a.scheduledStart) return -1
+    if (b.scheduledStart) return 1
+    return 0
+  })
+
+  // Suggested technician per dated pending order, reusing its own window.
+  // "El sistema recomienda. El usuario decide." Undated orders get no suggestion
+  // (no window to evaluate or honor) — the user is routed to schedule them.
+  const suggestionByWo = new Map(
+    await Promise.all(
+      unassigned.map(async (wo) => {
+        const win = woWindow(wo)
+        if (!win || !canSchedule) return [wo.id, null] as const
+        const results = await findEligibleTechnicians(context.tenantId, {
+          skillId: null,
+          minLevel: null,
+          zoneId: null,
+          startsAt: win.start,
+          endsAt: win.end,
+        })
+        const best = results.find((r) => r.eligible) ?? null
+        return [wo.id, best] as const
+      }),
+    ),
+  )
 
   const tabClass = (t: Tab) =>
     cn(
@@ -186,18 +224,19 @@ export default async function DispatchPage({
           </div>
         ) : (
           <>
-            {/* Sin asignar hoy — prioridad visual */}
+            {/* Pendientes de asignar — prioridad visual */}
             <div className="rounded-xl border bg-card p-4">
               <div className="flex items-center justify-between gap-2">
-                <h2 className="text-base font-semibold">Sin asignar hoy</h2>
+                <h2 className="text-base font-semibold">Pendientes de asignar</h2>
                 <span className="text-xs text-muted-foreground">{unassigned.length} orden(es)</span>
               </div>
               {unassigned.length === 0 ? (
-                <p className="mt-2 text-sm text-muted-foreground">Todo lo de hoy está asignado. 🎉</p>
+                <p className="mt-2 text-sm text-muted-foreground">Todo está asignado. 🎉</p>
               ) : (
                 <ul className="mt-3 space-y-1.5">
                   {unassigned.map((wo) => {
                     const win = woWindow(wo)
+                    const suggested = suggestionByWo.get(wo.id) ?? null
                     return (
                       <li
                         key={wo.id}
@@ -207,18 +246,45 @@ export default async function DispatchPage({
                           <span className="font-medium text-foreground">{wo.workOrderNumber}</span>
                           <span className="text-muted-foreground">{wo.subject}</span>
                           {wo.companyName ? <span className="text-xs text-muted-foreground/70">{wo.companyName}</span> : null}
-                          {win ? <span className="text-xs tabular-nums text-muted-foreground/70">{fmtTime(win.start)}</span> : null}
+                          {win ? (
+                            <span className="text-xs tabular-nums text-muted-foreground/70">{fmtDateTime(win.start)}</span>
+                          ) : (
+                            <span className="rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-600 dark:text-amber-400">Sin fecha</span>
+                          )}
                           <span className="text-[10px] uppercase tracking-wide text-muted-foreground/60">{WORK_ORDER_PRIORITY_LABELS[wo.priority]}</span>
                         </Link>
                         {canSchedule && win ? (
-                          <AssignTechnicianDialog
-                            mode="assign"
-                            tenantSlug={tenantSlug}
-                            targetId={wo.id}
-                            scheduledStart={win.start}
-                            scheduledEnd={win.end}
-                            technicians={technicians}
-                          />
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {suggested ? (
+                              <QuickAssignButton
+                                tenantSlug={tenantSlug}
+                                workOrderId={wo.id}
+                                technicianId={suggested.technicianId}
+                                technicianName={suggested.technicianName}
+                                scheduledStart={win.start}
+                                scheduledEnd={win.end}
+                              />
+                            ) : (
+                              <span className="text-xs text-muted-foreground/70">Sin técnico sugerido</span>
+                            )}
+                            <AssignTechnicianDialog
+                              mode="assign"
+                              tenantSlug={tenantSlug}
+                              targetId={wo.id}
+                              scheduledStart={win.start}
+                              scheduledEnd={win.end}
+                              technicians={technicians}
+                              triggerLabel="Otro técnico"
+                              triggerVariant="ghost"
+                            />
+                          </div>
+                        ) : !win ? (
+                          <Button asChild variant="outline" size="sm">
+                            <Link href={`/app/${tenantSlug}/work-orders/${wo.id}`}>
+                              <CalendarPlus className="size-4" />
+                              Programar y asignar
+                            </Link>
+                          </Button>
                         ) : null}
                       </li>
                     )

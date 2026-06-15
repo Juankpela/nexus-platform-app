@@ -32,8 +32,8 @@ export type OwnerDashboardInput = {
   acceptedQuotes: QuoteListItem[] | null
   /** woStats.openCount, or null when service is not readable. */
   openWorkOrders: number | null
-  /** woStats.byStatus.new (unscheduled). */
-  unscheduledWorkOrders: number
+  /** Open work orders without an active technician assignment (ADR-031). */
+  unassignedWorkOrders: number
   /** Today as YYYY-MM-DD in the tenant timezone. */
   todayISO: string
 }
@@ -46,7 +46,7 @@ const RECEIVABLE_STATUSES = new Set(["issued", "partially_paid"])
  * currency (COP).
  */
 export function buildOwnerDashboard(input: OwnerDashboardInput): OwnerDashboard {
-  const { invoices, acceptedQuotes, openWorkOrders, unscheduledWorkOrders, todayISO } = input
+  const { invoices, acceptedQuotes, openWorkOrders, unassignedWorkOrders, todayISO } = input
   const monthPrefix = todayISO.slice(0, 7)
 
   let salesThisMonth: number | null = null
@@ -84,8 +84,8 @@ export function buildOwnerDashboard(input: OwnerDashboardInput): OwnerDashboard 
   if (quotesReadyToInvoice > 0) {
     attention.push({ key: "ready", label: "Cotizaciones listas para facturar", count: quotesReadyToInvoice, severity: "warning", segment: "quotes" })
   }
-  if (unscheduledWorkOrders > 0) {
-    attention.push({ key: "unscheduled", label: "Trabajos sin programar", count: unscheduledWorkOrders, severity: "info", segment: "work-orders" })
+  if (unassignedWorkOrders > 0) {
+    attention.push({ key: "unassigned", label: "Órdenes sin asignar", count: unassignedWorkOrders, severity: "info", segment: "dispatch" })
   }
 
   return {
