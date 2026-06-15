@@ -1,8 +1,10 @@
 import {
+  Banknote,
   Building2,
   Cpu,
   Gauge,
   LifeBuoy,
+  Receipt,
   Target,
   TrendingUp,
   Users,
@@ -17,19 +19,23 @@ import { MissionQuickAction } from "@/components/dashboard/mission/mission-quick
 import { MissionSection } from "@/components/dashboard/mission/mission-section"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
 import {
+  BILLING_PERMISSIONS,
   CRM_PERMISSIONS,
   FORECASTING_PERMISSIONS,
   FOUNDATION_PERMISSIONS,
   SERVICE_PERMISSIONS,
   hasPermission,
 } from "@/modules/authorization/domain/permission"
+import { listTenantInvoices } from "@/modules/billing/composition"
 import {
   getTenantDashboardStats,
   listTenantOpportunities,
+  listTenantQuotes,
 } from "@/modules/crm/composition"
 import { getTenantDispatchStats } from "@/modules/dispatch/composition"
 import { getTenantRevenueMetrics } from "@/modules/forecasting/composition"
 import { getCachedCurrentUser } from "@/modules/identity/composition"
+import { buildOwnerDashboard } from "@/modules/platform/application/owner-dashboard"
 import {
   buildAttentionItems,
   greetingFor,
@@ -49,6 +55,13 @@ function fmt(value: number): string {
   return `$${value.toLocaleString()}`
 }
 
+const COP = new Intl.NumberFormat("es-CO", {
+  style: "currency",
+  currency: "COP",
+  maximumFractionDigits: 0,
+})
+const cop = (n: number | null): string => (n == null ? "—" : COP.format(n))
+
 export default async function MissionControlPage({
   params,
 }: {
@@ -66,6 +79,12 @@ export default async function MissionControlPage({
   const canWorkOrders = can(SERVICE_PERMISSIONS.workOrdersRead)
   const canDispatch = can(SERVICE_PERMISSIONS.dispatchRead)
   const canForecast = can(FORECASTING_PERMISSIONS.read)
+  const canInvoices = can(BILLING_PERMISSIONS.invoicesRead)
+  const canQuotes = can(CRM_PERMISSIONS.quotesRead)
+
+  // Owner-dashboard reads use a single large page (PYME volume); the aggregation
+  // is the seam if this ever needs a SQL rollup.
+  const OWNER_PAGE_SIZE = 1000
 
   const [
     user,
@@ -75,6 +94,8 @@ export default async function MissionControlPage({
     woStats,
     dispatch,
     topOpps,
+    invoicesPage,
+    acceptedQuotesPage,
   ] = await Promise.all([
     getCachedCurrentUser(),
     getTenantDashboardStats(context.tenantId),
@@ -87,7 +108,23 @@ export default async function MissionControlPage({
     canCrm
       ? listTenantOpportunities(context.tenantId, { search: null, status: null }, 1, 5)
       : Promise.resolve(null),
+    canInvoices
+      ? listTenantInvoices(context.tenantId, { search: null, status: null, companyId: null, page: 1, pageSize: OWNER_PAGE_SIZE })
+      : Promise.resolve(null),
+    canQuotes
+      ? listTenantQuotes(context.tenantId, { search: null, status: "accepted", companyId: null, page: 1, pageSize: OWNER_PAGE_SIZE })
+      : Promise.resolve(null),
   ])
+
+  // ── Owner block (Tu negocio hoy) ─────────────────────────────────────────────
+  const todayISO = new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" })
+  const owner = buildOwnerDashboard({
+    invoices: invoicesPage?.items ?? null,
+    acceptedQuotes: acceptedQuotesPage?.items ?? null,
+    openWorkOrders: woStats?.openCount ?? null,
+    unscheduledWorkOrders: woStats?.byStatus.new ?? 0,
+    todayISO,
+  })
 
   const name = (user?.email?.split("@")[0] ?? "").replace(/[._-]/g, " ")
   const greeting = greetingFor(new Date().getUTCHours())
@@ -135,6 +172,55 @@ export default async function MissionControlPage({
           </div>
         ) : null}
       </header>
+
+      {/* 0 — Owner block: tu negocio en 10 segundos */}
+      <MissionSection
+        title="Tu negocio hoy"
+        description="Lo esencial, de un vistazo."
+      >
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <MissionMetricCard
+            label="Vendido este mes"
+            value={cop(owner.salesThisMonth)}
+            icon={Banknote}
+            accent="emerald"
+            href={`${base}/invoices`}
+          />
+          <MissionMetricCard
+            label="Por cobrar"
+            value={cop(owner.receivable)}
+            icon={Receipt}
+            accent="orange"
+            hint={owner.overdueInvoices > 0 ? `${owner.overdueInvoices} vencida(s)` : undefined}
+            href={`${base}/invoices`}
+          />
+          <MissionMetricCard
+            label="Trabajos activos"
+            value={owner.activeWorkOrders ?? "—"}
+            icon={Wrench}
+            accent="blue"
+            href={`${base}/work-orders`}
+          />
+        </div>
+        <div className="mt-4">
+          <p className="mb-2 text-sm font-medium text-foreground">Atención hoy</p>
+          {owner.attention.length === 0 ? (
+            <MissionAllClear />
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {owner.attention.map((item) => (
+                <MissionAlertCard
+                  key={item.key}
+                  label={item.label}
+                  count={item.count}
+                  severity={item.severity}
+                  href={`${base}/${item.segment}`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </MissionSection>
 
       {/* 3 — Attention Center (urgent first) */}
       <MissionSection
