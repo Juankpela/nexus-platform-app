@@ -1,9 +1,13 @@
 import type { Metadata } from "next"
 
-import { EmptyState } from "@/components/layout/empty-state"
+import { BusinessProfileForm } from "@/components/settings/business-profile-form"
 import { PageHeader } from "@/components/layout/page-header"
+import {
+  FOUNDATION_PERMISSIONS,
+  hasPermission,
+} from "@/modules/authorization/domain/permission"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
-import { FOUNDATION_PERMISSIONS } from "@/modules/authorization/domain/permission"
+import { getTenantBusinessProfile } from "@/modules/tenancy/composition"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 
 export const metadata: Metadata = { title: "Settings" }
@@ -20,16 +24,26 @@ export default async function SettingsPage({
     FOUNDATION_PERMISSIONS.settingsRead,
   )
 
+  const canWrite = hasPermission(
+    context.effectivePermissions,
+    FOUNDATION_PERMISSIONS.settingsWrite,
+  )
+  const profile = await getTenantBusinessProfile(context.tenantId)
+
   return (
     <>
       <PageHeader
-        title="Settings"
-        description="Configure your tenant workspace."
+        title="Configuración"
+        description="Configura tu espacio de trabajo."
       />
-      <EmptyState
-        title="Workspace settings"
-        description="Tenant configuration will be added here without coupling settings to future business modules."
-      />
+      <div className="max-w-2xl px-5 py-6 sm:px-8">
+        <BusinessProfileForm
+          tenantSlug={tenantSlug}
+          tenantName={context.tenant.name}
+          profile={profile}
+          canWrite={canWrite}
+        />
+      </div>
     </>
   )
 }

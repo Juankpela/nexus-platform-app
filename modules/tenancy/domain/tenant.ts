@@ -15,3 +15,12 @@ export type TenantMembership = {
 export type TenantSummary = Tenant & {
   membershipId: UUID
 }
+
+/** Issuer data shown on quotes/invoices PDFs. All optional. */
+export type TenantBusinessProfile = {
+  legalName: string | null
+  taxId: string | null
+  phone: string | null
+  address: string | null
+  email: string | null
+}

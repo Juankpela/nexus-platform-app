@@ -9,6 +9,7 @@ import {
 import type { ReactElement } from "react"
 
 import { QUOTE_STATUS_LABELS, type QuoteDetail, type QuoteLine } from "@/modules/crm/domain/quote"
+import type { TenantBusinessProfile } from "@/modules/tenancy/domain/tenant"
 
 const BRAND = "#2563eb"
 const INK = "#111827"
@@ -36,6 +37,8 @@ const s = StyleSheet.create({
   page: { paddingVertical: 40, paddingHorizontal: 44, fontSize: 10, color: INK, fontFamily: "Helvetica" },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 },
   brand: { fontSize: 20, fontFamily: "Helvetica-Bold", color: BRAND },
+  issuerLine: { fontSize: 9, color: MUTED, marginTop: 2 },
+  issuerBox: { maxWidth: 260 },
   metaBox: { alignItems: "flex-end" },
   docTitle: { fontSize: 16, fontFamily: "Helvetica-Bold", letterSpacing: 1 },
   metaLine: { fontSize: 9, color: MUTED, marginTop: 2 },
@@ -65,14 +68,21 @@ export type QuotePdfProps = {
   quote: QuoteDetail
   lines: QuoteLine[]
   tenantName: string
+  issuer: TenantBusinessProfile
 }
 
-function QuotePdf({ quote, lines, tenantName }: QuotePdfProps): ReactElement<DocumentProps> {
+function QuotePdf({ quote, lines, tenantName, issuer }: QuotePdfProps): ReactElement<DocumentProps> {
   return (
     <Document title={`Cotización ${quote.quoteNumber}`}>
       <Page size="A4" style={s.page}>
         <View style={s.header}>
-          <Text style={s.brand}>{tenantName}</Text>
+          <View style={s.issuerBox}>
+            <Text style={s.brand}>{issuer.legalName ?? tenantName}</Text>
+            {issuer.taxId ? <Text style={s.issuerLine}>NIT: {issuer.taxId}</Text> : null}
+            {issuer.phone ? <Text style={s.issuerLine}>Tel: {issuer.phone}</Text> : null}
+            {issuer.address ? <Text style={s.issuerLine}>{issuer.address}</Text> : null}
+            {issuer.email ? <Text style={s.issuerLine}>{issuer.email}</Text> : null}
+          </View>
           <View style={s.metaBox}>
             <Text style={s.docTitle}>COTIZACIÓN</Text>
             <Text style={s.metaLine}>{quote.quoteNumber} · v{quote.version}</Text>

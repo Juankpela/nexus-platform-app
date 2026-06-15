@@ -22,6 +22,7 @@ import {
 import { resolveTenantAccess } from "@/modules/tenancy/application/use-cases/resolve-tenant-access"
 import { SupabaseMemberRepository } from "@/modules/tenancy/infrastructure/supabase-member-repository"
 import { SupabaseTenantRepository } from "@/modules/tenancy/infrastructure/supabase-tenant-repository"
+import type { TenantBusinessProfile } from "@/modules/tenancy/domain/tenant"
 import type { UUID } from "@/types/shared"
 
 export const resolveCachedTenantAccess = cache((tenantSlug: string) =>
@@ -44,7 +45,17 @@ export const listCachedAssignableRoles = cache(() =>
   listAssignableRoles(new SupabaseMemberRepository()),
 )
 
+export function getTenantBusinessProfile(tenantId: UUID) {
+  return new SupabaseTenantRepository().getBusinessProfile(tenantId)
+}
+
 // Mutations are intentionally not cached.
+export function updateTenantBusinessProfile(
+  tenantId: UUID,
+  profile: TenantBusinessProfile,
+) {
+  return new SupabaseTenantRepository().updateBusinessProfile(tenantId, profile)
+}
 export function changeTenantMemberStatus(input: ChangeMemberStatusInput) {
   return changeMemberStatus(
     {

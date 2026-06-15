@@ -3,6 +3,7 @@ export const FOUNDATION_PERMISSIONS = {
   usersRead: "tenant.users.read",
   usersWrite: "tenant.users.write",
   settingsRead: "tenant.settings.read",
+  settingsWrite: "tenant.settings.write",
   auditRead: "tenant.audit.read",
 } as const
 
