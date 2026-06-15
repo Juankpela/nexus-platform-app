@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 
+import { CopyApprovalLink } from "@/components/crm/copy-approval-link"
 import { SendDocumentEmailDialog } from "@/components/email/send-document-email-dialog"
 import { Button } from "@/components/ui/button"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
@@ -13,6 +14,7 @@ import {
   hasPermission,
 } from "@/modules/authorization/domain/permission"
 import {
+  ensureQuotePublicToken,
   getContactRecord,
   getQuoteRecord,
   listCompanyOptions,
@@ -78,10 +80,16 @@ export default async function QuoteDetailPage({
   const contact = quote.contactId
     ? await getContactRecord(context.tenantId, quote.contactId)
     : null
+
+  // Public approval link (Inc 4): ensure a token exists and build the URL.
+  const publicToken = await ensureQuotePublicToken(context.tenantId, quoteId)
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/\/$/, "")
+  const approvalUrl = `${appUrl}/q/${publicToken}`
+
   const emailDefaults = {
     to: contact?.email ?? "",
     subject: `Cotización ${quote.quoteNumber} - ${context.tenant.name}`,
-    message: `Hola,\n\nAdjuntamos la cotización ${quote.quoteNumber}. Quedamos atentos a cualquier inquietud.\n\nSaludos,\n${context.tenant.name}`,
+    message: `Hola,\n\nAdjuntamos la cotización ${quote.quoteNumber}. Puedes revisarla y aprobarla aquí:\n${approvalUrl}\n\nQuedamos atentos a cualquier inquietud.\n\nSaludos,\n${context.tenant.name}`,
   }
 
   const products = canWrite
@@ -134,6 +142,7 @@ export default async function QuoteDetailPage({
               Descargar PDF
             </Link>
           </Button>
+          {canWrite ? <CopyApprovalLink url={approvalUrl} /> : null}
           {canWrite ? (
             <SendDocumentEmailDialog
               tenantSlug={tenantSlug}

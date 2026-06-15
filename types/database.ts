@@ -1977,6 +1977,7 @@ export type Database = {
           notes: string | null
           opportunity_id: string | null
           price_book_id: string | null
+          public_token: string | null
           quote_number: string
           status: Database["public"]["Enums"]["quote_status"]
           subtotal: number
@@ -1996,6 +1997,7 @@ export type Database = {
           notes?: string | null
           opportunity_id?: string | null
           price_book_id?: string | null
+          public_token?: string | null
           quote_number: string
           status?: Database["public"]["Enums"]["quote_status"]
           subtotal?: number
@@ -2015,6 +2017,7 @@ export type Database = {
           notes?: string | null
           opportunity_id?: string | null
           price_book_id?: string | null
+          public_token?: string | null
           quote_number?: string
           status?: Database["public"]["Enums"]["quote_status"]
           subtotal?: number

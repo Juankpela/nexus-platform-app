@@ -1,5 +1,8 @@
 import "server-only"
 
+import { randomBytes } from "node:crypto"
+
+import { createAdminSupabaseClient } from "@/lib/supabase/admin"
 import { ApplicationError } from "@/lib/errors/application-error"
 import { createServerSupabaseClient } from "@/lib/supabase/server"
 import type { QuoteRepository } from "@/modules/crm/application/ports/quote-repository"
@@ -7,6 +10,7 @@ import type { Paginated } from "@/modules/crm/domain/pagination"
 import {
   computeLineTotal,
   computeQuoteTotal,
+  type PublicQuoteView,
   type OpportunityOption,
   type PriceBookOption,
   type ProductLineOption,
@@ -39,6 +43,7 @@ function toQuote(row: Record<string, unknown>): Quote {
     totalAmount: Number(row.total_amount),
     expirationDate: (row.expiration_date as string | null) ?? null,
     notes: (row.notes as string | null) ?? null,
+    publicToken: (row.public_token as string | null) ?? null,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
   }
@@ -280,6 +285,96 @@ export class SupabaseQuoteRepository implements QuoteRepository {
         "QUOTE_STATUS_FAILED",
         error,
       )
+    }
+  }
+
+  // ── Public approval (Inc 4) ──────────────────────────────────────────────────
+  /** Returns the existing public token, generating + storing one if absent. */
+  async ensurePublicToken(tenantId: UUID, id: UUID): Promise<string> {
+    const admin = createAdminSupabaseClient()
+    const { data, error } = await admin
+      .from("quotes")
+      .select("public_token")
+      .eq("tenant_id", tenantId)
+      .eq("id", id)
+      .maybeSingle()
+    if (error) {
+      throw new ApplicationError("Unable to read quote token.", "QUOTE_TOKEN_FAILED", error)
+    }
+    if (!data) throw new ApplicationError("Quote not found.", "QUOTE_NOT_FOUND")
+    if (data.public_token) return data.public_token
+
+    const token = randomBytes(24).toString("base64url")
+    const { error: updErr } = await admin
+      .from("quotes")
+      .update({ public_token: token })
+      .eq("tenant_id", tenantId)
+      .eq("id", id)
+    if (updErr) {
+      throw new ApplicationError("Unable to set quote token.", "QUOTE_TOKEN_FAILED", updErr)
+    }
+    return token
+  }
+
+  /** Loads a quote + lines + issuer name strictly by public token (no tenant ctx). */
+  async getPublicView(token: string): Promise<PublicQuoteView | null> {
+    const admin = createAdminSupabaseClient()
+    const { data, error } = await admin
+      .from("quotes")
+      .select(
+        "*, companies(name), contacts(first_name, last_name), opportunities(name), price_books(name), tenants(name)",
+      )
+      .eq("public_token", token)
+      .maybeSingle()
+    if (error) {
+      throw new ApplicationError("Unable to load quote.", "QUOTE_LOAD_FAILED", error)
+    }
+    if (!data) return null
+
+    const co = Array.isArray(data.companies) ? data.companies[0] : data.companies
+    const ct = Array.isArray(data.contacts) ? data.contacts[0] : data.contacts
+    const op = Array.isArray(data.opportunities) ? data.opportunities[0] : data.opportunities
+    const pb = Array.isArray(data.price_books) ? data.price_books[0] : data.price_books
+    const tn = Array.isArray(data.tenants) ? data.tenants[0] : data.tenants
+    const contactName = ct
+      ? [ct.first_name, ct.last_name].filter(Boolean).join(" ") || null
+      : null
+
+    const quote = {
+      ...toQuote(data as unknown as Record<string, unknown>),
+      companyName: (co?.name as string | null) ?? null,
+      contactName,
+      opportunityName: (op?.name as string | null) ?? null,
+      priceBookName: (pb?.name as string | null) ?? null,
+    }
+
+    const { data: lineRows, error: lineErr } = await admin
+      .from("quote_lines")
+      .select("*, products(name, sku)")
+      .eq("quote_id", quote.id)
+      .order("sort_order")
+      .order("created_at")
+    if (lineErr) {
+      throw new ApplicationError("Unable to load quote lines.", "QUOTE_LINES_FAILED", lineErr)
+    }
+
+    return {
+      quote,
+      lines: (lineRows ?? []).map((r) => toLine(r as unknown as Record<string, unknown>)),
+      tenantId: data.tenant_id as string,
+      tenantName: (tn?.name as string | null) ?? "",
+    }
+  }
+
+  /** Sets status strictly by public token (public decision). */
+  async setStatusByPublicToken(token: string, status: QuoteStatus): Promise<void> {
+    const admin = createAdminSupabaseClient()
+    const { error } = await admin
+      .from("quotes")
+      .update({ status })
+      .eq("public_token", token)
+    if (error) {
+      throw new ApplicationError("Unable to update quote status.", "QUOTE_STATUS_FAILED", error)
     }
   }
 

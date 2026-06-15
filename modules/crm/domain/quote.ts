@@ -75,6 +75,7 @@ export type Quote = {
   totalAmount: number
   expirationDate: string | null
   notes: string | null
+  publicToken: string | null
   createdAt: string
   updatedAt: string
 }
@@ -85,6 +86,14 @@ export type QuoteDetail = Quote & {
   contactName: string | null
   opportunityName: string | null
   priceBookName: string | null
+}
+
+/** Everything the public approval page needs, loaded by token (no tenant ctx). */
+export type PublicQuoteView = {
+  quote: QuoteDetail
+  lines: QuoteLine[]
+  tenantId: UUID
+  tenantName: string
 }
 
 /** Quote list item — includes companyName for display without full join. */

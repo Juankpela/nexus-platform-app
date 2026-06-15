@@ -446,6 +446,22 @@ export function getQuoteRecord(tenantId: UUID, id: UUID) {
   return quoteRepo().getById(tenantId, id)
 }
 
+// ── Public approval (Inc 4) ──────────────────────────────────────────────────
+export function ensureQuotePublicToken(tenantId: UUID, id: UUID) {
+  return quoteRepo().ensurePublicToken(tenantId, id)
+}
+
+export function getPublicQuoteView(token: string) {
+  return quoteRepo().getPublicView(token)
+}
+
+export function setQuoteStatusByPublicToken(
+  token: string,
+  status: "accepted" | "rejected",
+) {
+  return quoteRepo().setStatusByPublicToken(token, status)
+}
+
 export function createQuoteRecord(input: CreateQuoteInput) {
   return createQuote({ quotes: quoteRepo(), audit: audit() }, input)
 }

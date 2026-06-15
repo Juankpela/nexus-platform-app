@@ -3,6 +3,7 @@ import type {
   OpportunityOption,
   PriceBookOption,
   ProductLineOption,
+  PublicQuoteView,
   Quote,
   QuoteDetail,
   QuoteInput,
@@ -22,6 +23,11 @@ export interface QuoteRepository {
   update(tenantId: UUID, id: UUID, input: QuoteInput): Promise<Quote>
   setStatus(tenantId: UUID, id: UUID, status: QuoteStatus): Promise<void>
   createRevision(tenantId: UUID, sourceId: UUID): Promise<Quote>
+
+  // ── Public approval (Inc 4) ──────────────────────────────────────────────────
+  ensurePublicToken(tenantId: UUID, id: UUID): Promise<string>
+  getPublicView(token: string): Promise<PublicQuoteView | null>
+  setStatusByPublicToken(token: string, status: QuoteStatus): Promise<void>
   recalculateTotals(tenantId: UUID, quoteId: UUID): Promise<void>
 
   // ── Lines ──────────────────────────────────────────────────────────────────
