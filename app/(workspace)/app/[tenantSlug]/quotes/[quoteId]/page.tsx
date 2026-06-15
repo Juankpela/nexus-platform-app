@@ -1,4 +1,4 @@
-import { ExternalLink } from "lucide-react"
+import { Download } from "lucide-react"
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
@@ -114,11 +114,11 @@ export default async function QuoteDetailPage({
           )}
           <Button asChild variant="outline" size="sm">
             <Link
-              href={`/app/${tenantSlug}/quotes/${quoteId}/print`}
+              href={`/app/${tenantSlug}/quotes/${quoteId}/pdf`}
               target="_blank"
             >
-              <ExternalLink className="mr-2 h-4 w-4" />
-              Print / PDF
+              <Download className="mr-2 h-4 w-4" />
+              Descargar PDF
             </Link>
           </Button>
         </div>
