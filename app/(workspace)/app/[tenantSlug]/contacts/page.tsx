@@ -82,23 +82,27 @@ export default async function ContactsPage({
           <div className="flex flex-wrap items-center justify-end gap-2">
             <ExportButton tenantSlug={tenantSlug} object="contacts" filters={{ search }} />
             {canWrite ? (
+              // The create dialog renders FIRST in the DOM (pushed to the visual
+              // end with order-last) to dodge a Next 16 SSR bug where a Radix
+              // Dialog placed after another Dialog client subtree fails to
+              // render its trigger.
               <>
+                <ContactFormDialog
+                  tenantSlug={tenantSlug}
+                  companyOptions={companyOptions}
+                  trigger={
+                    <Button className="order-last">
+                      <Plus />
+                      New contact
+                    </Button>
+                  }
+                />
                 <ContactCsvImport
                   tenantSlug={tenantSlug}
                   trigger={
                     <Button variant="outline">
                       <Upload />
                       Importar contactos
-                    </Button>
-                  }
-                />
-                <ContactFormDialog
-                  tenantSlug={tenantSlug}
-                  companyOptions={companyOptions}
-                  trigger={
-                    <Button>
-                      <Plus />
-                      New contact
                     </Button>
                   }
                 />

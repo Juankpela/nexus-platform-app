@@ -4,6 +4,7 @@ import Link from "next/link"
 
 import { OpportunityFormDialog } from "@/components/crm/opportunity-form-dialog"
 import { OpportunityKanbanClient } from "@/components/crm/opportunity-kanban-client"
+import { ClientOnly } from "@/components/layout/client-only"
 import { Pagination } from "@/components/crm/pagination"
 import { EmptyState } from "@/components/layout/empty-state"
 import { PageHeader } from "@/components/layout/page-header"
@@ -136,6 +137,30 @@ export default async function OpportunitiesPage({
       <div className="space-y-4 px-5 py-6 sm:px-8">
         {/* ── Toolbar ── */}
         <div className="flex flex-wrap items-center justify-between gap-3">
+          {/*
+           * The create dialog renders client-only (ClientOnly) and is pushed to
+           * the visual end with order-last, to dodge a Next 16 SSR bug where this
+           * Radix Dialog trigger fails to render server-side inside this page's
+           * client-component tree.
+           */}
+          {canWrite ? (
+            <ClientOnly>
+              <div className="order-last flex items-center gap-2">
+                <OpportunityFormDialog
+                  tenantSlug={tenantSlug}
+                  companyOptions={companyOptions}
+                  contactOptions={contactOptions}
+                  ownerOptions={ownerOptions}
+                  trigger={
+                    <Button>
+                      <Plus />
+                      Nueva oportunidad
+                    </Button>
+                  }
+                />
+              </div>
+            </ClientOnly>
+          ) : null}
           <div className="flex flex-wrap items-center gap-2">
             {/* Search + status filter (table only) */}
             <form action={basePath} className="flex items-center gap-2">
@@ -194,21 +219,6 @@ export default async function OpportunitiesPage({
               </Link>
             </div>
           </div>
-
-          {canWrite ? (
-            <OpportunityFormDialog
-              tenantSlug={tenantSlug}
-              companyOptions={companyOptions}
-              contactOptions={contactOptions}
-              ownerOptions={ownerOptions}
-              trigger={
-                <Button>
-                  <Plus />
-                  Nueva oportunidad
-                </Button>
-              }
-            />
-          ) : null}
         </div>
 
         {/* ── Content ── */}
