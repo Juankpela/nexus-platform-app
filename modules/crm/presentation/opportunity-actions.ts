@@ -9,13 +9,18 @@ import {
   assignOpportunityRecordOwner,
   changeOpportunityRecordStatus,
   createOpportunityRecord,
+  listCompanyOptions,
+  listContactOptions,
   updateOpportunityRecord,
 } from "@/modules/crm/composition"
+import type { CompanyOption } from "@/modules/crm/domain/company"
+import type { ContactOption } from "@/modules/crm/domain/contact"
 import {
   OPPORTUNITY_BUSINESS_TYPES,
   OPPORTUNITY_STATUSES,
   type OpportunityInput,
 } from "@/modules/crm/domain/opportunity"
+import { listCachedTenantMembers } from "@/modules/tenancy/composition"
 import {
   fail,
   field,
@@ -26,6 +31,41 @@ import {
 const idSchema = z.uuid()
 const businessTypeSchema = z.enum(OPPORTUNITY_BUSINESS_TYPES)
 const statusSchema = z.enum(OPPORTUNITY_STATUSES)
+
+export type OpportunityFormOptions = {
+  companies: CompanyOption[]
+  contacts: ContactOption[]
+  owners: { id: string; label: string }[]
+}
+
+/**
+ * Loads the create/edit dropdown options client-side (on dialog open) instead of
+ * serializing them into the page's RSC payload. The opportunities list page is
+ * heavy (table/kanban); embedding these arrays in OpportunityFormDialog's props
+ * pushes the payload past a Next 16 streaming boundary and the dialog trigger
+ * silently fails to render. Fetching on demand keeps the page payload small.
+ */
+export async function loadOpportunityFormOptionsAction(
+  tenantSlug: string,
+): Promise<OpportunityFormOptions> {
+  const context = await requireCrmContext(
+    tenantSlug,
+    CRM_PERMISSIONS.opportunitiesWrite,
+  )
+  const [companies, contacts, members] = await Promise.all([
+    listCompanyOptions(context.tenantId),
+    listContactOptions(context.tenantId),
+    listCachedTenantMembers(context.tenantId),
+  ])
+  return {
+    companies,
+    contacts,
+    owners: members.map((m) => ({
+      id: m.userId,
+      label: m.fullName ?? m.email ?? m.userId,
+    })),
+  }
+}
 
 type ParsedOpportunity =
   | { ok: true; data: OpportunityInput }

@@ -25,6 +25,7 @@ import {
 } from "@/modules/crm/domain/opportunity"
 import {
   createOpportunityAction,
+  loadOpportunityFormOptionsAction,
   updateOpportunityAction,
 } from "@/modules/crm/presentation/opportunity-actions"
 import type { CrmActionState } from "@/modules/crm/presentation/require-crm-context"
@@ -67,9 +68,14 @@ export function OpportunityFormDialog({
   trigger,
 }: {
   tenantSlug: string
-  companyOptions: CompanyOption[]
-  contactOptions: ContactOption[]
-  ownerOptions: OwnerOption[]
+  /**
+   * Dropdown options. Optional: when omitted (e.g. the heavy list page), the
+   * dialog loads them client-side on open to keep them out of the page's RSC
+   * payload (see loadOpportunityFormOptionsAction).
+   */
+  companyOptions?: CompanyOption[]
+  contactOptions?: ContactOption[]
+  ownerOptions?: OwnerOption[]
   opportunity?: Opportunity
   trigger: React.ReactNode
 }) {
@@ -80,6 +86,29 @@ export function OpportunityFormDialog({
     initialState,
   )
 
+  // Options come from props when provided, otherwise are fetched on first open.
+  const [companies, setCompanies] = useState<CompanyOption[]>(companyOptions ?? [])
+  const [contacts, setContacts] = useState<ContactOption[]>(contactOptions ?? [])
+  const [owners, setOwners] = useState<OwnerOption[]>(ownerOptions ?? [])
+  const [loadingOptions, setLoadingOptions] = useState(false)
+  const optionsLoaded = useRef(Boolean(companyOptions))
+
+  async function handleOpenChange(next: boolean) {
+    setOpen(next)
+    if (next && !optionsLoaded.current && !loadingOptions) {
+      setLoadingOptions(true)
+      try {
+        const opts = await loadOpportunityFormOptionsAction(tenantSlug)
+        setCompanies(opts.companies)
+        setContacts(opts.contacts)
+        setOwners(opts.owners)
+        optionsLoaded.current = true
+      } finally {
+        setLoadingOptions(false)
+      }
+    }
+  }
+
   const wasPending = useRef(false)
   useEffect(() => {
     if (wasPending.current && !pending && state.ok) setOpen(false)
@@ -87,7 +116,7 @@ export function OpportunityFormDialog({
   }, [pending, state.ok])
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
@@ -126,9 +155,9 @@ export function OpportunityFormDialog({
                 className={selectClass}
               >
                 <option value="" disabled>
-                  Select a company
+                  {loadingOptions ? "Cargando…" : "Select a company"}
                 </option>
-                {companyOptions.map((option) => (
+                {companies.map((option) => (
                   <option key={option.id} value={option.id}>
                     {option.name}
                   </option>
@@ -144,9 +173,9 @@ export function OpportunityFormDialog({
                 className={selectClass}
               >
                 <option value="" disabled>
-                  Select a contact
+                  {loadingOptions ? "Cargando…" : "Select a contact"}
                 </option>
-                {contactOptions.map((option) => (
+                {contacts.map((option) => (
                   <option key={option.id} value={option.id}>
                     {option.name}
                   </option>
@@ -176,7 +205,7 @@ export function OpportunityFormDialog({
                   className={selectClass}
                 >
                   <option value="">Me (default)</option>
-                  {ownerOptions.map((option) => (
+                  {owners.map((option) => (
                     <option key={option.id} value={option.id}>
                       {option.label}
                     </option>

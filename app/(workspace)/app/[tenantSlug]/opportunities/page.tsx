@@ -4,7 +4,6 @@ import Link from "next/link"
 
 import { OpportunityFormDialog } from "@/components/crm/opportunity-form-dialog"
 import { OpportunityKanbanClient } from "@/components/crm/opportunity-kanban-client"
-import { ClientOnly } from "@/components/layout/client-only"
 import { Pagination } from "@/components/crm/pagination"
 import { EmptyState } from "@/components/layout/empty-state"
 import { PageHeader } from "@/components/layout/page-header"
@@ -15,13 +14,7 @@ import {
   CRM_PERMISSIONS,
   hasPermission,
 } from "@/modules/authorization/domain/permission"
-import {
-  listCompanyOptions,
-  listContactOptions,
-  listTenantOpportunities,
-} from "@/modules/crm/composition"
-import type { CompanyOption } from "@/modules/crm/domain/company"
-import type { ContactOption } from "@/modules/crm/domain/contact"
+import { listTenantOpportunities } from "@/modules/crm/composition"
 import {
   OPPORTUNITY_BUSINESS_TYPE_LABELS,
   OPPORTUNITY_STATUSES,
@@ -29,7 +22,6 @@ import {
   type OpportunityStatus,
 } from "@/modules/crm/domain/opportunity"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
-import { listCachedTenantMembers } from "@/modules/tenancy/composition"
 import { cn } from "@/lib/utils"
 
 export const metadata: Metadata = { title: "Opportunities" }
@@ -84,21 +76,12 @@ export default async function OpportunitiesPage({
   const page = Number.isFinite(pageRaw) && pageRaw > 0 ? pageRaw : 1
   const basePath = `/app/${tenantSlug}/opportunities`
 
-  const [result, companyOptions, contactOptions, members] = await Promise.all([
-    listTenantOpportunities(
-      context.tenantId,
-      { search, status },
-      1,
-      isKanban ? KANBAN_PAGE_SIZE : PAGE_SIZE,
-    ),
-    canWrite
-      ? listCompanyOptions(context.tenantId)
-      : Promise.resolve([] as CompanyOption[]),
-    canWrite
-      ? listContactOptions(context.tenantId)
-      : Promise.resolve([] as ContactOption[]),
-    canWrite ? listCachedTenantMembers(context.tenantId) : Promise.resolve([]),
-  ])
+  const result = await listTenantOpportunities(
+    context.tenantId,
+    { search, status },
+    1,
+    isKanban ? KANBAN_PAGE_SIZE : PAGE_SIZE,
+  )
 
   // For table view we re-fetch with the correct page
   const tableResult =
@@ -110,11 +93,6 @@ export default async function OpportunitiesPage({
           PAGE_SIZE,
         )
       : result
-
-  const ownerOptions = members.map((member) => ({
-    id: member.userId,
-    label: member.fullName ?? member.email ?? member.userId,
-  }))
 
   const selectClass =
     "h-9 rounded-lg border border-input bg-background px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30"
@@ -138,28 +116,21 @@ export default async function OpportunitiesPage({
         {/* ── Toolbar ── */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           {/*
-           * The create dialog renders client-only (ClientOnly) and is pushed to
-           * the visual end with order-last, to dodge a Next 16 SSR bug where this
-           * Radix Dialog trigger fails to render server-side inside this page's
-           * client-component tree.
+           * Options are NOT passed as props (they would bloat this heavy page's
+           * RSC payload past a Next 16 streaming boundary and the dialog trigger
+           * would silently fail to render). The dialog loads them client-side on
+           * open. order-last keeps the create button at the visual end.
            */}
           {canWrite ? (
-            <ClientOnly>
-              <div className="order-last flex items-center gap-2">
-                <OpportunityFormDialog
-                  tenantSlug={tenantSlug}
-                  companyOptions={companyOptions}
-                  contactOptions={contactOptions}
-                  ownerOptions={ownerOptions}
-                  trigger={
-                    <Button>
-                      <Plus />
-                      Nueva oportunidad
-                    </Button>
-                  }
-                />
-              </div>
-            </ClientOnly>
+            <OpportunityFormDialog
+              tenantSlug={tenantSlug}
+              trigger={
+                <Button className="order-last">
+                  <Plus />
+                  Nueva oportunidad
+                </Button>
+              }
+            />
           ) : null}
           <div className="flex flex-wrap items-center gap-2">
             {/* Search + status filter (table only) */}
