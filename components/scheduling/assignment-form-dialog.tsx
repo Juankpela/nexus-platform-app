@@ -1,6 +1,7 @@
 "use client"
 
 import { Loader2 } from "lucide-react"
+import { useRouter } from "next/navigation"
 import * as React from "react"
 import { useActionState, useEffect, useRef, useState } from "react"
 
@@ -57,17 +58,21 @@ function toLocalInput(iso: string | null): string {
 
 export function AssignmentFormDialog({
   tenantSlug,
-  workOrderOptions,
+  workOrderOptions = [],
   technicianOptions,
   assignment,
+  lockedWorkOrder,
   trigger,
 }: {
   tenantSlug: string
-  workOrderOptions: SelectOption[]
+  workOrderOptions?: SelectOption[]
   technicianOptions: SelectOption[]
   assignment?: WorkOrderAssignment
+  /** When set, the order is fixed: no dropdown, just schedule + assign it. */
+  lockedWorkOrder?: SelectOption
   trigger: React.ReactNode
 }) {
+  const router = useRouter()
   const isReassign = Boolean(assignment)
   const [open, setOpen] = useState(false)
   const [state, formAction, pending] = useActionState(
@@ -77,9 +82,12 @@ export function AssignmentFormDialog({
 
   const wasPending = useRef(false)
   useEffect(() => {
-    if (wasPending.current && !pending && state.ok) setOpen(false)
+    if (wasPending.current && !pending && state.ok) {
+      setOpen(false)
+      router.refresh()
+    }
     wasPending.current = pending
-  }, [pending, state.ok])
+  }, [pending, state.ok, router])
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -107,6 +115,12 @@ export function AssignmentFormDialog({
               <span className="font-medium">
                 {assignment?.workOrderNumber} · {assignment?.workOrderSubject}
               </span>
+            </div>
+          ) : lockedWorkOrder ? (
+            <div className="rounded-lg bg-muted/40 px-3 py-2 text-sm">
+              <input type="hidden" name="work_order_id" value={lockedWorkOrder.id} />
+              <span className="text-muted-foreground">Orden: </span>
+              <span className="font-medium">{lockedWorkOrder.label}</span>
             </div>
           ) : (
             <Field label="Orden de trabajo" htmlFor="work_order_id" required>

@@ -12,6 +12,7 @@ import Link from "next/link"
 import { AssignTechnicianDialog } from "@/components/dispatch/assign-technician-dialog"
 import { AssignmentActions } from "@/components/dispatch/assignment-actions"
 import { QuickAssignButton } from "@/components/dispatch/quick-assign-button"
+import { AssignmentFormDialog } from "@/components/scheduling/assignment-form-dialog"
 import { KpiCard } from "@/components/dashboard/kpi-card"
 import { RefreshBoardButton } from "@/components/dispatch/refresh-board-button"
 import { EmptyState } from "@/components/layout/empty-state"
@@ -278,13 +279,21 @@ export default async function DispatchPage({
                               triggerVariant="ghost"
                             />
                           </div>
-                        ) : !win ? (
-                          <Button asChild variant="outline" size="sm">
-                            <Link href={`/app/${tenantSlug}/work-orders/${wo.id}`}>
-                              <CalendarPlus className="size-4" />
-                              Programar y asignar
-                            </Link>
-                          </Button>
+                        ) : canSchedule && !win ? (
+                          <AssignmentFormDialog
+                            tenantSlug={tenantSlug}
+                            lockedWorkOrder={{
+                              id: wo.id,
+                              label: `${wo.workOrderNumber} · ${wo.subject}`,
+                            }}
+                            technicianOptions={technicians.map((t) => ({ id: t.id, label: t.name }))}
+                            trigger={
+                              <Button type="button" variant="outline" size="sm">
+                                <CalendarPlus className="size-4" />
+                                Programar y asignar
+                              </Button>
+                            }
+                          />
                         ) : null}
                       </li>
                     )
