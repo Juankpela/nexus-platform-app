@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 
 import { Pagination } from "@/components/crm/pagination"
+import { ClientOnly } from "@/components/layout/client-only"
 import { EmptyState } from "@/components/layout/empty-state"
 import { PageHeader } from "@/components/layout/page-header"
 import { CaseFormDialog } from "@/components/service/case-form-dialog"
@@ -251,6 +252,25 @@ export default async function CasesPage({
               search || status || priority || ownerId
                 ? "Ningún caso coincide con los filtros."
                 : "Crea tu primer caso de servicio."
+            }
+            actions={
+              canWrite ? (
+                <ClientOnly>
+                  <CaseFormDialog
+                    tenantSlug={tenantSlug}
+                    companyOptions={companyOptions}
+                    contactOptions={contactOptions}
+                    ownerOptions={ownerOptions}
+                    assetOptions={assetOptions}
+                    trigger={
+                      <Button>
+                        <Plus />
+                        Crear caso
+                      </Button>
+                    }
+                  />
+                </ClientOnly>
+              ) : undefined
             }
           />
         ) : isKanban ? (

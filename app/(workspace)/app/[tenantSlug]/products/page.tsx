@@ -7,6 +7,7 @@ import { ProductCsvExport } from "@/components/crm/product-csv-export"
 import { ProductCsvImport } from "@/components/crm/product-csv-import"
 import { ProductFormDialog } from "@/components/crm/product-form-dialog"
 import { Pagination } from "@/components/crm/pagination"
+import { ClientOnly } from "@/components/layout/client-only"
 import { EmptyState } from "@/components/layout/empty-state"
 import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
@@ -172,6 +173,25 @@ export default async function ProductsPage({
               search || productTypeFilter || productFamilyFilter
                 ? "No products match your filters."
                 : "Create your first product to get started."
+            }
+            actions={
+              canWrite ? (
+                <ClientOnly>
+                  <ProductFormDialog
+                    tenantSlug={tenantSlug}
+                    trigger={
+                      <Button>
+                        <Plus />
+                        Crear producto
+                      </Button>
+                    }
+                  />
+                  <ProductCsvImport
+                    tenantSlug={tenantSlug}
+                    trigger={<Button variant="outline">Importar productos</Button>}
+                  />
+                </ClientOnly>
+              ) : undefined
             }
           />
         ) : (

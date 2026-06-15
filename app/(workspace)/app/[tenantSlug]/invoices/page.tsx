@@ -90,6 +90,11 @@ export default async function InvoicesPage({
         <EmptyState
           title="No invoices yet"
           description="Invoices are generated from completed, billable work orders."
+          actions={
+            <Button asChild variant="outline">
+              <Link href={`/app/${tenantSlug}/quotes`}>Ir a cotizaciones</Link>
+            </Button>
+          }
         />
       ) : (
         <>

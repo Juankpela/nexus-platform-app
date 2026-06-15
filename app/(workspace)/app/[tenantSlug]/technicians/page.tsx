@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 
 import { Pagination } from "@/components/crm/pagination"
+import { ClientOnly } from "@/components/layout/client-only"
 import { EmptyState } from "@/components/layout/empty-state"
 import { PageHeader } from "@/components/layout/page-header"
 import { KpiCard } from "@/components/dashboard/kpi-card"
@@ -204,6 +205,21 @@ export default async function TechniciansPage({
                   search || status
                     ? "Ningún técnico coincide con los filtros."
                     : "Registra tu primer técnico de campo."
+                }
+                actions={
+                  canWrite ? (
+                    <ClientOnly>
+                      <TechnicianFormDialog
+                        tenantSlug={tenantSlug}
+                        trigger={
+                          <Button>
+                            <Plus />
+                            Crear técnico
+                          </Button>
+                        }
+                      />
+                    </ClientOnly>
+                  ) : undefined
                 }
               />
             ) : (

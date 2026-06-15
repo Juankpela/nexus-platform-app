@@ -7,6 +7,7 @@ import { CompanyFormDialog } from "@/components/crm/company-form-dialog"
 import { CrmStatusToggle } from "@/components/crm/crm-status-toggle"
 import { Pagination } from "@/components/crm/pagination"
 import { ExportButton } from "@/components/integrations/export-button"
+import { ClientOnly } from "@/components/layout/client-only"
 import { EmptyState } from "@/components/layout/empty-state"
 import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
@@ -108,6 +109,30 @@ export default async function CompaniesPage({
               search
                 ? "No companies match your search."
                 : "Create your first company to get started."
+            }
+            actions={
+              canWrite ? (
+                <ClientOnly>
+                  <CompanyFormDialog
+                    tenantSlug={tenantSlug}
+                    trigger={
+                      <Button>
+                        <Plus />
+                        Crear empresa
+                      </Button>
+                    }
+                  />
+                  <CompanyCsvImport
+                    tenantSlug={tenantSlug}
+                    trigger={
+                      <Button variant="outline">
+                        <Upload />
+                        Importar empresas
+                      </Button>
+                    }
+                  />
+                </ClientOnly>
+              ) : undefined
             }
           />
         ) : (

@@ -5,6 +5,7 @@ import Link from "next/link"
 import { PriceBookActiveToggle } from "@/components/crm/price-book-active-toggle"
 import { PriceBookFormDialog } from "@/components/crm/price-book-form-dialog"
 import { Pagination } from "@/components/crm/pagination"
+import { ClientOnly } from "@/components/layout/client-only"
 import { EmptyState } from "@/components/layout/empty-state"
 import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
@@ -88,6 +89,21 @@ export default async function PriceBooksPage({
               search
                 ? "No price books match your search."
                 : "Create your first price book to get started."
+            }
+            actions={
+              canWrite ? (
+                <ClientOnly>
+                  <PriceBookFormDialog
+                    tenantSlug={tenantSlug}
+                    trigger={
+                      <Button>
+                        <Plus />
+                        Crear lista de precios
+                      </Button>
+                    }
+                  />
+                </ClientOnly>
+              ) : undefined
             }
           />
         ) : (

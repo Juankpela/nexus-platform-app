@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 
 import { Pagination } from "@/components/crm/pagination"
+import { ClientOnly } from "@/components/layout/client-only"
 import { EmptyState } from "@/components/layout/empty-state"
 import { PageHeader } from "@/components/layout/page-header"
 import { WorkOrderFormDialog } from "@/components/service/work-order-form-dialog"
@@ -287,6 +288,24 @@ export default async function WorkOrdersPage({
               search || status || priority || technicianId || companyId
                 ? "Ninguna orden coincide con los filtros."
                 : "Crea la primera orden de trabajo."
+            }
+            actions={
+              canWrite ? (
+                <ClientOnly>
+                  <WorkOrderFormDialog
+                    tenantSlug={tenantSlug}
+                    companyOptions={companyOptions}
+                    caseOptions={caseOptions}
+                    assetOptions={assetOptions}
+                    trigger={
+                      <Button>
+                        <Plus />
+                        Crear orden
+                      </Button>
+                    }
+                  />
+                </ClientOnly>
+              ) : undefined
             }
           />
         ) : isKanban ? (

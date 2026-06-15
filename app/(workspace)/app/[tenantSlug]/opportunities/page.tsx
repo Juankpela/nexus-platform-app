@@ -5,6 +5,7 @@ import Link from "next/link"
 import { OpportunityFormDialog } from "@/components/crm/opportunity-form-dialog"
 import { OpportunityKanbanClient } from "@/components/crm/opportunity-kanban-client"
 import { Pagination } from "@/components/crm/pagination"
+import { ClientOnly } from "@/components/layout/client-only"
 import { EmptyState } from "@/components/layout/empty-state"
 import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
@@ -202,6 +203,21 @@ export default async function OpportunitiesPage({
                   ? "Ninguna oportunidad coincide con la búsqueda."
                   : "Crea tu primera oportunidad para empezar el pipeline."
               }
+              actions={
+                canWrite ? (
+                  <ClientOnly>
+                    <OpportunityFormDialog
+                      tenantSlug={tenantSlug}
+                      trigger={
+                        <Button>
+                          <Plus />
+                          Crear oportunidad
+                        </Button>
+                      }
+                    />
+                  </ClientOnly>
+                ) : undefined
+              }
             />
           ) : (
             <OpportunityKanbanClient
@@ -220,6 +236,21 @@ export default async function OpportunitiesPage({
                   search || status
                     ? "Ninguna oportunidad coincide con los filtros."
                     : "Crea tu primera oportunidad para empezar el pipeline."
+                }
+                actions={
+                  canWrite ? (
+                    <ClientOnly>
+                      <OpportunityFormDialog
+                        tenantSlug={tenantSlug}
+                        trigger={
+                          <Button>
+                            <Plus />
+                            Crear oportunidad
+                          </Button>
+                        }
+                      />
+                    </ClientOnly>
+                  ) : undefined
                 }
               />
             ) : (

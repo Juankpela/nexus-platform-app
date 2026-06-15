@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 
 import { Pagination } from "@/components/crm/pagination"
+import { ClientOnly } from "@/components/layout/client-only"
 import { EmptyState } from "@/components/layout/empty-state"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -138,6 +139,13 @@ export default async function LeadsPage({
         <EmptyState
           title="Sin leads todavía"
           description="Captura tu primer lead para empezar el embudo comercial."
+          actions={
+            canWrite ? (
+              <ClientOnly>
+                <LeadCreateButton tenantSlug={tenantSlug} />
+              </ClientOnly>
+            ) : undefined
+          }
         />
       ) : (
         <>

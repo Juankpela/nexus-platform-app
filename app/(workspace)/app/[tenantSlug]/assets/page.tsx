@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 
 import { Pagination } from "@/components/crm/pagination"
+import { ClientOnly } from "@/components/layout/client-only"
 import { EmptyState } from "@/components/layout/empty-state"
 import { PageHeader } from "@/components/layout/page-header"
 import { AssetCsvImport } from "@/components/service/asset-csv-import"
@@ -189,6 +190,30 @@ export default async function AssetsPage({
               search || status || category || criticality
                 ? "Ningún activo coincide con los filtros."
                 : "Registra tu primer activo."
+            }
+            actions={
+              canWrite ? (
+                <ClientOnly>
+                  <AssetFormDialog
+                    tenantSlug={tenantSlug}
+                    trigger={
+                      <Button>
+                        <Plus />
+                        Crear activo
+                      </Button>
+                    }
+                  />
+                  <AssetCsvImport
+                    tenantSlug={tenantSlug}
+                    trigger={
+                      <Button variant="outline">
+                        <Upload />
+                        Importar activos
+                      </Button>
+                    }
+                  />
+                </ClientOnly>
+              ) : undefined
             }
           />
         ) : (

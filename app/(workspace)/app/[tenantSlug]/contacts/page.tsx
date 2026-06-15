@@ -7,6 +7,7 @@ import { ContactFormDialog } from "@/components/crm/contact-form-dialog"
 import { CrmStatusToggle } from "@/components/crm/crm-status-toggle"
 import { Pagination } from "@/components/crm/pagination"
 import { ExportButton } from "@/components/integrations/export-button"
+import { ClientOnly } from "@/components/layout/client-only"
 import { EmptyState } from "@/components/layout/empty-state"
 import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
@@ -118,6 +119,31 @@ export default async function ContactsPage({
               search
                 ? "No contacts match your search."
                 : "Create your first contact to get started."
+            }
+            actions={
+              canWrite ? (
+                <ClientOnly>
+                  <ContactFormDialog
+                    tenantSlug={tenantSlug}
+                    companyOptions={companyOptions}
+                    trigger={
+                      <Button>
+                        <Plus />
+                        Crear contacto
+                      </Button>
+                    }
+                  />
+                  <ContactCsvImport
+                    tenantSlug={tenantSlug}
+                    trigger={
+                      <Button variant="outline">
+                        <Upload />
+                        Importar contactos
+                      </Button>
+                    }
+                  />
+                </ClientOnly>
+              ) : undefined
             }
           />
         ) : (

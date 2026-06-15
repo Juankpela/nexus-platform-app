@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 
 import { Pagination } from "@/components/crm/pagination"
+import { ClientOnly } from "@/components/layout/client-only"
 import { EmptyState } from "@/components/layout/empty-state"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -131,6 +132,19 @@ export default async function QuotesPage({
         <EmptyState
           title="No quotes yet"
           description="Create your first quote to get started."
+          actions={
+            canWrite ? (
+              <ClientOnly>
+                <QuoteCreateButton
+                  tenantSlug={tenantSlug}
+                  companies={companies}
+                  contacts={contacts.map((c) => ({ id: c.id, name: c.name }))}
+                  opportunities={opportunities}
+                  priceBooks={priceBooks}
+                />
+              </ClientOnly>
+            ) : undefined
+          }
         />
       ) : (
         <>
