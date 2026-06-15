@@ -3,6 +3,10 @@
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 
+import { renderToBuffer } from "@react-pdf/renderer"
+
+import { buildQuotePdf } from "@/components/crm/quote-pdf-document"
+import { sendEmail } from "@/lib/email/send-email"
 import { ApplicationError } from "@/lib/errors/application-error"
 import { CRM_PERMISSIONS } from "@/modules/authorization/domain/permission"
 import {
@@ -10,6 +14,8 @@ import {
   changeQuoteRecordStatus,
   createQuoteRecord,
   createQuoteRevisionRecord,
+  getQuoteRecord,
+  listQuoteLines,
   removeQuoteLineRecord,
   updateQuoteLineRecord,
   updateQuoteRecord,
@@ -17,9 +23,11 @@ import {
 import type { Quote, QuoteStatus } from "@/modules/crm/domain/quote"
 import {
   fail,
+  field,
   requireCrmContext,
   type CrmActionState,
 } from "@/modules/crm/presentation/require-crm-context"
+import { getTenantBusinessProfile } from "@/modules/tenancy/composition"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -268,4 +276,57 @@ export async function createQuoteRevisionAction(
   } catch (err) {
     return handleError(err)
   }
+}
+
+// ── Send by email (Revenue Inc 3) ───────────────────────────────────────────
+
+const emailSchema = z.string().email()
+
+/**
+ * Sends the quote to a client by email with its PDF attached. Manual send: the
+ * user reviews recipient/subject/message in a modal and confirms.
+ */
+export async function sendQuoteEmailAction(
+  _state: CrmActionState,
+  formData: FormData,
+): Promise<CrmActionState> {
+  const tenantSlug = field(formData, "tenantSlug")
+  const quoteId = field(formData, "document_id")
+  const to = emailSchema.safeParse(field(formData, "to"))
+  const subject = field(formData, "subject")
+  const message = field(formData, "message") ?? ""
+  if (!tenantSlug || !quoteId) return fail("Solicitud inválida.")
+  if (!to.success) return fail("Destinatario inválido.")
+  if (!subject) return fail("El asunto es obligatorio.")
+
+  try {
+    const context = await requireCrmContext(tenantSlug, CRM_PERMISSIONS.quotesWrite)
+    const [quote, lines, issuer] = await Promise.all([
+      getQuoteRecord(context.tenantId, quoteId),
+      listQuoteLines(context.tenantId, quoteId),
+      getTenantBusinessProfile(context.tenantId),
+    ])
+    if (!quote) return fail("Cotización no encontrada.")
+
+    const buffer = await renderToBuffer(
+      buildQuotePdf({ quote, lines, tenantName: context.tenant.name, issuer }),
+    )
+
+    await sendEmail({
+      to: to.data,
+      subject,
+      text: message,
+      attachments: [{ filename: `${quote.quoteNumber}.pdf`, content: Buffer.from(buffer) }],
+    })
+  } catch (err) {
+    if (err instanceof ApplicationError && err.code === "EMAIL_NOT_CONFIGURED") {
+      return fail("El email no está configurado. Configura RESEND_API_KEY y EMAIL_FROM.")
+    }
+    if (err instanceof ApplicationError && err.code === "FORBIDDEN") {
+      return fail("No tienes permiso para enviar cotizaciones.")
+    }
+    return fail("No se pudo enviar el correo. Inténtalo de nuevo.")
+  }
+
+  return { ok: true, error: null }
 }

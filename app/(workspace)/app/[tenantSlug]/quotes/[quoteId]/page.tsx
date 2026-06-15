@@ -1,8 +1,9 @@
-import { Download } from "lucide-react"
+import { Download, Mail } from "lucide-react"
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 
+import { SendDocumentEmailDialog } from "@/components/email/send-document-email-dialog"
 import { Button } from "@/components/ui/button"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
 import {
@@ -12,6 +13,7 @@ import {
   hasPermission,
 } from "@/modules/authorization/domain/permission"
 import {
+  getContactRecord,
   getQuoteRecord,
   listCompanyOptions,
   listContactOptions,
@@ -21,6 +23,7 @@ import {
   listQuoteProductLineOptions,
   listSubjectAuditEvents,
 } from "@/modules/crm/composition"
+import { sendQuoteEmailAction } from "@/modules/crm/presentation/quote-actions"
 import {
   QUOTE_STATUS_COLORS,
   QUOTE_STATUS_LABELS,
@@ -70,6 +73,16 @@ export default async function QuoteDetailPage({
     ])
 
   if (!quote) notFound()
+
+  // Prefill the email recipient from the linked contact (Inc 3).
+  const contact = quote.contactId
+    ? await getContactRecord(context.tenantId, quote.contactId)
+    : null
+  const emailDefaults = {
+    to: contact?.email ?? "",
+    subject: `Cotización ${quote.quoteNumber} - ${context.tenant.name}`,
+    message: `Hola,\n\nAdjuntamos la cotización ${quote.quoteNumber}. Quedamos atentos a cualquier inquietud.\n\nSaludos,\n${context.tenant.name}`,
+  }
 
   const products = canWrite
     ? await listQuoteProductLineOptions(context.tenantId, quote.priceBookId)
@@ -121,6 +134,22 @@ export default async function QuoteDetailPage({
               Descargar PDF
             </Link>
           </Button>
+          {canWrite ? (
+            <SendDocumentEmailDialog
+              tenantSlug={tenantSlug}
+              documentId={quoteId}
+              defaultTo={emailDefaults.to}
+              defaultSubject={emailDefaults.subject}
+              defaultMessage={emailDefaults.message}
+              action={sendQuoteEmailAction}
+              trigger={
+                <Button size="sm">
+                  <Mail className="mr-2 h-4 w-4" />
+                  Enviar por email
+                </Button>
+              }
+            />
+          ) : null}
         </div>
       </div>
 

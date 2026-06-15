@@ -3,13 +3,19 @@
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 
+import { renderToBuffer } from "@react-pdf/renderer"
+
+import { buildInvoicePdf } from "@/components/billing/invoice-pdf-document"
+import { sendEmail } from "@/lib/email/send-email"
 import { ApplicationError } from "@/lib/errors/application-error"
 import { BILLING_PERMISSIONS } from "@/modules/authorization/domain/permission"
 import {
   addInvoiceLineRecord,
   generateInvoiceFromQuoteRecord,
   generateInvoiceFromWorkOrderRecord,
+  getInvoiceRecord,
   issueInvoiceRecord,
+  listInvoiceLines,
   removeInvoiceLineRecord,
   updateInvoiceDraftRecord,
   updateInvoiceLineRecord,
@@ -21,6 +27,7 @@ import {
   requireBillingContext,
   type BillingActionState,
 } from "@/modules/billing/presentation/require-billing-context"
+import { getTenantBusinessProfile } from "@/modules/tenancy/composition"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -287,4 +294,64 @@ export async function voidInvoiceAction(
   } catch (err) {
     return handleError(err)
   }
+}
+
+// ── Send by email (Revenue Inc 3) ───────────────────────────────────────────
+
+const emailSchema = z.string().email()
+
+function str(formData: FormData, name: string): string | null {
+  const v = formData.get(name)
+  if (typeof v !== "string") return null
+  const t = v.trim()
+  return t.length > 0 ? t : null
+}
+
+/**
+ * Sends the invoice to a client by email with its PDF attached. Manual send.
+ */
+export async function sendInvoiceEmailAction(
+  _state: BillingActionState,
+  formData: FormData,
+): Promise<BillingActionState> {
+  const tenantSlug = str(formData, "tenantSlug")
+  const invoiceId = str(formData, "document_id")
+  const to = emailSchema.safeParse(str(formData, "to"))
+  const subject = str(formData, "subject")
+  const message = str(formData, "message") ?? ""
+  if (!tenantSlug || !invoiceId) return fail("Solicitud inválida.")
+  if (!to.success) return fail("Destinatario inválido.")
+  if (!subject) return fail("El asunto es obligatorio.")
+
+  try {
+    const context = await requireBillingContext(tenantSlug, BILLING_PERMISSIONS.invoicesWrite)
+    const [invoice, lines, issuer] = await Promise.all([
+      getInvoiceRecord(context.tenantId, invoiceId),
+      listInvoiceLines(context.tenantId, invoiceId),
+      getTenantBusinessProfile(context.tenantId),
+    ])
+    if (!invoice) return fail("Factura no encontrada.")
+
+    const buffer = await renderToBuffer(
+      buildInvoicePdf({ invoice, lines, tenantName: context.tenant.name, issuer }),
+    )
+    const name = (invoice.invoiceNumber ?? "factura").replace(/[^\w.-]/g, "_")
+
+    await sendEmail({
+      to: to.data,
+      subject,
+      text: message,
+      attachments: [{ filename: `${name}.pdf`, content: Buffer.from(buffer) }],
+    })
+  } catch (err) {
+    if (err instanceof ApplicationError && err.code === "EMAIL_NOT_CONFIGURED") {
+      return fail("El email no está configurado. Configura RESEND_API_KEY y EMAIL_FROM.")
+    }
+    if (err instanceof ApplicationError && err.code === "FORBIDDEN") {
+      return fail("No tienes permiso para enviar facturas.")
+    }
+    return fail("No se pudo enviar el correo. Inténtalo de nuevo.")
+  }
+
+  return { ok: true, error: null }
 }

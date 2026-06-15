@@ -1,7 +1,9 @@
+import { Mail } from "lucide-react"
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 
+import { SendDocumentEmailDialog } from "@/components/email/send-document-email-dialog"
 import { Button } from "@/components/ui/button"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
 import {
@@ -13,6 +15,8 @@ import {
   listInvoiceLines,
   listInvoicePayments,
 } from "@/modules/billing/composition"
+import { getContactRecord } from "@/modules/crm/composition"
+import { sendInvoiceEmailAction } from "@/modules/billing/presentation/invoice-actions"
 import {
   INVOICE_ORIGIN_LABELS,
   INVOICE_STATUS_COLORS,
@@ -44,6 +48,17 @@ export default async function InvoiceDetailPage({
   if (!invoice) notFound()
 
   const lines = await listInvoiceLines(context.tenantId, invoiceId)
+
+  // Prefill the email recipient from the linked contact (Inc 3).
+  const contact = invoice.contactId
+    ? await getContactRecord(context.tenantId, invoice.contactId)
+    : null
+  const invoiceNumber = invoice.invoiceNumber ?? "—"
+  const emailDefaults = {
+    to: contact?.email ?? "",
+    subject: `Factura ${invoiceNumber} - ${context.tenant.name}`,
+    message: `Hola,\n\nAdjuntamos la factura ${invoiceNumber}. Quedamos atentos a cualquier inquietud.\n\nSaludos,\n${context.tenant.name}`,
+  }
 
   const canPaymentsRead = hasPermission(
     context.effectivePermissions,
@@ -104,6 +119,22 @@ export default async function InvoiceDetailPage({
               Descargar PDF
             </Link>
           </Button>
+          {canWrite ? (
+            <SendDocumentEmailDialog
+              tenantSlug={tenantSlug}
+              documentId={invoice.id}
+              defaultTo={emailDefaults.to}
+              defaultSubject={emailDefaults.subject}
+              defaultMessage={emailDefaults.message}
+              action={sendInvoiceEmailAction}
+              trigger={
+                <Button size="sm">
+                  <Mail className="mr-2 h-4 w-4" />
+                  Enviar por email
+                </Button>
+              }
+            />
+          ) : null}
           <Button asChild size="sm" variant="ghost">
             <Link href={`/app/${tenantSlug}/invoices`}>← Back to invoices</Link>
           </Button>

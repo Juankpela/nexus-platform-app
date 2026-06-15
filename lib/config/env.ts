@@ -10,6 +10,10 @@ const serverEnvSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
   // Shared secret the Vercel Cron scheduler sends to authenticate the export worker.
   CRON_SECRET: z.string().min(1).optional(),
+  // Resend (transactional email). Optional/empty-tolerant: sending is disabled
+  // (sendEmail throws EMAIL_NOT_CONFIGURED) when these are empty/unset.
+  RESEND_API_KEY: z.string().optional(),
+  EMAIL_FROM: z.string().optional(),
 })
 
 export const env = serverEnvSchema.parse({
@@ -19,4 +23,6 @@ export const env = serverEnvSchema.parse({
   NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
   CRON_SECRET: process.env.CRON_SECRET,
+  RESEND_API_KEY: process.env.RESEND_API_KEY,
+  EMAIL_FROM: process.env.EMAIL_FROM,
 })
