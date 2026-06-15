@@ -98,10 +98,10 @@ export default async function InvoiceDetailPage({
         <div className="flex items-center gap-2">
           <Button asChild size="sm" variant="outline">
             <Link
-              href={`/app/${tenantSlug}/invoices/${invoice.id}/print`}
+              href={`/app/${tenantSlug}/invoices/${invoice.id}/pdf`}
               target="_blank"
             >
-              PDF
+              Descargar PDF
             </Link>
           </Button>
           <Button asChild size="sm" variant="ghost">
