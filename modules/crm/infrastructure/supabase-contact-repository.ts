@@ -67,7 +67,7 @@ function sanitizeSearch(term: string): string {
 export class SupabaseContactRepository implements ContactRepository {
   async list(
     tenantId: UUID,
-    { search, page, pageSize }: ListQuery,
+    { search, page, pageSize, companyId }: ListQuery,
   ): Promise<Paginated<Contact>> {
     const client = await createServerSupabaseClient()
     const from = (page - 1) * pageSize
@@ -77,6 +77,10 @@ export class SupabaseContactRepository implements ContactRepository {
       .from("contacts")
       .select(SELECT_WITH_COMPANY, { count: "estimated" })
       .eq("tenant_id", tenantId)
+
+    if (companyId) {
+      query = query.eq("company_id", companyId)
+    }
 
     const term = search ? sanitizeSearch(search) : ""
     if (term) {
