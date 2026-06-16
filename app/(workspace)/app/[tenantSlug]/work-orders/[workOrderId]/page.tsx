@@ -9,6 +9,7 @@ import { WorkOrderFormDialog } from "@/components/service/work-order-form-dialog
 import { WorkOrderStatusControl } from "@/components/service/work-order-status-control"
 import { WorkOrderTechnicianAssign } from "@/components/service/work-order-technician-assign"
 import { WorkOrderEligibilityPanel } from "@/components/scheduling/work-order-eligibility-panel"
+import { NextStepBanner } from "@/components/layout/next-step-banner"
 import { Button } from "@/components/ui/button"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
 import {
@@ -187,12 +188,6 @@ export default async function WorkOrderDetailPage({
             Órdenes de trabajo
           </Link>
           <div className="flex items-center gap-2">
-            {canInvoice && isWorkOrderInvoiceable(workOrder) ? (
-              <GenerateInvoiceButton
-                tenantSlug={tenantSlug}
-                workOrderId={workOrder.id}
-              />
-            ) : null}
             {canWrite ? (
               <WorkOrderFormDialog
                 tenantSlug={tenantSlug}
@@ -209,6 +204,16 @@ export default async function WorkOrderDetailPage({
             ) : null}
           </div>
         </div>
+
+        {/* Siguiente paso del lazo de dinero */}
+        {canInvoice && isWorkOrderInvoiceable(workOrder) ? (
+          <NextStepBanner
+            title="Trabajo listo para facturar"
+            description="Genera la factura de este trabajo para cobrar."
+          >
+            <GenerateInvoiceButton tenantSlug={tenantSlug} workOrderId={workOrder.id} />
+          </NextStepBanner>
+        ) : null}
 
         {/* Traceability chain: Cliente -> Activo -> Caso -> Intervención */}
         <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-card p-4 text-sm">

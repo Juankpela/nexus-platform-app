@@ -4,6 +4,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 
 import { SendDocumentEmailDialog } from "@/components/email/send-document-email-dialog"
+import { NextStepBanner } from "@/components/layout/next-step-banner"
 import { Button } from "@/components/ui/button"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
 import {
@@ -140,6 +141,34 @@ export default async function InvoiceDetailPage({
         </div>
       </div>
 
+      {/* Siguiente paso del lazo de dinero */}
+      {invoice.status === "draft" && canIssue ? (
+        <NextStepBanner
+          title="Factura en borrador"
+          description="Emítela para poder cobrarla."
+        >
+          <Button asChild size="sm">
+            <a href="#acciones-factura">Ir a emitir</a>
+          </Button>
+        </NextStepBanner>
+      ) : (invoice.status === "issued" || invoice.status === "partially_paid") &&
+        canPaymentsWrite ? (
+        <NextStepBanner
+          title="Factura emitida"
+          description="Registra el pago cuando recibas el dinero."
+        >
+          <Button asChild size="sm">
+            <a href="#pagos-factura">Registrar pago</a>
+          </Button>
+        </NextStepBanner>
+      ) : invoice.status === "paid" ? (
+        <NextStepBanner
+          tone="success"
+          title="Factura pagada"
+          description="Cobro completado. Este trabajo cerró su ciclo."
+        />
+      ) : null}
+
       {/* Meta */}
       <div className="grid grid-cols-2 gap-4 rounded-xl border bg-card p-4 text-sm sm:grid-cols-4">
         <div>
@@ -245,25 +274,29 @@ export default async function InvoiceDetailPage({
         </div>
       )}
 
-      <InvoiceDetailActions
-        tenantSlug={tenantSlug}
-        invoice={invoice}
-        lines={lines}
-        canWrite={canWrite}
-        canIssue={canIssue}
-        canVoid={canVoid}
-      />
+      <div id="acciones-factura" className="scroll-mt-20">
+        <InvoiceDetailActions
+          tenantSlug={tenantSlug}
+          invoice={invoice}
+          lines={lines}
+          canWrite={canWrite}
+          canIssue={canIssue}
+          canVoid={canVoid}
+        />
+      </div>
 
       {canPaymentsRead && invoice.status !== "draft" && invoice.status !== "void" ? (
-        <InvoicePaymentsSection
-          tenantSlug={tenantSlug}
-          invoiceId={invoice.id}
-          companyId={invoice.companyId}
-          balance={invoice.balance}
-          status={invoice.status}
-          payments={payments}
-          canWrite={canPaymentsWrite}
-        />
+        <div id="pagos-factura" className="scroll-mt-20">
+          <InvoicePaymentsSection
+            tenantSlug={tenantSlug}
+            invoiceId={invoice.id}
+            companyId={invoice.companyId}
+            balance={invoice.balance}
+            status={invoice.status}
+            payments={payments}
+            canWrite={canPaymentsWrite}
+          />
+        </div>
       ) : null}
     </div>
   )

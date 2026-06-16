@@ -4,6 +4,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 
 import { CopyApprovalLink } from "@/components/crm/copy-approval-link"
+import { NextStepBanner } from "@/components/layout/next-step-banner"
 import { SendDocumentEmailDialog } from "@/components/email/send-document-email-dialog"
 import { Button } from "@/components/ui/button"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
@@ -125,12 +126,6 @@ export default async function QuoteDetailPage({
           {canCreateWorkOrder && quote.status === "accepted" && (
             <GenerateWorkOrderButton tenantSlug={tenantSlug} quoteId={quoteId} />
           )}
-          {canCreateInvoice && quote.status === "accepted" && (
-            <GenerateInvoiceFromQuoteButton
-              tenantSlug={tenantSlug}
-              quoteId={quoteId}
-            />
-          )}
           <Button asChild variant="outline" size="sm">
             <Link
               href={`/app/${tenantSlug}/quotes/${quoteId}/pdf`}
@@ -159,6 +154,16 @@ export default async function QuoteDetailPage({
           ) : null}
         </div>
       </div>
+
+      {/* Siguiente paso del lazo de dinero */}
+      {canCreateInvoice && quote.status === "accepted" ? (
+        <NextStepBanner
+          title="Cotización aceptada"
+          description="Genera la factura para cobrarle a tu cliente."
+        >
+          <GenerateInvoiceFromQuoteButton tenantSlug={tenantSlug} quoteId={quoteId} />
+        </NextStepBanner>
+      ) : null}
 
       {/* Status control + edit + revision */}
       {canWrite && (
