@@ -29,6 +29,7 @@ import {
 import { listTenantInvoices } from "@/modules/billing/composition"
 import {
   getTenantDashboardStats,
+  listTenantCompanies,
   listTenantOpportunities,
   listTenantQuotes,
 } from "@/modules/crm/composition"
@@ -38,6 +39,7 @@ import { getTenantRevenueMetrics } from "@/modules/forecasting/composition"
 import { getCachedCurrentUser } from "@/modules/identity/composition"
 import { getActiveAssignmentsByWorkOrder } from "@/modules/scheduling/composition"
 import { buildOwnerDashboard } from "@/modules/platform/application/owner-dashboard"
+import { OnboardingCard } from "@/components/dashboard/onboarding-card"
 import {
   buildAttentionItems,
   greetingFor,
@@ -45,6 +47,7 @@ import {
 import {
   getTenantCaseStats,
   getTenantWorkOrderStats,
+  listTenantTechnicians,
   listTenantWorkOrders,
 } from "@/modules/service/composition"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
@@ -84,6 +87,11 @@ export default async function MissionControlPage({
   const canForecast = can(FORECASTING_PERMISSIONS.read)
   const canInvoices = can(BILLING_PERMISSIONS.invoicesRead)
   const canQuotes = can(CRM_PERMISSIONS.quotesRead)
+  const canCompanies = can(CRM_PERMISSIONS.companiesRead)
+  const canTechnicians = can(SERVICE_PERMISSIONS.techniciansRead)
+  // Onboarding card is for the owner setting up: only when all 5 areas readable.
+  const canOnboarding =
+    canCompanies && canTechnicians && canWorkOrders && canQuotes && canInvoices
 
   // Owner-dashboard reads use a single large page (PYME volume); the aggregation
   // is the seam if this ever needs a SQL rollup.
@@ -100,6 +108,9 @@ export default async function MissionControlPage({
     invoicesPage,
     acceptedQuotesPage,
     allWorkOrdersPage,
+    companiesCountPage,
+    techniciansCountPage,
+    quotesCountPage,
   ] = await Promise.all([
     getCachedCurrentUser(),
     getTenantDashboardStats(context.tenantId),
@@ -126,6 +137,16 @@ export default async function MissionControlPage({
           OWNER_PAGE_SIZE,
         )
       : Promise.resolve(null),
+    // Onboarding counts (page size 1 → only the total is needed).
+    canOnboarding
+      ? listTenantCompanies(context.tenantId, { search: null, page: 1, pageSize: 1 })
+      : Promise.resolve(null),
+    canOnboarding
+      ? listTenantTechnicians(context.tenantId, { search: null, status: null }, "name", 1, 1)
+      : Promise.resolve(null),
+    canOnboarding
+      ? listTenantQuotes(context.tenantId, { search: null, status: null, companyId: null, page: 1, pageSize: 1 })
+      : Promise.resolve(null),
   ])
 
   // Open work orders without an active assignment (ADR-031): aligns the owner's
@@ -141,6 +162,17 @@ export default async function MissionControlPage({
       new Set(activeMap.keys()),
     ).length
   }
+
+  // Activation flow counts (reuse loaded data; count-only queries for the rest).
+  const onboardingCounts = canOnboarding
+    ? {
+        clientes: companiesCountPage?.total ?? 0,
+        tecnicos: techniciansCountPage?.total ?? 0,
+        trabajos: allWorkOrdersPage?.total ?? 0,
+        cotizaciones: quotesCountPage?.total ?? 0,
+        facturas: invoicesPage?.total ?? 0,
+      }
+    : null
 
   // ── Owner block (Tu negocio hoy) ─────────────────────────────────────────────
   const todayISO = new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" })
@@ -198,6 +230,11 @@ export default async function MissionControlPage({
           </div>
         ) : null}
       </header>
+
+      {/* Activation flow: next step toward the first invoice */}
+      {onboardingCounts ? (
+        <OnboardingCard base={base} counts={onboardingCounts} />
+      ) : null}
 
       {/* 0 — Owner block: tu negocio en 10 segundos */}
       <MissionSection
