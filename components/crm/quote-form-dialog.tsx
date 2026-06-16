@@ -21,7 +21,7 @@ import type {
 } from "@/modules/crm/domain/quote"
 
 type CompanyOption = { id: string; name: string }
-type ContactOption = { id: string; name: string }
+type ContactOption = { id: string; name: string; companyId: string | null }
 
 type QuoteFormDialogProps = {
   open: boolean
@@ -94,9 +94,10 @@ export function QuoteFormDialog({
             <select
               className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
               value={companyId}
-              onChange={(e) =>
+              onChange={(e) => {
                 setCompanyId(e.target.value === "_none" ? "" : e.target.value)
-              }
+                setContactId("") // el contacto se filtra por empresa
+              }}
             >
               <option value="_none">Ninguno</option>
               {companies.map((c) => (
@@ -117,11 +118,13 @@ export function QuoteFormDialog({
               }
             >
               <option value="_none">Ninguno</option>
-              {contacts.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
+              {contacts
+                .filter((c) => !companyId || c.companyId === companyId)
+                .map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
             </select>
           </div>
 

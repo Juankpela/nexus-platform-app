@@ -26,7 +26,7 @@ import {
 } from "@/modules/crm/presentation/quote-actions"
 
 type CompanyOption = { id: string; name: string }
-type ContactOption = { id: string; name: string }
+type ContactOption = { id: string; name: string; companyId: string | null }
 
 type QuoteDetailActionsProps = {
   tenantSlug: string

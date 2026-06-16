@@ -115,6 +115,10 @@ export function OpportunityFormDialog({
     wasPending.current = pending
   }, [pending, state.ok])
 
+  // El contacto se filtra por la empresa seleccionada.
+  const [companyId, setCompanyId] = useState(opportunity?.companyId ?? "")
+  const [contactId, setContactId] = useState(opportunity?.contactId ?? "")
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
@@ -151,7 +155,11 @@ export function OpportunityFormDialog({
                 id="company_id"
                 name="company_id"
                 required
-                defaultValue={opportunity?.companyId ?? ""}
+                value={companyId}
+                onChange={(e) => {
+                  setCompanyId(e.target.value)
+                  setContactId("")
+                }}
                 className={selectClass}
               >
                 <option value="" disabled>
@@ -169,17 +177,20 @@ export function OpportunityFormDialog({
                 id="contact_id"
                 name="contact_id"
                 required
-                defaultValue={opportunity?.contactId ?? ""}
+                value={contactId}
+                onChange={(e) => setContactId(e.target.value)}
                 className={selectClass}
               >
                 <option value="" disabled>
                   {loadingOptions ? "Cargando…" : "Select a contact"}
                 </option>
-                {contacts.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.name}
-                  </option>
-                ))}
+                {contacts
+                  .filter((option) => !companyId || option.companyId === companyId)
+                  .map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.name}
+                    </option>
+                  ))}
               </select>
             </Field>
             <Field label="Business type" htmlFor="business_type" required>

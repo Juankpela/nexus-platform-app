@@ -173,7 +173,7 @@ export default async function QuoteDetailPage({
           lines={lines}
           products={products}
           companies={companies}
-          contacts={contacts.map((c) => ({ id: c.id, name: c.name }))}
+          contacts={contacts.map((c) => ({ id: c.id, name: c.name, companyId: c.companyId }))}
           opportunities={opportunities}
           priceBooks={priceBooks}
         />

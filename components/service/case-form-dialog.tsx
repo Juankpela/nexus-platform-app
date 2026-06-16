@@ -91,6 +91,10 @@ export function CaseFormDialog({
     wasPending.current = pending
   }, [pending, state.ok])
 
+  // El contacto se filtra por la empresa seleccionada.
+  const [companyId, setCompanyId] = useState(serviceCase?.companyId ?? "")
+  const [contactId, setContactId] = useState(serviceCase?.contactId ?? "")
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
@@ -124,7 +128,11 @@ export function CaseFormDialog({
               <select
                 id="company_id"
                 name="company_id"
-                defaultValue={serviceCase?.companyId ?? ""}
+                value={companyId}
+                onChange={(e) => {
+                  setCompanyId(e.target.value)
+                  setContactId("")
+                }}
                 className={selectClass}
               >
                 <option value="">Sin empresa</option>
@@ -139,15 +147,18 @@ export function CaseFormDialog({
               <select
                 id="contact_id"
                 name="contact_id"
-                defaultValue={serviceCase?.contactId ?? ""}
+                value={contactId}
+                onChange={(e) => setContactId(e.target.value)}
                 className={selectClass}
               >
                 <option value="">Sin contacto</option>
-                {contactOptions.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.name}
-                  </option>
-                ))}
+                {contactOptions
+                  .filter((option) => !companyId || option.companyId === companyId)
+                  .map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.name}
+                    </option>
+                  ))}
               </select>
             </Field>
             <Field label="Prioridad" htmlFor="priority" required>
