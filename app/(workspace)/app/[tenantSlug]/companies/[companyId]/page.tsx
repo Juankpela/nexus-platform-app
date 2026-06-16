@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Banknote, FileText, Receipt, Users, Wrench } from "lucide-react"
+import { ArrowLeft, ArrowRight, Banknote, Cpu, FileText, LifeBuoy, Receipt, Users, Wrench } from "lucide-react"
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
@@ -35,8 +35,14 @@ import {
   type ActivityFilters,
   type ActivityType,
 } from "@/modules/crm/domain/activity"
-import { listTenantWorkOrders } from "@/modules/service/composition"
+import {
+  listTenantAssets,
+  listTenantCases,
+  listTenantWorkOrders,
+} from "@/modules/service/composition"
 import { WORK_ORDER_STATUS_LABELS } from "@/modules/service/domain/work-order"
+import { CASE_STATUS_LABELS } from "@/modules/service/domain/case"
+import { ASSET_STATUS_LABELS } from "@/modules/service/domain/asset"
 import { getActiveAssignmentsByWorkOrder } from "@/modules/scheduling/composition"
 import {
   buildCompanyFinancials,
@@ -97,6 +103,8 @@ export default async function CompanyDetailPage({
 
   const canContacts = can(CRM_PERMISSIONS.contactsRead)
   const canWorkOrders = can(SERVICE_PERMISSIONS.workOrdersRead)
+  const canCases = can(SERVICE_PERMISSIONS.casesRead)
+  const canAssets = can(SERVICE_PERMISSIONS.assetsRead)
   const canQuotes = can(CRM_PERMISSIONS.quotesRead)
   const canInvoices = can(BILLING_PERMISSIONS.invoicesRead)
   const canReadActivities = can(CRM_PERMISSIONS.activitiesRead)
@@ -112,6 +120,8 @@ export default async function CompanyDetailPage({
     workOrdersPage,
     quotesPage,
     invoicesPage,
+    casesPage,
+    assetsPage,
     activities,
   ] = await Promise.all([
     canInvoices ? getCustomerRevenueTimeline(context.tenantId, companyId) : Promise.resolve(null),
@@ -119,6 +129,8 @@ export default async function CompanyDetailPage({
     canWorkOrders ? listTenantWorkOrders(context.tenantId, noWoFilters, 1, 50) : Promise.resolve(null),
     canQuotes ? listTenantQuotes(context.tenantId, { search: null, status: null, companyId, page: 1, pageSize: 50 }) : Promise.resolve(null),
     canInvoices ? listTenantInvoices(context.tenantId, { search: null, status: null, companyId, page: 1, pageSize: 50 }) : Promise.resolve(null),
+    canCases ? listTenantCases(context.tenantId, { search: null, status: null, priority: null, ownerId: null, companyId }, 1, 5) : Promise.resolve(null),
+    canAssets ? listTenantAssets(context.tenantId, { search: null, status: null, category: null, criticality: null, companyId }, 1, 5) : Promise.resolve(null),
     canReadActivities ? listCompanyActivityTimeline(context.tenantId, companyId, filters) : Promise.resolve([]),
   ])
 
@@ -146,6 +158,8 @@ export default async function CompanyDetailPage({
   const quotesTop = quotes.slice(0, 5)
   const invoicesTop = invoices.slice(0, 5)
   const contacts = contactsPage?.items ?? []
+  const casesTop = casesPage?.items ?? []
+  const assetsTop = assetsPage?.items ?? []
 
   return (
     <>
@@ -338,6 +352,68 @@ export default async function CompanyDetailPage({
                       <span className="flex items-center gap-3 text-xs text-muted-foreground">
                         <span>{c.email ?? "—"}</span>
                         <span>{c.phone ?? c.mobile ?? "—"}</span>
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        ) : null}
+
+        {/* 8 — Casos del cliente */}
+        {canCases ? (
+          <section className="rounded-xl border bg-card">
+            <div className="flex items-center justify-between gap-2 border-b px-5 py-3">
+              <h2 className="inline-flex items-center gap-2 text-base font-semibold">
+                <LifeBuoy className="size-4 text-muted-foreground" /> Casos
+              </h2>
+              <Link href={`${base}/cases`} className="text-sm text-muted-foreground hover:text-foreground">
+                Ver todos ({casesPage?.total ?? 0})
+              </Link>
+            </div>
+            {casesTop.length === 0 ? (
+              <p className="px-5 py-6 text-center text-sm text-muted-foreground">Sin casos todavía.</p>
+            ) : (
+              <ul className="divide-y">
+                {casesTop.map((c) => (
+                  <li key={c.id}>
+                    <Link href={`${base}/cases/${c.id}`} className="flex flex-wrap items-center justify-between gap-2 px-5 py-3 text-sm hover:bg-muted/20">
+                      <span className="flex flex-wrap items-center gap-2">
+                        <span className="font-medium">{c.caseNumber}</span>
+                        <span className="text-muted-foreground">{c.subject}</span>
+                        {badge("bg-muted text-muted-foreground", CASE_STATUS_LABELS[c.status])}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        ) : null}
+
+        {/* 9 — Activos del cliente */}
+        {canAssets ? (
+          <section className="rounded-xl border bg-card">
+            <div className="flex items-center justify-between gap-2 border-b px-5 py-3">
+              <h2 className="inline-flex items-center gap-2 text-base font-semibold">
+                <Cpu className="size-4 text-muted-foreground" /> Activos
+              </h2>
+              <Link href={`${base}/assets`} className="text-sm text-muted-foreground hover:text-foreground">
+                Ver todos ({assetsPage?.total ?? 0})
+              </Link>
+            </div>
+            {assetsTop.length === 0 ? (
+              <p className="px-5 py-6 text-center text-sm text-muted-foreground">Sin activos todavía.</p>
+            ) : (
+              <ul className="divide-y">
+                {assetsTop.map((a) => (
+                  <li key={a.id}>
+                    <Link href={`${base}/assets/${a.id}`} className="flex flex-wrap items-center justify-between gap-2 px-5 py-3 text-sm hover:bg-muted/20">
+                      <span className="flex flex-wrap items-center gap-2">
+                        <span className="font-medium">{a.assetNumber}</span>
+                        <span className="text-muted-foreground">{a.name}</span>
+                        {badge("bg-muted text-muted-foreground", ASSET_STATUS_LABELS[a.status])}
                       </span>
                     </Link>
                   </li>

@@ -114,4 +114,6 @@ export type CaseFilters = {
   status: CaseStatus | null
   priority: CasePriority | null
   ownerId: UUID | null
+  /** Optional: restrict to one company (used by the customer page). */
+  companyId?: UUID | null
 }

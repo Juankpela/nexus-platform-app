@@ -94,6 +94,7 @@ export class SupabaseCaseRepository implements CaseRepository {
     if (filters.status) query = query.eq("status", filters.status)
     if (filters.priority) query = query.eq("priority", filters.priority)
     if (filters.ownerId) query = query.eq("owner_id", filters.ownerId)
+    if (filters.companyId) query = query.eq("company_id", filters.companyId)
     const term = filters.search ? sanitizeSearch(filters.search) : ""
     if (term) {
       query = query.or(`subject.ilike.%${term}%,case_number.ilike.%${term}%`)
