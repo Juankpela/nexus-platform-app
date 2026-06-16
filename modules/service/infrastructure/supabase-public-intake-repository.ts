@@ -20,6 +20,32 @@ export type PublicReportInput = {
   category: string
   reporterName: string
   reporterPhone: string | null
+  /** Foto comprimida en el cliente, como data URL `data:image/jpeg;base64,...`. */
+  photoDataUrl?: string | null
+}
+
+const REPORTS_BUCKET = "reports"
+
+/** Sube la foto (si viene) al bucket público y devuelve su URL, o null. */
+async function uploadReportPhoto(
+  tenantId: UUID,
+  photoDataUrl: string | null | undefined,
+): Promise<string | null> {
+  if (!photoDataUrl) return null
+  const match = /^data:(image\/(?:jpeg|png|webp));base64,(.+)$/.exec(photoDataUrl)
+  if (!match) return null
+  const [, contentType, b64] = match
+  const ext = contentType.split("/")[1] === "png" ? "png" : contentType.split("/")[1] === "webp" ? "webp" : "jpg"
+  const bytes = Buffer.from(b64, "base64")
+  if (bytes.byteLength > 5_242_880) return null // 5MB tope defensivo
+
+  const admin = createAdminSupabaseClient()
+  const path = `${tenantId}/${crypto.randomUUID()}.${ext}`
+  const { error } = await admin.storage
+    .from(REPORTS_BUCKET)
+    .upload(path, bytes, { contentType, upsert: false })
+  if (error) return null // la foto es opcional: no bloquea el reporte
+  return admin.storage.from(REPORTS_BUCKET).getPublicUrl(path).data.publicUrl
 }
 
 /** Resolve the tenant a public report link points to. Null = invalid link. */
@@ -51,12 +77,15 @@ export async function submitPublicReport(
   )
   if (numErr || !caseNumber) throw new Error("No se pudo generar el folio.")
 
+  const photoUrl = await uploadReportPhoto(target.tenantId, input.photoDataUrl)
+
   const subject = `${input.category}: ${input.description}`.slice(0, 200)
   const description = [
     input.description,
     `Dónde: ${input.location}`,
     `Categoría: ${input.category}`,
     `Reportado por: ${input.reporterName}${input.reporterPhone ? ` — WhatsApp ${input.reporterPhone}` : ""}`,
+    ...(photoUrl ? [`Foto: ${photoUrl}`] : []),
   ].join("\n")
 
   const { error: insErr } = await admin.from("cases").insert({

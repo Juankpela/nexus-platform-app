@@ -1,6 +1,6 @@
 "use client"
 
-import { CheckCircle2, Loader2, MapPin, Send } from "lucide-react"
+import { Camera, CheckCircle2, Loader2, MapPin, Send, X } from "lucide-react"
 import { useActionState, useState } from "react"
 
 import { Button } from "@/components/ui/button"
@@ -27,11 +27,58 @@ const fieldCls = "mt-1.5"
 
 type GeoState = { status: "idle" | "loading" | "done" | "error"; message?: string }
 
+/** Comprime la imagen en el cliente con canvas nativo (sin librerías). */
+function compressImage(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onerror = () => reject(new Error("read"))
+    reader.onload = () => {
+      const img = new Image()
+      img.onerror = () => reject(new Error("decode"))
+      img.onload = () => {
+        const max = 1024
+        let { width, height } = img
+        if (width > height && width > max) {
+          height = Math.round((height * max) / width)
+          width = max
+        } else if (height > max) {
+          width = Math.round((width * max) / height)
+          height = max
+        }
+        const canvas = document.createElement("canvas")
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext("2d")
+        if (!ctx) return reject(new Error("ctx"))
+        ctx.drawImage(img, 0, 0, width, height)
+        resolve(canvas.toDataURL("image/jpeg", 0.55))
+      }
+      img.src = reader.result as string
+    }
+    reader.readAsDataURL(file)
+  })
+}
+
 export function PublicReportForm({ tenantSlug }: { tenantSlug: string }) {
   const [state, formAction, pending] = useActionState(submitReportAction, initial)
   // El campo de ubicación es controlado para poder autocompletarlo con el GPS.
   const [location, setLocation] = useState("")
   const [geo, setGeo] = useState<GeoState>({ status: "idle" })
+  const [photo, setPhoto] = useState<string | null>(null)
+  const [photoStatus, setPhotoStatus] = useState<"idle" | "loading" | "error">("idle")
+
+  async function handlePhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setPhotoStatus("loading")
+    try {
+      setPhoto(await compressImage(file))
+      setPhotoStatus("idle")
+    } catch {
+      setPhoto(null)
+      setPhotoStatus("error")
+    }
+  }
 
   function handleUseLocation() {
     if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
@@ -76,6 +123,7 @@ export function PublicReportForm({ tenantSlug }: { tenantSlug: string }) {
   return (
     <form action={formAction} className="rounded-2xl border bg-card p-6 sm:p-8">
       <input type="hidden" name="tenantSlug" value={tenantSlug} />
+      <input type="hidden" name="photo" value={photo ?? ""} />
       {/* Honeypot — oculto para humanos, lo llenan los bots. */}
       <input
         type="text"
@@ -135,6 +183,39 @@ export function PublicReportForm({ tenantSlug }: { tenantSlug: string }) {
             ))}
           </select>
         </div>
+        <div>
+          <span className={labelCls}>Foto (opcional)</span>
+          {photo ? (
+            <div className="mt-1.5 flex items-center gap-3">
+              {/* data: URL local; next/image no aplica. CSP permite img-src data:. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={photo} alt="Evidencia" className="size-16 rounded-lg border object-cover" />
+              <Button type="button" variant="ghost" size="sm" onClick={() => setPhoto(null)}>
+                <X className="mr-1 size-4" /> Quitar
+              </Button>
+            </div>
+          ) : (
+            <label className="mt-1.5 flex h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-input text-sm text-muted-foreground hover:bg-muted/40 sm:w-auto sm:px-4">
+              {photoStatus === "loading" ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Camera className="size-4" />
+              )}
+              Tomar foto
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={handlePhoto}
+              />
+            </label>
+          )}
+          {photoStatus === "error" ? (
+            <p className="mt-1 text-xs text-muted-foreground">No pudimos procesar la imagen. Intenta otra.</p>
+          ) : null}
+        </div>
+
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="reporterName" className={labelCls}>Nombre</label>

@@ -30,6 +30,7 @@ export async function submitReportAction(
   const category = field(formData, "category")
   const reporterName = field(formData, "reporterName")
   const reporterPhone = field(formData, "reporterPhone")
+  const photoDataUrl = field(formData, "photo")
 
   if (!slug) return { ok: false, error: "Enlace inválido." }
   if (!description) return { ok: false, error: "Cuéntanos qué ocurrió." }
@@ -43,6 +44,7 @@ export async function submitReportAction(
       category: category || "Otro",
       reporterName,
       reporterPhone: reporterPhone || null,
+      photoDataUrl: photoDataUrl || null,
     })
     if (!result) return { ok: false, error: "Enlace inválido." }
     const folio = result.caseNumber.replace(/^CASE/i, "REP")
