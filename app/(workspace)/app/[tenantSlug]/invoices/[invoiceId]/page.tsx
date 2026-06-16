@@ -1,4 +1,4 @@
-import { Mail } from "lucide-react"
+import { Mail, MessageCircle } from "lucide-react"
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
@@ -59,6 +59,21 @@ export default async function InvoiceDetailPage({
     subject: `Factura ${invoiceNumber} - ${context.tenant.name}`,
     message: `Hola,\n\nAdjuntamos la factura ${invoiceNumber}. Quedamos atentos a cualquier inquietud.\n\nSaludos,\n${context.tenant.name}`,
   }
+
+  // Cobro/compartir por WhatsApp (canal real del cliente PYME). wa.me es un
+  // hipervínculo — sin APIs ni dependencias. Mensaje según estado de la factura.
+  const todayISO = new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" })
+  const hasBalance = invoice.balance > 0
+  const isOverdue =
+    (invoice.status === "issued" || invoice.status === "partially_paid") &&
+    hasBalance &&
+    invoice.dueDate != null &&
+    invoice.dueDate < todayISO
+  const whatsappMessage = hasBalance
+    ? `Hola, te ${isOverdue ? "recordamos" : "compartimos"} la factura ${invoiceNumber} por ${formatCOP(invoice.totalAmount)}, con saldo pendiente de ${formatCOP(invoice.balance)}${isOverdue && invoice.dueDate ? ` (vencida el ${formatDateNumeric(invoice.dueDate)})` : ""}. Quedamos atentos a tu pago. Saludos, ${context.tenant.name}.`
+    : `Hola, te compartimos la factura ${invoiceNumber} por ${formatCOP(invoice.totalAmount)} de ${context.tenant.name}.`
+  const whatsappHref = `https://wa.me/?text=${encodeURIComponent(whatsappMessage)}`
+  const whatsappLabel = hasBalance ? "Cobrar por WhatsApp" : "Compartir por WhatsApp"
 
   const canPaymentsRead = hasPermission(
     context.effectivePermissions,
@@ -121,6 +136,14 @@ export default async function InvoiceDetailPage({
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {canWrite ? (
+            <Button asChild size="sm" variant="outline">
+              <a href={whatsappHref} target="_blank" rel="noopener noreferrer">
+                <MessageCircle className="mr-2 h-4 w-4" />
+                {whatsappLabel}
+              </a>
+            </Button>
+          ) : null}
           <Button asChild size="sm" variant="outline">
             <Link
               href={`/app/${tenantSlug}/invoices/${invoice.id}/pdf`}
