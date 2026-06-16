@@ -14,15 +14,15 @@ describe("buildBreadcrumbs", () => {
   })
 
   it("shows group + item for a CRM list page", () => {
-    expect(labels(`/app/${T}/companies`)).toEqual(["Inicio", "CRM", "Companies"])
+    expect(labels(`/app/${T}/companies`)).toEqual(["Inicio", "Comercial", "Clientes"])
   })
 
   it("adds a Detalle crumb and links the list on a detail page", () => {
     const crumbs = buildBreadcrumbs(`/app/${T}/work-orders/123`, T)
     expect(crumbs.map((c) => c.label)).toEqual([
       "Inicio",
-      "Field Service",
-      "Work Orders",
+      "Operación de campo",
+      "Órdenes de trabajo",
       "Detalle",
     ])
     // Work Orders crumb links back to the list.
@@ -30,15 +30,15 @@ describe("buildBreadcrumbs", () => {
   })
 
   it("classifies Service segments", () => {
-    expect(labels(`/app/${T}/cases`)).toEqual(["Inicio", "Service", "Cases"])
-    expect(labels(`/app/${T}/assets`)).toEqual(["Inicio", "Service", "Assets"])
+    expect(labels(`/app/${T}/cases`)).toEqual(["Inicio", "Servicio", "Casos"])
+    expect(labels(`/app/${T}/assets`)).toEqual(["Inicio", "Servicio", "Activos"])
   })
 
   it("classifies Field Service segments", () => {
     expect(labels(`/app/${T}/dispatch`)).toEqual([
       "Inicio",
-      "Field Service",
-      "Dispatch",
+      "Operación de campo",
+      "Despacho",
     ])
   })
 

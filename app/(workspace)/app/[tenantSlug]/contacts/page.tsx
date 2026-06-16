@@ -180,7 +180,13 @@ export default async function ContactsPage({
                       ) : null}
                     </td>
                     <td className="px-4 py-4 text-muted-foreground">
-                      {contact.companyName ?? "—"}
+                      {contact.companyId && contact.companyName ? (
+                        <Link href={`/app/${tenantSlug}/companies/${contact.companyId}`} className="hover:underline">
+                          {contact.companyName}
+                        </Link>
+                      ) : (
+                        (contact.companyName ?? "—")
+                      )}
                     </td>
                     <td className="px-4 py-4 text-muted-foreground">
                       {contact.email ?? "—"}

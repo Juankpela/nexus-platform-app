@@ -4,6 +4,7 @@ import Link from "next/link"
 import { Pagination } from "@/components/crm/pagination"
 import { ClientOnly } from "@/components/layout/client-only"
 import { EmptyState } from "@/components/layout/empty-state"
+import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
@@ -79,28 +80,15 @@ export default async function QuotesPage({
     ])
 
   return (
-    <div className="space-y-6 p-5 sm:p-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight">Cotizaciones</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {total} {total !== 1 ? "cotizaciones" : "cotización"}
-          </p>
-        </div>
-        {canWrite && (
-          <QuoteCreateButton
-            tenantSlug={tenantSlug}
-            companies={companies}
-            contacts={contacts.map((c) => ({ id: c.id, name: c.name, companyId: c.companyId }))}
-            opportunities={opportunities}
-            priceBooks={priceBooks}
-          />
-        )}
-      </div>
-
-      {/* Filters */}
-      <form className="flex flex-wrap gap-3">
+    <>
+      <PageHeader
+        title="Cotizaciones"
+        description={`${total} ${total !== 1 ? "cotizaciones" : "cotización"}`}
+      />
+      <div className="space-y-6 px-5 py-6 sm:px-8">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          {/* Filters */}
+          <form className="flex flex-wrap gap-3">
         <Input
           name="search"
           placeholder="Buscar por número…"
@@ -127,7 +115,17 @@ export default async function QuotesPage({
             <Link href={`/app/${tenantSlug}/quotes`}>Limpiar</Link>
           </Button>
         )}
-      </form>
+          </form>
+          {canWrite && (
+            <QuoteCreateButton
+              tenantSlug={tenantSlug}
+              companies={companies}
+              contacts={contacts.map((c) => ({ id: c.id, name: c.name, companyId: c.companyId }))}
+              opportunities={opportunities}
+              priceBooks={priceBooks}
+            />
+          )}
+        </div>
 
       {/* Table */}
       {items.length === 0 ? (
@@ -177,7 +175,15 @@ export default async function QuotesPage({
                     <td className="px-4 py-3 text-muted-foreground">
                       v{q.version}
                     </td>
-                    <td className="px-4 py-3">{q.companyName ?? "—"}</td>
+                    <td className="px-4 py-3">
+                      {q.companyId && q.companyName ? (
+                        <Link href={`/app/${tenantSlug}/companies/${q.companyId}`} className="hover:underline">
+                          {q.companyName}
+                        </Link>
+                      ) : (
+                        (q.companyName ?? "—")
+                      )}
+                    </td>
                     <td className="px-4 py-3">
                       <span
                         className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${QUOTE_STATUS_COLORS[q.status]}`}
@@ -210,6 +216,7 @@ export default async function QuotesPage({
           />
         </>
       )}
-    </div>
+      </div>
+    </>
   )
 }

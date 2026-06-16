@@ -348,7 +348,13 @@ export default async function WorkOrdersPage({
                         </p>
                       </td>
                       <td className="px-4 py-4 text-muted-foreground">
-                        {wo.companyName ?? "—"}
+                        {wo.companyId && wo.companyName ? (
+                          <Link href={`/app/${tenantSlug}/companies/${wo.companyId}`} className="hover:underline">
+                            {wo.companyName}
+                          </Link>
+                        ) : (
+                          (wo.companyName ?? "—")
+                        )}
                       </td>
                       <td className="px-4 py-4 text-muted-foreground">
                         {activeAssignments.get(wo.id)?.technicianName ?? "Sin asignar"}

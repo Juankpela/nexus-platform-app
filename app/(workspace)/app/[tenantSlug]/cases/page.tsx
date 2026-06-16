@@ -313,7 +313,13 @@ export default async function CasesPage({
                         </p>
                       </td>
                       <td className="px-4 py-4 text-muted-foreground">
-                        {c.companyName ?? "—"}
+                        {c.companyId && c.companyName ? (
+                          <Link href={`/app/${tenantSlug}/companies/${c.companyId}`} className="hover:underline">
+                            {c.companyName}
+                          </Link>
+                        ) : (
+                          (c.companyName ?? "—")
+                        )}
                       </td>
                       <td className="px-4 py-4">
                         <span

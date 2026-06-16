@@ -3,6 +3,7 @@ import Link from "next/link"
 
 import { Pagination } from "@/components/crm/pagination"
 import { EmptyState } from "@/components/layout/empty-state"
+import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
@@ -48,15 +49,12 @@ export default async function InvoicesPage({
   })
 
   return (
-    <div className="space-y-6 p-5 sm:p-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight">Facturas</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {total} {total !== 1 ? "facturas" : "factura"}
-        </p>
-      </div>
-
+    <>
+      <PageHeader
+        title="Facturas"
+        description={`${total} ${total !== 1 ? "facturas" : "factura"}`}
+      />
+      <div className="space-y-6 px-5 py-6 sm:px-8">
       {/* Filters */}
       <form className="flex flex-wrap gap-3">
         <Input
@@ -124,7 +122,15 @@ export default async function InvoicesPage({
                         {inv.invoiceNumber ?? "Borrador"}
                       </Link>
                     </td>
-                    <td className="px-4 py-3">{inv.companyName ?? "—"}</td>
+                    <td className="px-4 py-3">
+                      {inv.companyId && inv.companyName ? (
+                        <Link href={`/app/${tenantSlug}/companies/${inv.companyId}`} className="hover:underline">
+                          {inv.companyName}
+                        </Link>
+                      ) : (
+                        (inv.companyName ?? "—")
+                      )}
+                    </td>
                     <td className="px-4 py-3">
                       <span
                         className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${INVOICE_STATUS_COLORS[inv.status]}`}
@@ -160,6 +166,7 @@ export default async function InvoicesPage({
           />
         </>
       )}
-    </div>
+      </div>
+    </>
   )
 }

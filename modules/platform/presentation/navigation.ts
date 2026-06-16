@@ -51,13 +51,13 @@ export type NavigationItem = {
  * not by object — see ADR-018.
  */
 export const NAVIGATION_GROUP_ORDER = [
-  "CRM",
-  "Service",
-  "Field Service",
-  "Revenue",
-  "Inventory",
-  "Analytics",
-  "Administration",
+  "Comercial",
+  "Servicio",
+  "Operación de campo",
+  "Facturación",
+  "Inventario",
+  "Analítica",
+  "Administración",
 ] as const
 
 export type NavigationGroup = (typeof NAVIGATION_GROUP_ORDER)[number]
@@ -65,47 +65,47 @@ export type NavigationGroup = (typeof NAVIGATION_GROUP_ORDER)[number]
 export const workspaceNavigation: NavigationItem[] = [
   // ── Dashboard (ungrouped, always first) ───────────────────────────────────
   {
-    label: "Dashboard",
+    label: "Panel",
     segment: "dashboard",
     icon: LayoutDashboard,
     permission: FOUNDATION_PERMISSIONS.dashboardRead,
   },
 
-  // ── CRM ────────────────────────────────────────────────────────────────────
-  { label: "Leads", segment: "leads", icon: UserPlus, permission: CRM_PERMISSIONS.leadsRead, group: "CRM" },
-  { label: "Companies", segment: "companies", icon: Building2, permission: CRM_PERMISSIONS.companiesRead, group: "CRM" },
-  { label: "Contacts", segment: "contacts", icon: Contact, permission: CRM_PERMISSIONS.contactsRead, group: "CRM" },
-  { label: "Opportunities", segment: "opportunities", icon: Target, permission: CRM_PERMISSIONS.opportunitiesRead, group: "CRM" },
-  { label: "Products", segment: "products", icon: Package, permission: CRM_PERMISSIONS.productsRead, group: "CRM" },
-  { label: "Price Books", segment: "price-books", icon: BookOpen, permission: CRM_PERMISSIONS.priceBooksRead, group: "CRM" },
-  { label: "Quotes", segment: "quotes", icon: FileText, permission: CRM_PERMISSIONS.quotesRead, group: "CRM" },
+  // ── Comercial ────────────────────────────────────────────────────────────────
+  { label: "Prospectos", segment: "leads", icon: UserPlus, permission: CRM_PERMISSIONS.leadsRead, group: "Comercial" },
+  { label: "Clientes", segment: "companies", icon: Building2, permission: CRM_PERMISSIONS.companiesRead, group: "Comercial" },
+  { label: "Contactos", segment: "contacts", icon: Contact, permission: CRM_PERMISSIONS.contactsRead, group: "Comercial" },
+  { label: "Oportunidades", segment: "opportunities", icon: Target, permission: CRM_PERMISSIONS.opportunitiesRead, group: "Comercial" },
+  { label: "Productos", segment: "products", icon: Package, permission: CRM_PERMISSIONS.productsRead, group: "Comercial" },
+  { label: "Listas de precios", segment: "price-books", icon: BookOpen, permission: CRM_PERMISSIONS.priceBooksRead, group: "Comercial" },
+  { label: "Cotizaciones", segment: "quotes", icon: FileText, permission: CRM_PERMISSIONS.quotesRead, group: "Comercial" },
 
-  // ── Service ──────────────────────────────────────────────────────────────
-  { label: "Cases", segment: "cases", icon: LifeBuoy, permission: SERVICE_PERMISSIONS.casesRead, group: "Service" },
-  { label: "Assets", segment: "assets", icon: Cpu, permission: SERVICE_PERMISSIONS.assetsRead, group: "Service" },
+  // ── Servicio ──────────────────────────────────────────────────────────────
+  { label: "Casos", segment: "cases", icon: LifeBuoy, permission: SERVICE_PERMISSIONS.casesRead, group: "Servicio" },
+  { label: "Activos", segment: "assets", icon: Cpu, permission: SERVICE_PERMISSIONS.assetsRead, group: "Servicio" },
 
-  // ── Field Service ──────────────────────────────────────────────────────────
-  { label: "Work Orders", segment: "work-orders", icon: Wrench, permission: SERVICE_PERMISSIONS.workOrdersRead, group: "Field Service" },
-  { label: "Technicians", segment: "technicians", icon: HardHat, permission: SERVICE_PERMISSIONS.techniciansRead, group: "Field Service" },
-  { label: "Schedule", segment: "schedule", icon: CalendarClock, permission: SERVICE_PERMISSIONS.schedulingRead, group: "Field Service" },
-  { label: "Dispatch", segment: "dispatch", icon: Radar, permission: SERVICE_PERMISSIONS.dispatchRead, group: "Field Service" },
-  { label: "Monitor de Campo", segment: "field-monitor", icon: Radio, permission: SERVICE_PERMISSIONS.dispatchRead, group: "Field Service" },
-  { label: "Calendar", segment: "calendar", icon: CalendarDays, permission: SERVICE_PERMISSIONS.schedulingRead, group: "Field Service" },
+  // ── Operación de campo ──────────────────────────────────────────────────────
+  { label: "Órdenes de trabajo", segment: "work-orders", icon: Wrench, permission: SERVICE_PERMISSIONS.workOrdersRead, group: "Operación de campo" },
+  { label: "Equipo técnico", segment: "technicians", icon: HardHat, permission: SERVICE_PERMISSIONS.techniciansRead, group: "Operación de campo" },
+  { label: "Agenda", segment: "schedule", icon: CalendarClock, permission: SERVICE_PERMISSIONS.schedulingRead, group: "Operación de campo" },
+  { label: "Despacho", segment: "dispatch", icon: Radar, permission: SERVICE_PERMISSIONS.dispatchRead, group: "Operación de campo" },
+  { label: "Monitor de campo", segment: "field-monitor", icon: Radio, permission: SERVICE_PERMISSIONS.dispatchRead, group: "Operación de campo" },
+  { label: "Calendario", segment: "calendar", icon: CalendarDays, permission: SERVICE_PERMISSIONS.schedulingRead, group: "Operación de campo" },
 
-  // ── Revenue ──────────────────────────────────────────────────────────────
-  { label: "Invoices", segment: "invoices", icon: Receipt, permission: BILLING_PERMISSIONS.invoicesRead, group: "Revenue" },
-  { label: "Payments", segment: "payments", icon: Wallet, permission: BILLING_PERMISSIONS.paymentsRead, group: "Revenue" },
+  // ── Facturación ──────────────────────────────────────────────────────────
+  { label: "Facturas", segment: "invoices", icon: Receipt, permission: BILLING_PERMISSIONS.invoicesRead, group: "Facturación" },
+  { label: "Pagos", segment: "payments", icon: Wallet, permission: BILLING_PERMISSIONS.paymentsRead, group: "Facturación" },
 
-  // ── Inventory ──────────────────────────────────────────────────────────────
-  { label: "Inventory", segment: "inventory", icon: Boxes, permission: INVENTORY_PERMISSIONS.stockRead, group: "Inventory" },
-  { label: "Materials", segment: "inventory/materials", icon: PackageSearch, permission: INVENTORY_PERMISSIONS.materialsRead, group: "Inventory" },
+  // ── Inventario ──────────────────────────────────────────────────────────────
+  { label: "Inventario", segment: "inventory", icon: Boxes, permission: INVENTORY_PERMISSIONS.stockRead, group: "Inventario" },
+  { label: "Materiales", segment: "inventory/materials", icon: PackageSearch, permission: INVENTORY_PERMISSIONS.materialsRead, group: "Inventario" },
 
-  // ── Analytics ──────────────────────────────────────────────────────────────
-  { label: "Forecast", segment: "forecasting", icon: TrendingUp, permission: FORECASTING_PERMISSIONS.read, group: "Analytics" },
-  { label: "Reports", segment: "reports", icon: BarChart3, permission: FORECASTING_PERMISSIONS.read, group: "Analytics" },
+  // ── Analítica ──────────────────────────────────────────────────────────────
+  { label: "Pronóstico", segment: "forecasting", icon: TrendingUp, permission: FORECASTING_PERMISSIONS.read, group: "Analítica" },
+  { label: "Reportes", segment: "reports", icon: BarChart3, permission: FORECASTING_PERMISSIONS.read, group: "Analítica" },
 
-  // ── Administration ─────────────────────────────────────────────────────────
-  { label: "Exports", segment: "exports", icon: FileDown, permission: FOUNDATION_PERMISSIONS.dashboardRead, group: "Administration" },
-  { label: "Users", segment: "users", icon: Users, permission: FOUNDATION_PERMISSIONS.usersRead, group: "Administration" },
-  { label: "Settings", segment: "settings", icon: Settings, permission: FOUNDATION_PERMISSIONS.settingsRead, group: "Administration" },
+  // ── Administración ─────────────────────────────────────────────────────────
+  { label: "Exportaciones", segment: "exports", icon: FileDown, permission: FOUNDATION_PERMISSIONS.dashboardRead, group: "Administración" },
+  { label: "Usuarios", segment: "users", icon: Users, permission: FOUNDATION_PERMISSIONS.usersRead, group: "Administración" },
+  { label: "Configuración", segment: "settings", icon: Settings, permission: FOUNDATION_PERMISSIONS.settingsRead, group: "Administración" },
 ]
