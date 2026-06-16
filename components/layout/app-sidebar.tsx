@@ -64,7 +64,7 @@ export function AppSidebar({
   }
 
   return (
-    <aside className="hidden w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground md:flex">
+    <aside className="hidden w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground md:sticky md:top-0 md:flex md:h-screen">
       <Link
         href={`/app/${tenantSlug}/dashboard`}
         aria-label="Nexus — Where Operations Connect."
