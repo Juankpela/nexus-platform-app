@@ -1,7 +1,7 @@
 "use client"
 
-import { CheckCircle2, Loader2, Send } from "lucide-react"
-import { useActionState } from "react"
+import { CheckCircle2, Loader2, MapPin, Send } from "lucide-react"
+import { useActionState, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -25,8 +25,36 @@ const CATEGORIES = [
 const labelCls = "text-sm font-medium text-foreground"
 const fieldCls = "mt-1.5"
 
+type GeoState = { status: "idle" | "loading" | "done" | "error"; message?: string }
+
 export function PublicReportForm({ tenantSlug }: { tenantSlug: string }) {
   const [state, formAction, pending] = useActionState(submitReportAction, initial)
+  // El campo de ubicación es controlado para poder autocompletarlo con el GPS.
+  const [location, setLocation] = useState("")
+  const [geo, setGeo] = useState<GeoState>({ status: "idle" })
+
+  function handleUseLocation() {
+    if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
+      setGeo({ status: "error", message: "Tu dispositivo no permite ubicación. Escríbela abajo." })
+      return
+    }
+    setGeo({ status: "loading" })
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords
+        const link = `https://maps.google.com/?q=${latitude},${longitude}`
+        // Conserva lo que el usuario haya escrito y agrega el enlace de mapa.
+        setLocation((prev) => (prev.trim() ? `${prev.trim()} — ${link}` : link))
+        setGeo({ status: "done" })
+      },
+      () =>
+        setGeo({
+          status: "error",
+          message: "No pudimos obtener tu ubicación. Escríbela manualmente abajo.",
+        }),
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+    )
+  }
 
   if (state.ok) {
     return (
@@ -64,8 +92,35 @@ export function PublicReportForm({ tenantSlug }: { tenantSlug: string }) {
           <Textarea id="description" name="description" required rows={3} className={fieldCls} placeholder="Describe la novedad o el daño" />
         </div>
         <div>
-          <label htmlFor="location" className={labelCls}>¿Dónde ocurrió?</label>
-          <Input id="location" name="location" required className={fieldCls} placeholder="Sede, escenario, dirección o área" />
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <label htmlFor="location" className={labelCls}>¿Dónde ocurrió?</label>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleUseLocation}
+              disabled={geo.status === "loading"}
+            >
+              {geo.status === "loading" ? (
+                <Loader2 className="mr-2 size-4 animate-spin" />
+              ) : (
+                <MapPin className="mr-2 size-4" />
+              )}
+              {geo.status === "done" ? "Ubicación agregada" : "Usar mi ubicación"}
+            </Button>
+          </div>
+          <Input
+            id="location"
+            name="location"
+            required
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            className={fieldCls}
+            placeholder="Sede, escenario, dirección o área"
+          />
+          {geo.status === "error" && geo.message ? (
+            <p className="mt-1 text-xs text-muted-foreground">{geo.message}</p>
+          ) : null}
         </div>
         <div>
           <label htmlFor="category" className={labelCls}>Categoría</label>
