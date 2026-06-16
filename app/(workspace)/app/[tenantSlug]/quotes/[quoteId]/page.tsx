@@ -1,4 +1,4 @@
-import { Download, Mail } from "lucide-react"
+import { Download, Mail, MessageCircle } from "lucide-react"
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
@@ -89,6 +89,12 @@ export default async function QuoteDetailPage({
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/\/$/, "")
   const approvalUrl = `${appUrl}/q/${publicToken}`
 
+  // Enviar por WhatsApp: el canal real del cliente PYME. wa.me es un hipervínculo
+  // (sin dependencia ni API); reutiliza el link de aprobación pública.
+  const whatsappHref = `https://wa.me/?text=${encodeURIComponent(
+    `Hola, te comparto la cotización ${quote.quoteNumber} de ${context.tenant.name}. Puedes revisarla y aprobarla aquí: ${approvalUrl}`,
+  )}`
+
   const emailDefaults = {
     to: contact?.email ?? "",
     subject: `Cotización ${quote.quoteNumber} - ${context.tenant.name}`,
@@ -141,6 +147,14 @@ export default async function QuoteDetailPage({
               Descargar PDF
             </Link>
           </Button>
+          {canWrite ? (
+            <Button asChild variant="outline" size="sm">
+              <a href={whatsappHref} target="_blank" rel="noopener noreferrer">
+                <MessageCircle className="mr-2 h-4 w-4" />
+                WhatsApp
+              </a>
+            </Button>
+          ) : null}
           {canWrite ? <CopyApprovalLink url={approvalUrl} /> : null}
           {canWrite ? (
             <SendDocumentEmailDialog
