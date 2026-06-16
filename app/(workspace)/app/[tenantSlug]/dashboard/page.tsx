@@ -40,6 +40,7 @@ import { getCachedCurrentUser } from "@/modules/identity/composition"
 import { getActiveAssignmentsByWorkOrder } from "@/modules/scheduling/composition"
 import { buildOwnerDashboard } from "@/modules/platform/application/owner-dashboard"
 import { OnboardingCard } from "@/components/dashboard/onboarding-card"
+import { StartReceivingCard } from "@/components/dashboard/start-receiving-card"
 import {
   buildAttentionItems,
   greetingFor,
@@ -79,6 +80,11 @@ export default async function MissionControlPage({
 
   const can = (p: string) => hasPermission(context.effectivePermissions, p)
   const base = `/app/${tenantSlug}`
+
+  // Enlace público de reportes (mismo patrón que el link de aprobación de
+  // cotizaciones): hace visible una capacidad existente para activar el día 1.
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/\/$/, "")
+  const reportUrl = appUrl ? `${appUrl}/r/${tenantSlug}` : null
 
   const canCrm = can(CRM_PERMISSIONS.opportunitiesRead)
   const canCases = can(SERVICE_PERMISSIONS.casesRead)
@@ -230,6 +236,11 @@ export default async function MissionControlPage({
           </div>
         ) : null}
       </header>
+
+      {/* Activación día 1: hace visible el enlace público de reportes */}
+      {reportUrl ? (
+        <StartReceivingCard url={reportUrl} tenantName={context.tenant.name} />
+      ) : null}
 
       {/* Activation flow: next step toward the first invoice */}
       {onboardingCounts ? (
