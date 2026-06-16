@@ -400,3 +400,10 @@ export function removeAvailabilityExceptionRecord(input: RemoveExceptionInput) {
 export function setTechnicianCapacityRecord(input: SetCapacityInput) {
   return setTechnicianCapacity(availabilityDeps(), input)
 }
+
+// ── Public work intake (anonymous report → Case) ─────────────────────────────
+export {
+  getPublicReportTarget,
+  submitPublicReport,
+  type PublicReportInput,
+} from "@/modules/service/infrastructure/supabase-public-intake-repository"

@@ -1,0 +1,74 @@
+import "server-only"
+
+import { createAdminSupabaseClient } from "@/lib/supabase/admin"
+import { computeSlaDueAt } from "@/modules/service/domain/sla"
+import type { UUID } from "@/types/shared"
+
+/**
+ * Public work intake. Anonymous reporters (citizens, residents, supervisors)
+ * submit a "novedad" that becomes a tracked Case in the tenant's queue. Security
+ * is the tenant slug in the URL (public report form) + service-role scoped to
+ * that tenant. No auth, no tenant context. created_by/owner_id are nullable, so
+ * an anonymous report needs no user.
+ */
+
+export type PublicReportTarget = { tenantId: UUID; tenantName: string }
+
+export type PublicReportInput = {
+  description: string
+  location: string
+  category: string
+  reporterName: string
+  reporterPhone: string | null
+}
+
+/** Resolve the tenant a public report link points to. Null = invalid link. */
+export async function getPublicReportTarget(
+  slug: string,
+): Promise<PublicReportTarget | null> {
+  const admin = createAdminSupabaseClient()
+  const { data, error } = await admin
+    .from("tenants")
+    .select("id, name")
+    .eq("slug", slug)
+    .maybeSingle()
+  if (error || !data) return null
+  return { tenantId: data.id, tenantName: data.name }
+}
+
+/** Create a Case (origin "web") from a public report. Returns its number. */
+export async function submitPublicReport(
+  slug: string,
+  input: PublicReportInput,
+): Promise<{ caseNumber: string } | null> {
+  const target = await getPublicReportTarget(slug)
+  if (!target) return null
+
+  const admin = createAdminSupabaseClient()
+  const { data: caseNumber, error: numErr } = await admin.rpc(
+    "next_case_number",
+    { p_tenant_id: target.tenantId },
+  )
+  if (numErr || !caseNumber) throw new Error("No se pudo generar el folio.")
+
+  const subject = `${input.category}: ${input.description}`.slice(0, 200)
+  const description = [
+    input.description,
+    `Dónde: ${input.location}`,
+    `Categoría: ${input.category}`,
+    `Reportado por: ${input.reporterName}${input.reporterPhone ? ` — WhatsApp ${input.reporterPhone}` : ""}`,
+  ].join("\n")
+
+  const { error: insErr } = await admin.from("cases").insert({
+    tenant_id: target.tenantId,
+    case_number: caseNumber as string,
+    subject,
+    description,
+    priority: "medium",
+    origin: "web",
+    sla_due_at: computeSlaDueAt(new Date().toISOString(), "medium"),
+  })
+  if (insErr) throw new Error("No se pudo registrar el reporte.")
+
+  return { caseNumber: caseNumber as string }
+}
