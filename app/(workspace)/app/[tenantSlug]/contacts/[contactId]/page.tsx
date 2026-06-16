@@ -32,14 +32,28 @@ function parseFilters(sp: { type?: string; status?: string }): ActivityFilters {
   return { type, status }
 }
 
-function Detail({ label, value }: { label: string; value: string | null }) {
+function Detail({
+  label,
+  value,
+  href,
+}: {
+  label: string
+  value: string | null
+  href?: string
+}) {
   if (!value) return null
   return (
     <div>
       <dt className="text-xs uppercase tracking-wider text-muted-foreground">
         {label}
       </dt>
-      <dd className="mt-0.5 text-sm text-foreground">{value}</dd>
+      <dd className="mt-0.5 text-sm text-foreground">
+        {href ? (
+          <Link href={href} className="hover:underline">{value}</Link>
+        ) : (
+          value
+        )}
+      </dd>
     </div>
   )
 }
@@ -80,14 +94,14 @@ export default async function ContactDetailPage({
 
   return (
     <>
-      <PageHeader title={fullName} description="Contact details and activity." />
+      <PageHeader title={fullName} description="Detalle del contacto y actividad." />
       <div className="space-y-6 px-5 py-6 sm:px-8">
         <Link
           href={`/app/${tenantSlug}/contacts`}
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="size-4" />
-          Contacts
+          Contactos
         </Link>
 
         <div className="rounded-xl border bg-card p-5">
@@ -98,15 +112,19 @@ export default async function ContactDetailPage({
                 : "bg-muted text-muted-foreground"
             }`}
           >
-            {contact.status === "active" ? "Active" : "Inactive"}
+            {contact.status === "active" ? "Activo" : "Inactivo"}
           </span>
           <dl className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <Detail label="Company" value={contact.companyName} />
-            <Detail label="Title" value={contact.title} />
-            <Detail label="Department" value={contact.department} />
-            <Detail label="Email" value={contact.email} />
-            <Detail label="Phone" value={contact.phone} />
-            <Detail label="Mobile" value={contact.mobile} />
+            <Detail
+              label="Empresa"
+              value={contact.companyName}
+              href={contact.companyId ? `/app/${tenantSlug}/companies/${contact.companyId}` : undefined}
+            />
+            <Detail label="Cargo" value={contact.title} />
+            <Detail label="Departamento" value={contact.department} />
+            <Detail label="Correo" value={contact.email} />
+            <Detail label="Teléfono" value={contact.phone} />
+            <Detail label="Celular" value={contact.mobile} />
           </dl>
           {contact.notes ? (
             <p className="mt-4 whitespace-pre-wrap text-sm text-muted-foreground">

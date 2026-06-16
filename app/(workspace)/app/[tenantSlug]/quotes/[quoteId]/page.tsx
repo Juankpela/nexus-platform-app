@@ -118,7 +118,13 @@ export default async function QuoteDetailPage({
           </div>
           {quote.companyName && (
             <p className="mt-1 text-sm text-muted-foreground">
-              {quote.companyName}
+              {quote.companyId ? (
+                <Link href={`/app/${tenantSlug}/companies/${quote.companyId}`} className="hover:underline">
+                  {quote.companyName}
+                </Link>
+              ) : (
+                quote.companyName
+              )}
             </p>
           )}
         </div>
@@ -188,7 +194,15 @@ export default async function QuoteDetailPage({
               <dt className="text-xs uppercase tracking-wider text-muted-foreground">
                 Oportunidad
               </dt>
-              <dd className="mt-0.5 text-sm">{quote.opportunityName}</dd>
+              <dd className="mt-0.5 text-sm">
+                {quote.opportunityId ? (
+                  <Link href={`/app/${tenantSlug}/opportunities/${quote.opportunityId}`} className="hover:underline">
+                    {quote.opportunityName}
+                  </Link>
+                ) : (
+                  quote.opportunityName
+                )}
+              </dd>
             </div>
           )}
           {quote.contactName && (
@@ -196,7 +210,15 @@ export default async function QuoteDetailPage({
               <dt className="text-xs uppercase tracking-wider text-muted-foreground">
                 Contacto
               </dt>
-              <dd className="mt-0.5 text-sm">{quote.contactName}</dd>
+              <dd className="mt-0.5 text-sm">
+                {quote.contactId ? (
+                  <Link href={`/app/${tenantSlug}/contacts/${quote.contactId}`} className="hover:underline">
+                    {quote.contactName}
+                  </Link>
+                ) : (
+                  quote.contactName
+                )}
+              </dd>
             </div>
           )}
           {quote.priceBookName && (

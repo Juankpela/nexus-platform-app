@@ -62,13 +62,27 @@ function parseActivityFilters(sp: {
   return { type, status }
 }
 
-function Detail({ label, value }: { label: string; value: string | null }) {
+function Detail({
+  label,
+  value,
+  href,
+}: {
+  label: string
+  value: string | null
+  href?: string
+}) {
   return (
     <div>
       <dt className="text-xs uppercase tracking-wider text-muted-foreground">
         {label}
       </dt>
-      <dd className="mt-0.5 text-sm text-foreground">{value ?? "—"}</dd>
+      <dd className="mt-0.5 text-sm text-foreground">
+        {value && href ? (
+          <Link href={href} className="hover:underline">{value}</Link>
+        ) : (
+          value ?? "—"
+        )}
+      </dd>
     </div>
   )
 }
@@ -231,7 +245,11 @@ export default async function AssetDetailPage({
               label="Categoría"
               value={ASSET_CATEGORY_LABELS[asset.assetCategory]}
             />
-            <Detail label="Empresa / sede" value={asset.companyName} />
+            <Detail
+              label="Empresa / sede"
+              value={asset.companyName}
+              href={asset.companyId ? `/app/${tenantSlug}/companies/${asset.companyId}` : undefined}
+            />
             <Detail label="Modelo de catálogo" value={asset.productName} />
             <Detail label="Activo padre" value={asset.parentAssetName} />
             <Detail label="N° de serie" value={asset.serialNumber} />

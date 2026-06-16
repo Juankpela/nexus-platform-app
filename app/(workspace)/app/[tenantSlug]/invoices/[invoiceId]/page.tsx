@@ -101,13 +101,23 @@ export default async function InvoiceDetailPage({
             </span>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
-            {invoice.companyName ?? "—"} ·{" "}
-            {INVOICE_ORIGIN_LABELS[invoice.originType]}
-            {invoice.workOrderNumber
-              ? ` ${invoice.workOrderNumber}`
-              : invoice.quoteNumber
-                ? ` ${invoice.quoteNumber}`
-                : ""}
+            {invoice.companyId ? (
+              <Link href={`/app/${tenantSlug}/companies/${invoice.companyId}`} className="hover:underline">
+                {invoice.companyName ?? "—"}
+              </Link>
+            ) : (
+              (invoice.companyName ?? "—")
+            )}{" "}
+            · {INVOICE_ORIGIN_LABELS[invoice.originType]}{" "}
+            {invoice.workOrderId && invoice.workOrderNumber ? (
+              <Link href={`/app/${tenantSlug}/work-orders/${invoice.workOrderId}`} className="hover:underline">
+                {invoice.workOrderNumber}
+              </Link>
+            ) : invoice.quoteId && invoice.quoteNumber ? (
+              <Link href={`/app/${tenantSlug}/quotes/${invoice.quoteId}`} className="hover:underline">
+                {invoice.quoteNumber}
+              </Link>
+            ) : null}
           </p>
         </div>
         <div className="flex items-center gap-2">

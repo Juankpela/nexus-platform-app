@@ -48,13 +48,27 @@ function parseActivityFilters(sp: {
   return { type, status }
 }
 
-function Detail({ label, value }: { label: string; value: string | null }) {
+function Detail({
+  label,
+  value,
+  href,
+}: {
+  label: string
+  value: string | null
+  href?: string
+}) {
   return (
     <div>
       <dt className="text-xs uppercase tracking-wider text-muted-foreground">
         {label}
       </dt>
-      <dd className="mt-0.5 text-sm text-foreground">{value ?? "—"}</dd>
+      <dd className="mt-0.5 text-sm text-foreground">
+        {value && href ? (
+          <Link href={href} className="hover:underline">{value}</Link>
+        ) : (
+          value ?? "—"
+        )}
+      </dd>
     </div>
   )
 }
@@ -133,7 +147,7 @@ export default async function OpportunityDetailPage({
             className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="size-4" />
-            Opportunities
+            Oportunidades
           </Link>
           {canWrite ? (
             <OpportunityFormDialog
@@ -173,8 +187,16 @@ export default async function OpportunityDetailPage({
             ) : null}
           </div>
           <dl className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <Detail label="Company" value={opportunity.companyName} />
-            <Detail label="Contact" value={opportunity.contactName} />
+            <Detail
+              label="Empresa"
+              value={opportunity.companyName}
+              href={opportunity.companyId ? `/app/${tenantSlug}/companies/${opportunity.companyId}` : undefined}
+            />
+            <Detail
+              label="Contacto"
+              value={opportunity.contactName}
+              href={opportunity.contactId ? `/app/${tenantSlug}/contacts/${opportunity.contactId}` : undefined}
+            />
             <Detail
               label="Business type"
               value={OPPORTUNITY_BUSINESS_TYPE_LABELS[opportunity.businessType]}

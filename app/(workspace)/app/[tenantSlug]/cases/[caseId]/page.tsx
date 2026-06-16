@@ -63,13 +63,27 @@ function fmtDate(iso: string | null): string | null {
   return iso ? new Date(iso).toLocaleString(undefined, { timeZone: "America/Bogota" }) : null
 }
 
-function Detail({ label, value }: { label: string; value: string | null }) {
+function Detail({
+  label,
+  value,
+  href,
+}: {
+  label: string
+  value: string | null
+  href?: string
+}) {
   return (
     <div>
       <dt className="text-xs uppercase tracking-wider text-muted-foreground">
         {label}
       </dt>
-      <dd className="mt-0.5 text-sm text-foreground">{value ?? "—"}</dd>
+      <dd className="mt-0.5 text-sm text-foreground">
+        {value && href ? (
+          <Link href={href} className="hover:underline">{value}</Link>
+        ) : (
+          value ?? "—"
+        )}
+      </dd>
     </div>
   )
 }
@@ -219,9 +233,21 @@ export default async function CaseDetailPage({
             ) : null}
           </div>
           <dl className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <Detail label="Empresa" value={serviceCase.companyName} />
-            <Detail label="Contacto" value={serviceCase.contactName} />
-            <Detail label="Activo" value={serviceCase.assetName} />
+            <Detail
+              label="Empresa"
+              value={serviceCase.companyName}
+              href={serviceCase.companyId ? `/app/${tenantSlug}/companies/${serviceCase.companyId}` : undefined}
+            />
+            <Detail
+              label="Contacto"
+              value={serviceCase.contactName}
+              href={serviceCase.contactId ? `/app/${tenantSlug}/contacts/${serviceCase.contactId}` : undefined}
+            />
+            <Detail
+              label="Activo"
+              value={serviceCase.assetName}
+              href={serviceCase.assetId ? `/app/${tenantSlug}/assets/${serviceCase.assetId}` : undefined}
+            />
             <Detail
               label="Prioridad"
               value={CASE_PRIORITY_LABELS[serviceCase.priority]}

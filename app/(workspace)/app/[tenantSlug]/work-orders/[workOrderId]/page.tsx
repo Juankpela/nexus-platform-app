@@ -66,13 +66,27 @@ function fmt(iso: string | null): string | null {
   return iso ? new Date(iso).toLocaleString(undefined, { timeZone: "America/Bogota" }) : null
 }
 
-function Detail({ label, value }: { label: string; value: string | null }) {
+function Detail({
+  label,
+  value,
+  href,
+}: {
+  label: string
+  value: string | null
+  href?: string
+}) {
   return (
     <div>
       <dt className="text-xs uppercase tracking-wider text-muted-foreground">
         {label}
       </dt>
-      <dd className="mt-0.5 text-sm text-foreground">{value ?? "—"}</dd>
+      <dd className="mt-0.5 text-sm text-foreground">
+        {value && href ? (
+          <Link href={href} className="hover:underline">{value}</Link>
+        ) : (
+          value ?? "—"
+        )}
+      </dd>
     </div>
   )
 }
@@ -217,10 +231,20 @@ export default async function WorkOrderDetailPage({
 
         {/* Traceability chain: Cliente -> Activo -> Caso -> Intervención */}
         <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-card p-4 text-sm">
-          <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-            <Building2 className="size-4" />
-            {workOrder.companyName ?? "—"}
-          </span>
+          {workOrder.companyId ? (
+            <Link
+              href={`/app/${tenantSlug}/companies/${workOrder.companyId}`}
+              className="inline-flex items-center gap-1.5 font-medium text-foreground hover:underline"
+            >
+              <Building2 className="size-4" />
+              {workOrder.companyName ?? "—"}
+            </Link>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+              <Building2 className="size-4" />
+              {workOrder.companyName ?? "—"}
+            </span>
+          )}
           <ArrowRight className="size-4 text-muted-foreground/50" />
           {workOrder.assetId ? (
             <Link
@@ -286,10 +310,26 @@ export default async function WorkOrderDetailPage({
               label="Prioridad"
               value={WORK_ORDER_PRIORITY_LABELS[workOrder.priority]}
             />
-            <Detail label="Empresa" value={workOrder.companyName} />
-            <Detail label="Activo" value={workOrder.assetName} />
-            <Detail label="Caso origen" value={workOrder.caseNumber} />
-            <Detail label="Cotización origen" value={workOrder.quoteNumber} />
+            <Detail
+              label="Empresa"
+              value={workOrder.companyName}
+              href={workOrder.companyId ? `/app/${tenantSlug}/companies/${workOrder.companyId}` : undefined}
+            />
+            <Detail
+              label="Activo"
+              value={workOrder.assetName}
+              href={workOrder.assetId ? `/app/${tenantSlug}/assets/${workOrder.assetId}` : undefined}
+            />
+            <Detail
+              label="Caso origen"
+              value={workOrder.caseNumber}
+              href={workOrder.caseId ? `/app/${tenantSlug}/cases/${workOrder.caseId}` : undefined}
+            />
+            <Detail
+              label="Cotización origen"
+              value={workOrder.quoteNumber}
+              href={workOrder.quoteId ? `/app/${tenantSlug}/quotes/${workOrder.quoteId}` : undefined}
+            />
             <Detail label="Técnico asignado" value={technicianLabel} />
             <Detail label="Inicio programado" value={fmt(workOrder.scheduledStart)} />
             <Detail label="Fin programado" value={fmt(workOrder.scheduledEnd)} />
