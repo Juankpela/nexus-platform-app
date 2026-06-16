@@ -74,11 +74,11 @@ export function CompanyFormDialog({
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit company" : "New company"}</DialogTitle>
+          <DialogTitle>{isEdit ? "Editar empresa" : "Nueva empresa"}</DialogTitle>
           <DialogDescription>
             {isEdit
-              ? "Update this company's details."
-              : "Add a company to this workspace."}
+              ? "Actualiza los datos de esta empresa."
+              : "Agrega una empresa a este espacio de trabajo."}
           </DialogDescription>
         </DialogHeader>
         <form action={formAction} className="grid gap-4">
@@ -87,7 +87,7 @@ export function CompanyFormDialog({
             <input type="hidden" name="id" value={company.id} />
           ) : null}
 
-          <Field label="Name" htmlFor="name" required>
+          <Field label="Nombre" htmlFor="name" required>
             <Input
               id="name"
               name="name"
@@ -98,40 +98,40 @@ export function CompanyFormDialog({
           </Field>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Tax ID" htmlFor="tax_id">
+            <Field label="NIT" htmlFor="tax_id">
               <Input id="tax_id" name="tax_id" defaultValue={company?.taxId ?? ""} />
             </Field>
-            <Field label="Industry" htmlFor="industry">
+            <Field label="Industria" htmlFor="industry">
               <Input
                 id="industry"
                 name="industry"
                 defaultValue={company?.industry ?? ""}
               />
             </Field>
-            <Field label="Website" htmlFor="website">
+            <Field label="Sitio web" htmlFor="website">
               <Input
                 id="website"
                 name="website"
                 defaultValue={company?.website ?? ""}
               />
             </Field>
-            <Field label="Phone" htmlFor="phone">
+            <Field label="Teléfono" htmlFor="phone">
               <Input id="phone" name="phone" defaultValue={company?.phone ?? ""} />
             </Field>
-            <Field label="City" htmlFor="city">
+            <Field label="Ciudad" htmlFor="city">
               <Input id="city" name="city" defaultValue={company?.city ?? ""} />
             </Field>
-            <Field label="State" htmlFor="state">
+            <Field label="Departamento" htmlFor="state">
               <Input id="state" name="state" defaultValue={company?.state ?? ""} />
             </Field>
-            <Field label="Country" htmlFor="country">
+            <Field label="País" htmlFor="country">
               <Input
                 id="country"
                 name="country"
                 defaultValue={company?.country ?? ""}
               />
             </Field>
-            <Field label="Address" htmlFor="address">
+            <Field label="Dirección" htmlFor="address">
               <Input
                 id="address"
                 name="address"
@@ -140,7 +140,7 @@ export function CompanyFormDialog({
             </Field>
           </div>
 
-          <Field label="Notes" htmlFor="notes">
+          <Field label="Notas" htmlFor="notes">
             <Textarea id="notes" name="notes" defaultValue={company?.notes ?? ""} />
           </Field>
 
@@ -152,13 +152,11 @@ export function CompanyFormDialog({
 
           <div className="flex justify-end gap-2">
             <DialogClose asChild>
-              <Button type="button" variant="ghost">
-                Cancel
-              </Button>
+              <Button type="button" variant="ghost">Cancelar</Button>
             </DialogClose>
             <Button type="submit" disabled={pending}>
               {pending ? <Loader2 className="animate-spin" /> : null}
-              {isEdit ? "Save changes" : "Create company"}
+              {isEdit ? "Guardar cambios" : "Crear empresa"}
             </Button>
           </div>
         </form>

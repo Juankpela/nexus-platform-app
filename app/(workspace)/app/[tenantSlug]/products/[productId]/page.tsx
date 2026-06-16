@@ -23,7 +23,7 @@ import {
 } from "@/modules/crm/domain/product"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 
-export const metadata: Metadata = { title: "Product" }
+export const metadata: Metadata = { title: "Producto" }
 
 function Detail({ label, value }: { label: string; value: string | null }) {
   if (!value) return null

@@ -86,8 +86,8 @@ export default async function ProductsPage({
   return (
     <>
       <PageHeader
-        title="Products"
-        description="Manage the product catalog for this workspace."
+        title="Productos"
+        description="Gestiona el catálogo de productos de este espacio de trabajo."
       />
       <div className="space-y-4 px-5 py-6 sm:px-8">
         {/* Toolbar */}
@@ -97,7 +97,7 @@ export default async function ProductsPage({
               type="search"
               name="search"
               defaultValue={search ?? ""}
-              placeholder="Search products..."
+              placeholder="Buscar productos..."
               className="w-52"
             />
             <select
@@ -105,7 +105,7 @@ export default async function ProductsPage({
               defaultValue={productTypeFilter ?? ""}
               className="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
-              <option value="">All types</option>
+              <option value="">Todos los tipos</option>
               {PRODUCT_TYPES.map((t) => (
                 <option key={t} value={t}>
                   {PRODUCT_TYPE_LABELS[t]}
@@ -117,7 +117,7 @@ export default async function ProductsPage({
               defaultValue={productFamilyFilter ?? ""}
               className="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
-              <option value="">All families</option>
+              <option value="">Todas las familias</option>
               {PRODUCT_FAMILIES.map((f) => (
                 <option key={f} value={f}>
                   {PRODUCT_FAMILY_LABELS[f]}
@@ -135,12 +135,12 @@ export default async function ProductsPage({
               }
               className="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
-              <option value="">All statuses</option>
-              <option value="true">Active</option>
-              <option value="false">Inactive</option>
+              <option value="">Todos los estados</option>
+              <option value="true">Activo</option>
+              <option value="false">Inactivo</option>
             </select>
             <Button type="submit" variant="outline" size="sm">
-              Filter
+              Filtrar
             </Button>
           </form>
 
@@ -150,14 +150,14 @@ export default async function ProductsPage({
               <>
                 <ProductCsvImport
                   tenantSlug={tenantSlug}
-                  trigger={<Button variant="outline">Import CSV</Button>}
+                  trigger={<Button variant="outline">Importar CSV</Button>}
                 />
                 <ProductFormDialog
                   tenantSlug={tenantSlug}
                   trigger={
                     <Button>
                       <Plus />
-                      New product
+                      Nuevo producto
                     </Button>
                   }
                 />
@@ -168,11 +168,11 @@ export default async function ProductsPage({
 
         {result.items.length === 0 ? (
           <EmptyState
-            title="No products"
+            title="Sin productos"
             description={
               search || productTypeFilter || productFamilyFilter
-                ? "No products match your filters."
-                : "Create your first product to get started."
+                ? "Ningún producto coincide con los filtros."
+                : "Crea tu primer producto para empezar."
             }
             actions={
               canWrite ? (
@@ -199,14 +199,14 @@ export default async function ProductsPage({
             <table className="w-full text-sm">
               <thead className="border-b bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Product</th>
-                  <th className="px-4 py-3 font-medium">Type</th>
-                  <th className="px-4 py-3 font-medium">Family</th>
-                  <th className="px-4 py-3 font-medium">UOM</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium">Producto</th>
+                  <th className="px-4 py-3 font-medium">Tipo</th>
+                  <th className="px-4 py-3 font-medium">Familia</th>
+                  <th className="px-4 py-3 font-medium">UM</th>
+                  <th className="px-4 py-3 font-medium">Estado</th>
                   {canWrite ? (
                     <th className="px-4 py-3 text-right font-medium">
-                      Actions
+                      Acciones
                     </th>
                   ) : null}
                 </tr>
@@ -244,7 +244,7 @@ export default async function ProductsPage({
                             : "bg-muted text-muted-foreground"
                         }`}
                       >
-                        {product.active ? "Active" : "Inactive"}
+                        {product.active ? "Activo" : "Inactivo"}
                       </span>
                     </td>
                     {canWrite ? (
@@ -255,7 +255,7 @@ export default async function ProductsPage({
                             product={product}
                             trigger={
                               <Button variant="outline" size="sm">
-                                Edit
+                                Editar
                               </Button>
                             }
                           />

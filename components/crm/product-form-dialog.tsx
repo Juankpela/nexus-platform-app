@@ -83,11 +83,11 @@ export function ProductFormDialog({
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit product" : "New product"}</DialogTitle>
+          <DialogTitle>{isEdit ? "Editar producto" : "Nuevo producto"}</DialogTitle>
           <DialogDescription>
             {isEdit
-              ? "Update this product's details."
-              : "Add a product to the catalog."}
+              ? "Actualiza los datos de este producto."
+              : "Agrega un producto al catálogo."}
           </DialogDescription>
         </DialogHeader>
         <form action={formAction} className="grid gap-4">
@@ -96,7 +96,7 @@ export function ProductFormDialog({
             <input type="hidden" name="id" value={product.id} />
           ) : null}
 
-          <Field label="Name" htmlFor="name" required>
+          <Field label="Nombre" htmlFor="name" required>
             <Input
               id="name"
               name="name"
@@ -111,16 +111,16 @@ export function ProductFormDialog({
               <Input id="sku" name="sku" defaultValue={product?.sku ?? ""} />
             </Field>
 
-            <Field label="Unit of Measure" htmlFor="unit_of_measure">
+            <Field label="Unidad de medida" htmlFor="unit_of_measure">
               <Input
                 id="unit_of_measure"
                 name="unit_of_measure"
-                placeholder="e.g. piece, kg, liter"
+                placeholder="Ej. unidad, kg, litro"
                 defaultValue={product?.unitOfMeasure ?? ""}
               />
             </Field>
 
-            <Field label="Product Type" htmlFor="productType" required>
+            <Field label="Tipo de producto" htmlFor="productType" required>
               <select
                 id="productType"
                 name="productType"
@@ -128,7 +128,7 @@ export function ProductFormDialog({
                 defaultValue={product?.productType ?? ""}
                 className={selectCls}
               >
-                <option value="">— Select type —</option>
+                <option value="">— Selecciona el tipo —</option>
                 {PRODUCT_TYPES.map((t) => (
                   <option key={t} value={t}>
                     {PRODUCT_TYPE_LABELS[t]}
@@ -137,7 +137,7 @@ export function ProductFormDialog({
               </select>
             </Field>
 
-            <Field label="Product Family" htmlFor="productFamily" required>
+            <Field label="Familia de producto" htmlFor="productFamily" required>
               <select
                 id="productFamily"
                 name="productFamily"
@@ -145,7 +145,7 @@ export function ProductFormDialog({
                 defaultValue={product?.productFamily ?? ""}
                 className={selectCls}
               >
-                <option value="">— Select family —</option>
+                <option value="">— Selecciona la familia —</option>
                 {PRODUCT_FAMILIES.map((f) => (
                   <option key={f} value={f}>
                     {PRODUCT_FAMILY_LABELS[f]}
@@ -155,7 +155,7 @@ export function ProductFormDialog({
             </Field>
           </div>
 
-          <Field label="Description" htmlFor="description">
+          <Field label="Descripción" htmlFor="description">
             <Textarea
               id="description"
               name="description"
@@ -171,13 +171,11 @@ export function ProductFormDialog({
 
           <div className="flex justify-end gap-2">
             <DialogClose asChild>
-              <Button type="button" variant="ghost">
-                Cancel
-              </Button>
+              <Button type="button" variant="ghost">Cancelar</Button>
             </DialogClose>
             <Button type="submit" disabled={pending}>
               {pending ? <Loader2 className="animate-spin" /> : null}
-              {isEdit ? "Save changes" : "Create product"}
+              {isEdit ? "Guardar cambios" : "Crear producto"}
             </Button>
           </div>
         </form>

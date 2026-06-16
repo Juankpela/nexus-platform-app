@@ -1,4 +1,4 @@
-import { ChevronsUpDown, LogOut, Plus, Search } from "lucide-react"
+import { ChevronsUpDown, LogOut } from "lucide-react"
 import Link from "next/link"
 
 import { NotificationBell } from "@/components/layout/notification-bell"
@@ -48,29 +48,8 @@ export function AppHeader({
         <ChevronsUpDown className="size-3.5 text-muted-foreground" />
       </Link>
 
-      {/* Global search (visual structure — wiring comes later) */}
-      <div
-        className="mx-auto hidden w-full max-w-md items-center gap-2 rounded-lg border bg-muted/40 px-3 py-1.5 text-sm text-muted-foreground md:flex"
-        title="Search — coming soon"
-      >
-        <Search className="size-4" />
-        <span className="flex-1">Search…</span>
-        <kbd className="rounded border bg-background px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-          ⌘K
-        </kbd>
-      </div>
-
       {/* Quick actions + account */}
-      <div className="ml-auto flex items-center gap-1 md:ml-0">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          aria-label="Quick create"
-          title="Quick create — coming soon"
-        >
-          <Plus />
-        </Button>
+      <div className="ml-auto flex items-center gap-1">
         <NotificationBell
           tenantSlug={tenantSlug}
           notifications={notifications}

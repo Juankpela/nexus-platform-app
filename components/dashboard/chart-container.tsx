@@ -35,7 +35,7 @@ export function ChartContainer({
       <CardContent>
         {children ?? (
           <div className="grid h-56 place-items-center rounded-xl border border-dashed text-sm text-muted-foreground">
-            Chart coming soon
+            Gráfico no disponible
           </div>
         )}
       </CardContent>

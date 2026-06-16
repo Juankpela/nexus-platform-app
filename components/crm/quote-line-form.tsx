@@ -18,6 +18,7 @@ import {
   type ProductLineOption,
   type QuoteLine,
 } from "@/modules/crm/domain/quote"
+import { formatCOP } from "@/lib/format/money"
 
 type QuoteLineFormProps = {
   open: boolean
@@ -90,13 +91,13 @@ export function QuoteLineForm({
           <input type="hidden" name="sortOrder" value={sortOrder} />
 
           <div className="grid gap-1.5">
-            <label className="text-sm font-medium">Product</label>
+            <label className="text-sm font-medium">Producto</label>
             <select
               className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
               value={productId}
               onChange={(e) => handleProductChange(e.target.value)}
             >
-              <option value="">Select product…</option>
+              <option value="">Selecciona un producto…</option>
               {products.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
@@ -108,7 +109,7 @@ export function QuoteLineForm({
 
           <div className="grid gap-1.5">
             <label className="text-sm font-medium" htmlFor="qty">
-              Quantity
+              Cantidad
             </label>
             <Input
               id="qty"
@@ -122,7 +123,7 @@ export function QuoteLineForm({
 
           <div className="grid gap-1.5">
             <label className="text-sm font-medium" htmlFor="price">
-              Unit Price
+              Precio unitario
             </label>
             <Input
               id="price"
@@ -136,7 +137,7 @@ export function QuoteLineForm({
 
           <div className="grid gap-1.5">
             <label className="text-sm font-medium" htmlFor="disc">
-              Line Discount
+              Descuento de línea
             </label>
             <Input
               id="disc"
@@ -149,18 +150,15 @@ export function QuoteLineForm({
           </div>
 
           <div className="flex items-center justify-between rounded-md bg-muted px-3 py-2 text-sm">
-            <span className="text-muted-foreground">Line Total</span>
+            <span className="text-muted-foreground">Total de línea</span>
             <span className="font-medium tabular-nums">
-              {lineTotal.toLocaleString("en-US", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
+              {formatCOP(lineTotal)}
             </span>
           </div>
 
           <div className="grid gap-1.5">
             <label className="text-sm font-medium" htmlFor="lineNotes">
-              Notes
+              Notas
             </label>
             <Textarea
               id="lineNotes"
@@ -180,11 +178,11 @@ export function QuoteLineForm({
               variant="outline"
               onClick={() => handleOpenChange(false)}
             >
-              Cancel
+              Cancelar
             </Button>
             <Button type="submit" disabled={pending || !productId}>
               {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save
+              Guardar
             </Button>
           </div>
         </form>

@@ -21,7 +21,7 @@ import {
 } from "@/modules/crm/domain/activity"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 
-export const metadata: Metadata = { title: "Contact" }
+export const metadata: Metadata = { title: "Contacto" }
 
 function parseFilters(sp: { type?: string; status?: string }): ActivityFilters {
   const type = (ACTIVITY_TYPES as string[]).includes(sp.type ?? "")

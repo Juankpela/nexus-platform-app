@@ -77,11 +77,11 @@ export function ContactFormDialog({
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit contact" : "New contact"}</DialogTitle>
+          <DialogTitle>{isEdit ? "Editar contacto" : "Nuevo contacto"}</DialogTitle>
           <DialogDescription>
             {isEdit
-              ? "Update this contact's details."
-              : "Add a contact to this workspace."}
+              ? "Actualiza los datos de este contacto."
+              : "Agrega un contacto a este espacio de trabajo."}
           </DialogDescription>
         </DialogHeader>
         <form action={formAction} className="grid gap-4">
@@ -91,7 +91,7 @@ export function ContactFormDialog({
           ) : null}
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="First name" htmlFor="first_name" required>
+            <Field label="Nombre" htmlFor="first_name" required>
               <Input
                 id="first_name"
                 name="first_name"
@@ -100,7 +100,7 @@ export function ContactFormDialog({
                 defaultValue={contact?.firstName ?? ""}
               />
             </Field>
-            <Field label="Last name" htmlFor="last_name">
+            <Field label="Apellido" htmlFor="last_name">
               <Input
                 id="last_name"
                 name="last_name"
@@ -109,14 +109,14 @@ export function ContactFormDialog({
             </Field>
           </div>
 
-          <Field label="Company" htmlFor="company_id">
+          <Field label="Empresa" htmlFor="company_id">
             <select
               id="company_id"
               name="company_id"
               defaultValue={contact?.companyId ?? ""}
               className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none transition-shadow focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30"
             >
-              <option value="">— No company —</option>
+              <option value="">— Sin empresa —</option>
               {companyOptions.map((option) => (
                 <option key={option.id} value={option.id}>
                   {option.name}
@@ -126,7 +126,7 @@ export function ContactFormDialog({
           </Field>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Email" htmlFor="email">
+            <Field label="Correo" htmlFor="email">
               <Input
                 id="email"
                 name="email"
@@ -134,20 +134,20 @@ export function ContactFormDialog({
                 defaultValue={contact?.email ?? ""}
               />
             </Field>
-            <Field label="Title" htmlFor="title">
+            <Field label="Cargo" htmlFor="title">
               <Input id="title" name="title" defaultValue={contact?.title ?? ""} />
             </Field>
-            <Field label="Phone" htmlFor="phone">
+            <Field label="Teléfono" htmlFor="phone">
               <Input id="phone" name="phone" defaultValue={contact?.phone ?? ""} />
             </Field>
-            <Field label="Mobile" htmlFor="mobile">
+            <Field label="Celular" htmlFor="mobile">
               <Input
                 id="mobile"
                 name="mobile"
                 defaultValue={contact?.mobile ?? ""}
               />
             </Field>
-            <Field label="Department" htmlFor="department">
+            <Field label="Departamento" htmlFor="department">
               <Input
                 id="department"
                 name="department"
@@ -156,7 +156,7 @@ export function ContactFormDialog({
             </Field>
           </div>
 
-          <Field label="Notes" htmlFor="notes">
+          <Field label="Notas" htmlFor="notes">
             <Textarea id="notes" name="notes" defaultValue={contact?.notes ?? ""} />
           </Field>
 
@@ -168,13 +168,11 @@ export function ContactFormDialog({
 
           <div className="flex justify-end gap-2">
             <DialogClose asChild>
-              <Button type="button" variant="ghost">
-                Cancel
-              </Button>
+              <Button type="button" variant="ghost">Cancelar</Button>
             </DialogClose>
             <Button type="submit" disabled={pending}>
               {pending ? <Loader2 className="animate-spin" /> : null}
-              {isEdit ? "Save changes" : "Create contact"}
+              {isEdit ? "Guardar cambios" : "Crear contacto"}
             </Button>
           </div>
         </form>

@@ -66,7 +66,7 @@ export function InvoiceDetailActions({
   }
 
   function handleVoid() {
-    const reason = window.prompt("Reason for voiding this invoice:")
+    const reason = window.prompt("Motivo de anulación de la factura:")
     if (!reason) return
     startVoid(async () => {
       const r = await voidInvoiceAction(tenantSlug, invoice.id, reason)
@@ -93,7 +93,7 @@ export function InvoiceDetailActions({
             ) : (
               <FileCheck2 className="mr-2 h-4 w-4" />
             )}
-            Issue invoice
+            Emitir factura
           </Button>
         )}
         {(invoice.status === "issued" ||
@@ -107,7 +107,7 @@ export function InvoiceDetailActions({
               disabled={voidPending}
             >
               <Ban className="mr-2 h-4 w-4" />
-              Void
+              Anular
             </Button>
           )}
       </div>
@@ -117,10 +117,10 @@ export function InvoiceDetailActions({
         <div className="space-y-6 rounded-xl border bg-card p-4">
           {/* Edit header */}
           <form action={saveDraft} className="space-y-3">
-            <h2 className="text-sm font-semibold">Edit draft</h2>
+            <h2 className="text-sm font-semibold">Editar borrador</h2>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <label className="space-y-1 text-sm">
-                <span className="text-xs text-muted-foreground">Due date</span>
+                <span className="text-xs text-muted-foreground">Fecha de vencimiento</span>
                 <Input
                   type="date"
                   name="dueDate"
@@ -129,16 +129,16 @@ export function InvoiceDetailActions({
                 />
               </label>
               <label className="space-y-1 text-sm">
-                <span className="text-xs text-muted-foreground">Terms</span>
+                <span className="text-xs text-muted-foreground">Condiciones</span>
                 <Input
                   name="paymentTerms"
                   defaultValue={invoice.paymentTerms ?? ""}
-                  placeholder="e.g. 30 días"
+                  placeholder="Ej. 30 días"
                   className="h-9"
                 />
               </label>
               <label className="space-y-1 text-sm">
-                <span className="text-xs text-muted-foreground">Notes</span>
+                <span className="text-xs text-muted-foreground">Notas</span>
                 <Input
                   name="notes"
                   defaultValue={invoice.notes ?? ""}
@@ -149,7 +149,7 @@ export function InvoiceDetailActions({
             <input type="hidden" name="contactId" value={invoice.contactId ?? ""} />
             <Button type="submit" size="sm" variant="secondary" disabled={draftPending}>
               {draftPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save draft
+              Guardar borrador
             </Button>
             {draftState.error && (
               <p className="text-sm text-destructive">{draftState.error}</p>
@@ -181,26 +181,26 @@ export function InvoiceDetailActions({
 
           {/* Add line */}
           <form action={addLine} className="space-y-3 border-t pt-4">
-            <h2 className="text-sm font-semibold">Add line</h2>
+            <h2 className="text-sm font-semibold">Agregar línea</h2>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-6">
               <label className="col-span-2 space-y-1 text-sm sm:col-span-2">
-                <span className="text-xs text-muted-foreground">Description</span>
+                <span className="text-xs text-muted-foreground">Descripción</span>
                 <Input name="description" required className="h-9" />
               </label>
               <label className="space-y-1 text-sm">
-                <span className="text-xs text-muted-foreground">Qty</span>
+                <span className="text-xs text-muted-foreground">Cant.</span>
                 <Input type="number" step="0.0001" min="0.0001" name="quantity" defaultValue="1" className="h-9" />
               </label>
               <label className="space-y-1 text-sm">
-                <span className="text-xs text-muted-foreground">Unit price</span>
+                <span className="text-xs text-muted-foreground">Precio unitario</span>
                 <Input type="number" step="0.01" min="0" name="unitPrice" defaultValue="0" className="h-9" />
               </label>
               <label className="space-y-1 text-sm">
-                <span className="text-xs text-muted-foreground">Discount</span>
+                <span className="text-xs text-muted-foreground">Descuento</span>
                 <Input type="number" step="0.01" min="0" name="discountAmount" defaultValue="0" className="h-9" />
               </label>
               <label className="space-y-1 text-sm">
-                <span className="text-xs text-muted-foreground">Tax rate</span>
+                <span className="text-xs text-muted-foreground">Tasa de impuesto</span>
                 <Input type="number" step="0.0001" min="0" name="taxRate" defaultValue="0.19" className="h-9" />
               </label>
             </div>
@@ -210,7 +210,7 @@ export function InvoiceDetailActions({
               ) : (
                 <Plus className="mr-2 h-4 w-4" />
               )}
-              Add line
+              Agregar línea
             </Button>
             {lineState.error && (
               <p className="text-sm text-destructive">{lineState.error}</p>

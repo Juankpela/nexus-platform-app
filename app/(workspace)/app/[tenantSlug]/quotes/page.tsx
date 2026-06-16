@@ -25,9 +25,11 @@ import {
   type QuoteStatus,
 } from "@/modules/crm/domain/quote"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
+import { formatDateNumeric } from "@/lib/format/datetime"
+import { formatCOP } from "@/lib/format/money"
 import { QuoteCreateButton } from "./_components/quote-create-button"
 
-export const metadata: Metadata = { title: "Quotes" }
+export const metadata: Metadata = { title: "Cotizaciones" }
 
 const PAGE_SIZE = 20
 
@@ -81,9 +83,9 @@ export default async function QuotesPage({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Quotes</h1>
+          <h1 className="text-xl font-semibold tracking-tight">Cotizaciones</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {total} quote{total !== 1 ? "s" : ""}
+            {total} {total !== 1 ? "cotizaciones" : "cotización"}
           </p>
         </div>
         {canWrite && (
@@ -101,7 +103,7 @@ export default async function QuotesPage({
       <form className="flex flex-wrap gap-3">
         <Input
           name="search"
-          placeholder="Search by quote number…"
+          placeholder="Buscar por número…"
           defaultValue={sp.search ?? ""}
           className="h-9 w-52"
         />
@@ -110,7 +112,7 @@ export default async function QuotesPage({
           defaultValue={sp.status ?? "_all"}
           className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
         >
-          <option value="_all">All statuses</option>
+          <option value="_all">Todos los estados</option>
           {QUOTE_STATUSES.map((s) => (
             <option key={s} value={s}>
               {QUOTE_STATUS_LABELS[s]}
@@ -118,11 +120,11 @@ export default async function QuotesPage({
           ))}
         </select>
         <Button type="submit" size="sm" variant="secondary">
-          Filter
+          Filtrar
         </Button>
         {(sp.search || (sp.status && sp.status !== "_all")) && (
           <Button asChild size="sm" variant="ghost">
-            <Link href={`/app/${tenantSlug}/quotes`}>Clear</Link>
+            <Link href={`/app/${tenantSlug}/quotes`}>Limpiar</Link>
           </Button>
         )}
       </form>
@@ -130,8 +132,8 @@ export default async function QuotesPage({
       {/* Table */}
       {items.length === 0 ? (
         <EmptyState
-          title="No quotes yet"
-          description="Create your first quote to get started."
+          title="Aún no tienes cotizaciones"
+          description="Crea tu primera cotización para empezar."
           actions={
             canWrite ? (
               <ClientOnly>
@@ -152,13 +154,13 @@ export default async function QuotesPage({
             <table className="w-full text-sm">
               <thead className="border-b bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Quote #</th>
+                  <th className="px-4 py-3 font-medium">N.º</th>
                   <th className="px-4 py-3 font-medium">Ver.</th>
-                  <th className="px-4 py-3 font-medium">Company</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium">Empresa</th>
+                  <th className="px-4 py-3 font-medium">Estado</th>
                   <th className="px-4 py-3 font-medium text-right">Total</th>
-                  <th className="px-4 py-3 font-medium">Expires</th>
-                  <th className="px-4 py-3 font-medium">Created</th>
+                  <th className="px-4 py-3 font-medium">Vence</th>
+                  <th className="px-4 py-3 font-medium">Creada</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -184,18 +186,13 @@ export default async function QuotesPage({
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums">
-                      {q.totalAmount.toLocaleString("en-US", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
+                      {formatCOP(q.totalAmount)}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {q.expirationDate
-                        ? new Date(q.expirationDate).toLocaleDateString(undefined, { timeZone: "America/Bogota" })
-                        : "—"}
+                      {q.expirationDate ? formatDateNumeric(q.expirationDate) : "—"}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {new Date(q.createdAt).toLocaleDateString(undefined, { timeZone: "America/Bogota" })}
+                      {formatDateNumeric(q.createdAt)}
                     </td>
                   </tr>
                 ))}

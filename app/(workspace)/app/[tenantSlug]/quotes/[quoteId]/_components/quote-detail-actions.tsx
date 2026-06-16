@@ -92,7 +92,7 @@ export function QuoteDetailActions({
         {isEditable && (
           <Button size="sm" variant="outline" onClick={() => setEditOpen(true)}>
             <Edit className="mr-2 h-4 w-4" />
-            Edit
+            Editar
           </Button>
         )}
 
@@ -107,7 +107,7 @@ export function QuoteDetailActions({
           ) : (
             <GitBranch className="mr-2 h-4 w-4" />
           )}
-          New Revision
+          Nueva revisión
         </Button>
       </div>
 
@@ -119,7 +119,7 @@ export function QuoteDetailActions({
           onClick={() => setAddLineOpen(true)}
         >
           <Plus className="mr-2 h-4 w-4" />
-          Add Line
+          Agregar ítem
         </Button>
       )}
 
@@ -167,7 +167,7 @@ export function QuoteDetailActions({
         tenantSlug={tenantSlug}
         defaultValues={quote}
         action={boundUpdateQuote}
-        title="Edit Quote"
+        title="Editar cotización"
         companies={companies}
         contacts={contacts}
         opportunities={opportunities}
@@ -184,7 +184,7 @@ export function QuoteDetailActions({
         }}
         action={boundAddLine}
         products={products}
-        title="Add Line Item"
+        title="Agregar ítem"
         sortOrder={lines.length}
       />
 
@@ -207,7 +207,7 @@ export function QuoteDetailActions({
           )}
           products={products}
           defaultValues={editLine}
-          title="Edit Line Item"
+          title="Editar ítem"
         />
       )}
     </div>

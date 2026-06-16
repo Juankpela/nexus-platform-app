@@ -26,7 +26,7 @@ import type { CompanyOption } from "@/modules/crm/domain/company"
 import { setContactStatusAction } from "@/modules/crm/presentation/contact-actions"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 
-export const metadata: Metadata = { title: "Contacts" }
+export const metadata: Metadata = { title: "Contactos" }
 
 const PAGE_SIZE = 10
 
@@ -67,8 +67,8 @@ export default async function ContactsPage({
   return (
     <>
       <PageHeader
-        title="Contacts"
-        description="Manage the contacts in your workspace."
+        title="Contactos"
+        description="Gestiona los contactos de tu espacio de trabajo."
       />
       <div className="space-y-4 px-5 py-6 sm:px-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -77,7 +77,7 @@ export default async function ContactsPage({
               type="search"
               name="search"
               defaultValue={search ?? ""}
-              placeholder="Search contacts..."
+              placeholder="Buscar contactos..."
             />
           </form>
           <div className="flex flex-wrap items-center justify-end gap-2">
@@ -94,7 +94,7 @@ export default async function ContactsPage({
                   trigger={
                     <Button className="order-last">
                       <Plus />
-                      New contact
+                      Nuevo contacto
                     </Button>
                   }
                 />
@@ -114,11 +114,11 @@ export default async function ContactsPage({
 
         {result.items.length === 0 ? (
           <EmptyState
-            title="No contacts"
+            title="Sin contactos"
             description={
               search
-                ? "No contacts match your search."
-                : "Create your first contact to get started."
+                ? "Ningún contacto coincide con tu búsqueda."
+                : "Crea tu primer contacto para empezar."
             }
             actions={
               canWrite ? (
@@ -151,13 +151,13 @@ export default async function ContactsPage({
             <table className="w-full text-sm">
               <thead className="border-b bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Name</th>
-                  <th className="px-4 py-3 font-medium">Company</th>
-                  <th className="px-4 py-3 font-medium">Email</th>
-                  <th className="px-4 py-3 font-medium">Phone</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium">Nombre</th>
+                  <th className="px-4 py-3 font-medium">Empresa</th>
+                  <th className="px-4 py-3 font-medium">Correo</th>
+                  <th className="px-4 py-3 font-medium">Teléfono</th>
+                  <th className="px-4 py-3 font-medium">Estado</th>
                   {canWrite ? (
-                    <th className="px-4 py-3 text-right font-medium">Actions</th>
+                    <th className="px-4 py-3 text-right font-medium">Acciones</th>
                   ) : null}
                 </tr>
               </thead>
@@ -192,7 +192,7 @@ export default async function ContactsPage({
                       <span
                         className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${statusStyles[contact.status]}`}
                       >
-                        {contact.status === "active" ? "Active" : "Inactive"}
+                        {contact.status === "active" ? "Activo" : "Inactivo"}
                       </span>
                     </td>
                     {canWrite ? (
@@ -204,7 +204,7 @@ export default async function ContactsPage({
                             contact={contact}
                             trigger={
                               <Button variant="outline" size="sm">
-                                Edit
+                                Editar
                               </Button>
                             }
                           />

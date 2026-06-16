@@ -22,7 +22,7 @@ import type { CrmStatus } from "@/modules/crm/domain/company"
 import { setCompanyStatusAction } from "@/modules/crm/presentation/company-actions"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 
-export const metadata: Metadata = { title: "Companies" }
+export const metadata: Metadata = { title: "Empresas" }
 
 const PAGE_SIZE = 10
 
@@ -62,8 +62,8 @@ export default async function CompaniesPage({
   return (
     <>
       <PageHeader
-        title="Companies"
-        description="Manage the companies in your workspace."
+        title="Empresas"
+        description="Gestiona las empresas de tu espacio de trabajo."
       />
       <div className="space-y-4 px-5 py-6 sm:px-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -72,7 +72,7 @@ export default async function CompaniesPage({
               type="search"
               name="search"
               defaultValue={search ?? ""}
-              placeholder="Search companies..."
+              placeholder="Buscar empresas..."
             />
           </form>
           <div className="flex flex-wrap items-center justify-end gap-2">
@@ -93,7 +93,7 @@ export default async function CompaniesPage({
                   trigger={
                     <Button>
                       <Plus />
-                      New company
+                      Nueva empresa
                     </Button>
                   }
                 />
@@ -104,11 +104,11 @@ export default async function CompaniesPage({
 
         {result.items.length === 0 ? (
           <EmptyState
-            title="No companies"
+            title="Sin empresas"
             description={
               search
-                ? "No companies match your search."
-                : "Create your first company to get started."
+                ? "Ninguna empresa coincide con tu búsqueda."
+                : "Crea tu primera empresa para empezar."
             }
             actions={
               canWrite ? (
@@ -140,13 +140,13 @@ export default async function CompaniesPage({
             <table className="w-full text-sm">
               <thead className="border-b bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Company</th>
-                  <th className="px-4 py-3 font-medium">Industry</th>
-                  <th className="px-4 py-3 font-medium">Location</th>
-                  <th className="px-4 py-3 font-medium">Phone</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium">Empresa</th>
+                  <th className="px-4 py-3 font-medium">Industria</th>
+                  <th className="px-4 py-3 font-medium">Ubicación</th>
+                  <th className="px-4 py-3 font-medium">Teléfono</th>
+                  <th className="px-4 py-3 font-medium">Estado</th>
                   {canWrite ? (
-                    <th className="px-4 py-3 text-right font-medium">Actions</th>
+                    <th className="px-4 py-3 text-right font-medium">Acciones</th>
                   ) : null}
                 </tr>
               </thead>
@@ -180,7 +180,7 @@ export default async function CompaniesPage({
                       <span
                         className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${statusStyles[company.status]}`}
                       >
-                        {company.status === "active" ? "Active" : "Inactive"}
+                        {company.status === "active" ? "Activa" : "Inactiva"}
                       </span>
                     </td>
                     {canWrite ? (
@@ -191,7 +191,7 @@ export default async function CompaniesPage({
                             company={company}
                             trigger={
                               <Button variant="outline" size="sm">
-                                Edit
+                                Editar
                               </Button>
                             }
                           />

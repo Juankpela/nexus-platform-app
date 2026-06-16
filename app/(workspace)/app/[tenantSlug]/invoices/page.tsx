@@ -15,8 +15,10 @@ import {
   type InvoiceStatus,
 } from "@/modules/billing/domain/invoice"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
+import { formatDateNumeric } from "@/lib/format/datetime"
+import { formatCOP } from "@/lib/format/money"
 
-export const metadata: Metadata = { title: "Invoices" }
+export const metadata: Metadata = { title: "Facturas" }
 
 const PAGE_SIZE = 20
 
@@ -49,9 +51,9 @@ export default async function InvoicesPage({
     <div className="space-y-6 p-5 sm:p-8">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-semibold tracking-tight">Invoices</h1>
+        <h1 className="text-xl font-semibold tracking-tight">Facturas</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {total} invoice{total !== 1 ? "s" : ""}
+          {total} {total !== 1 ? "facturas" : "factura"}
         </p>
       </div>
 
@@ -59,7 +61,7 @@ export default async function InvoicesPage({
       <form className="flex flex-wrap gap-3">
         <Input
           name="search"
-          placeholder="Search by invoice number…"
+          placeholder="Buscar por número…"
           defaultValue={sp.search ?? ""}
           className="h-9 w-52"
         />
@@ -68,7 +70,7 @@ export default async function InvoicesPage({
           defaultValue={sp.status ?? "_all"}
           className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
         >
-          <option value="_all">All statuses</option>
+          <option value="_all">Todos los estados</option>
           {INVOICE_STATUSES.map((s) => (
             <option key={s} value={s}>
               {INVOICE_STATUS_LABELS[s]}
@@ -76,11 +78,11 @@ export default async function InvoicesPage({
           ))}
         </select>
         <Button type="submit" size="sm" variant="secondary">
-          Filter
+          Filtrar
         </Button>
         {(sp.search || (sp.status && sp.status !== "_all")) && (
           <Button asChild size="sm" variant="ghost">
-            <Link href={`/app/${tenantSlug}/invoices`}>Clear</Link>
+            <Link href={`/app/${tenantSlug}/invoices`}>Limpiar</Link>
           </Button>
         )}
       </form>
@@ -88,8 +90,8 @@ export default async function InvoicesPage({
       {/* Table */}
       {items.length === 0 ? (
         <EmptyState
-          title="No invoices yet"
-          description="Invoices are generated from completed, billable work orders."
+          title="Aún no tienes facturas"
+          description="Las facturas se generan desde órdenes de trabajo completadas y facturables, o desde una cotización aceptada."
           actions={
             <Button asChild variant="outline">
               <Link href={`/app/${tenantSlug}/quotes`}>Ir a cotizaciones</Link>
@@ -102,13 +104,13 @@ export default async function InvoicesPage({
             <table className="w-full text-sm">
               <thead className="border-b bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Invoice #</th>
-                  <th className="px-4 py-3 font-medium">Company</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium">N.º</th>
+                  <th className="px-4 py-3 font-medium">Empresa</th>
+                  <th className="px-4 py-3 font-medium">Estado</th>
                   <th className="px-4 py-3 font-medium text-right">Total</th>
-                  <th className="px-4 py-3 font-medium text-right">Balance</th>
-                  <th className="px-4 py-3 font-medium">Due</th>
-                  <th className="px-4 py-3 font-medium">Created</th>
+                  <th className="px-4 py-3 font-medium text-right">Saldo</th>
+                  <th className="px-4 py-3 font-medium">Vence</th>
+                  <th className="px-4 py-3 font-medium">Creada</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -119,7 +121,7 @@ export default async function InvoicesPage({
                         href={`/app/${tenantSlug}/invoices/${inv.id}`}
                         className="font-medium hover:underline"
                       >
-                        {inv.invoiceNumber ?? "Draft"}
+                        {inv.invoiceNumber ?? "Borrador"}
                       </Link>
                     </td>
                     <td className="px-4 py-3">{inv.companyName ?? "—"}</td>
@@ -131,24 +133,16 @@ export default async function InvoicesPage({
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums">
-                      {inv.totalAmount.toLocaleString("es-CO", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
+                      {formatCOP(inv.totalAmount)}
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums">
-                      {inv.balance.toLocaleString("es-CO", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
+                      {formatCOP(inv.balance)}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {inv.dueDate
-                        ? new Date(inv.dueDate).toLocaleDateString(undefined, { timeZone: "America/Bogota" })
-                        : "—"}
+                      {inv.dueDate ? formatDateNumeric(inv.dueDate) : "—"}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {new Date(inv.createdAt).toLocaleDateString(undefined, { timeZone: "America/Bogota" })}
+                      {formatDateNumeric(inv.createdAt)}
                     </td>
                   </tr>
                 ))}

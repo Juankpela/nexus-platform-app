@@ -15,13 +15,13 @@ export const QUOTE_STATUSES = [
 export type QuoteStatus = (typeof QUOTE_STATUSES)[number]
 
 export const QUOTE_STATUS_LABELS: Record<QuoteStatus, string> = {
-  draft: "Draft",
-  pending_approval: "Pending Approval",
-  approved: "Approved",
-  rejected: "Rejected",
-  sent: "Sent",
-  accepted: "Accepted",
-  expired: "Expired",
+  draft: "Borrador",
+  pending_approval: "Pendiente de aprobación",
+  approved: "Aprobada internamente",
+  rejected: "Rechazada",
+  sent: "Enviada",
+  accepted: "Aceptada por el cliente",
+  expired: "Vencida",
 }
 
 /** Valid next statuses for each current status. */
@@ -38,12 +38,12 @@ export const QUOTE_STATUS_TRANSITIONS: Record<QuoteStatus, QuoteStatus[]> = {
 /** Label for the action button that triggers the transition. */
 export const QUOTE_STATUS_ACTION_LABELS: Partial<Record<QuoteStatus, string>> =
   {
-    pending_approval: "Submit for Approval",
-    approved: "Approve",
-    rejected: "Reject",
-    sent: "Mark as Sent",
-    accepted: "Mark as Accepted",
-    expired: "Mark as Expired",
+    pending_approval: "Enviar a aprobación",
+    approved: "Aprobar",
+    rejected: "Rechazar",
+    sent: "Marcar como enviada",
+    accepted: "Marcar como aceptada",
+    expired: "Marcar como vencida",
   }
 
 /** CSS classes for status badges. */

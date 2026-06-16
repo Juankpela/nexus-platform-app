@@ -13,11 +13,11 @@ export const INVOICE_STATUSES = [
 export type InvoiceStatus = (typeof INVOICE_STATUSES)[number]
 
 export const INVOICE_STATUS_LABELS: Record<InvoiceStatus, string> = {
-  draft: "Draft",
-  issued: "Issued",
-  partially_paid: "Partially Paid",
-  paid: "Paid",
-  void: "Void",
+  draft: "Borrador",
+  issued: "Emitida",
+  partially_paid: "Parcialmente pagada",
+  paid: "Pagada",
+  void: "Anulada",
 }
 
 /**
@@ -68,7 +68,7 @@ export const INVOICE_ORIGIN_TYPES = ["work_order", "quote"] as const
 export type InvoiceOriginType = (typeof INVOICE_ORIGIN_TYPES)[number]
 
 export const INVOICE_ORIGIN_LABELS: Record<InvoiceOriginType, string> = {
-  work_order: "Work Order",
+  work_order: "Orden de trabajo",
   quote: "Cotización",
 }
 

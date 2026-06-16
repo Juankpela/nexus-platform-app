@@ -12,7 +12,7 @@ import {
 } from "@/modules/billing/domain/invoice"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 
-export const metadata: Metadata = { title: "Invoice" }
+export const metadata: Metadata = { title: "Factura" }
 
 export default async function InvoicePrintPage({
   params,

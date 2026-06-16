@@ -36,7 +36,7 @@ export function QuoteCreateButton({
     <>
       <Button size="sm" onClick={() => setOpen(true)}>
         <Plus className="mr-2 h-4 w-4" />
-        New Quote
+        Nueva cotización
       </Button>
       <QuoteFormDialog
         open={open}
@@ -47,7 +47,7 @@ export function QuoteCreateButton({
         }}
         tenantSlug={tenantSlug}
         action={boundAction}
-        title="New Quote"
+        title="Nueva cotización"
         companies={companies}
         contacts={contacts}
         opportunities={opportunities}

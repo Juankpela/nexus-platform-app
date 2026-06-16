@@ -44,6 +44,18 @@ export function formatDate(value: DateInput, opts?: Intl.DateTimeFormatOptions):
   return date.toLocaleDateString(APP_LOCALE, { ...DATE_DEFAULTS, ...opts, timeZone: APP_TIME_ZONE })
 }
 
+/** Solo fecha en formato numérico colombiano DD/MM/YYYY (America/Bogota). */
+export function formatDateNumeric(value: DateInput): string {
+  const date = toValidDate(value)
+  if (!date) return "—"
+  return date.toLocaleDateString(APP_LOCALE, {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: APP_TIME_ZONE,
+  })
+}
+
 /** Solo hora en la zona horaria de la app (America/Bogota). */
 export function formatTime(value: DateInput, opts?: Intl.DateTimeFormatOptions): string {
   const date = toValidDate(value)

@@ -31,7 +31,7 @@ export function QuoteStatusControl({
     setError(null)
     startTransition(async () => {
       const result = await onStatusChange(status)
-      if (!result.ok) setError(result.error ?? "Something went wrong.")
+      if (!result.ok) setError(result.error ?? "Ocurrió un error.")
     })
   }
 

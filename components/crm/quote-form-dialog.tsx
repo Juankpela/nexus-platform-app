@@ -90,7 +90,7 @@ export function QuoteFormDialog({
           <input type="hidden" name="priceBookId" value={priceBookId} />
 
           <div className="grid gap-1.5">
-            <label className="text-sm font-medium">Company</label>
+            <label className="text-sm font-medium">Empresa</label>
             <select
               className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
               value={companyId}
@@ -98,7 +98,7 @@ export function QuoteFormDialog({
                 setCompanyId(e.target.value === "_none" ? "" : e.target.value)
               }
             >
-              <option value="_none">None</option>
+              <option value="_none">Ninguno</option>
               {companies.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
@@ -108,7 +108,7 @@ export function QuoteFormDialog({
           </div>
 
           <div className="grid gap-1.5">
-            <label className="text-sm font-medium">Contact</label>
+            <label className="text-sm font-medium">Contacto</label>
             <select
               className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
               value={contactId}
@@ -116,7 +116,7 @@ export function QuoteFormDialog({
                 setContactId(e.target.value === "_none" ? "" : e.target.value)
               }
             >
-              <option value="_none">None</option>
+              <option value="_none">Ninguno</option>
               {contacts.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
@@ -126,7 +126,7 @@ export function QuoteFormDialog({
           </div>
 
           <div className="grid gap-1.5">
-            <label className="text-sm font-medium">Opportunity</label>
+            <label className="text-sm font-medium">Oportunidad</label>
             <select
               className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
               value={opportunityId}
@@ -136,7 +136,7 @@ export function QuoteFormDialog({
                 )
               }
             >
-              <option value="_none">None</option>
+              <option value="_none">Ninguno</option>
               {opportunities.map((o) => (
                 <option key={o.id} value={o.id}>
                   {o.name}
@@ -146,7 +146,7 @@ export function QuoteFormDialog({
           </div>
 
           <div className="grid gap-1.5">
-            <label className="text-sm font-medium">Price Book</label>
+            <label className="text-sm font-medium">Lista de precios</label>
             <select
               className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
               value={priceBookId}
@@ -156,7 +156,7 @@ export function QuoteFormDialog({
                 )
               }
             >
-              <option value="_none">None</option>
+              <option value="_none">Ninguno</option>
               {priceBooks.map((pb) => (
                 <option key={pb.id} value={pb.id}>
                   {pb.name}
@@ -167,7 +167,7 @@ export function QuoteFormDialog({
 
           <div className="grid gap-1.5">
             <label className="text-sm font-medium" htmlFor="expirationDate">
-              Expiration Date
+              Fecha de vencimiento
             </label>
             <Input
               id="expirationDate"
@@ -180,7 +180,7 @@ export function QuoteFormDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1.5">
               <label className="text-sm font-medium" htmlFor="discountAmount">
-                Discount
+                Descuento
               </label>
               <Input
                 id="discountAmount"
@@ -193,7 +193,7 @@ export function QuoteFormDialog({
             </div>
             <div className="grid gap-1.5">
               <label className="text-sm font-medium" htmlFor="taxAmount">
-                Tax
+                Impuesto
               </label>
               <Input
                 id="taxAmount"
@@ -208,7 +208,7 @@ export function QuoteFormDialog({
 
           <div className="grid gap-1.5">
             <label className="text-sm font-medium" htmlFor="notes">
-              Notes
+              Notas
             </label>
             <Textarea
               id="notes"
@@ -228,11 +228,11 @@ export function QuoteFormDialog({
               variant="outline"
               onClick={() => handleOpenChange(false)}
             >
-              Cancel
+              Cancelar
             </Button>
             <Button type="submit" disabled={pending}>
               {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save
+              Guardar
             </Button>
           </div>
         </form>

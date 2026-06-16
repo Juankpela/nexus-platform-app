@@ -12,7 +12,7 @@ import {
 import { QUOTE_STATUS_LABELS } from "@/modules/crm/domain/quote"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 
-export const metadata: Metadata = { title: "Quote" }
+export const metadata: Metadata = { title: "Cotización" }
 
 export default async function QuotePrintPage({
   params,
