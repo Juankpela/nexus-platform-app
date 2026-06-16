@@ -1,7 +1,7 @@
 "use client"
 
-import { CheckCircle2, Loader2, MapPin, Play, ThumbsUp, XCircle } from "lucide-react"
-import { useActionState } from "react"
+import { Camera, CheckCircle2, Loader2, MapPin, Play, ThumbsUp, X, XCircle } from "lucide-react"
+import { useActionState, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -20,6 +20,82 @@ import {
 } from "@/modules/field-execution/presentation/worker-actions"
 
 const initial: WorkerActionState = { error: null, ok: false }
+
+/** Compresión en cliente con canvas nativo (mismo enfoque que el intake). */
+function compressImage(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onerror = () => reject(new Error("read"))
+    reader.onload = () => {
+      const img = new Image()
+      img.onerror = () => reject(new Error("decode"))
+      img.onload = () => {
+        const max = 1024
+        let { width, height } = img
+        if (width > height && width > max) {
+          height = Math.round((height * max) / width)
+          width = max
+        } else if (height > max) {
+          width = Math.round((width * max) / height)
+          height = max
+        }
+        const canvas = document.createElement("canvas")
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext("2d")
+        if (!ctx) return reject(new Error("ctx"))
+        ctx.drawImage(img, 0, 0, width, height)
+        resolve(canvas.toDataURL("image/jpeg", 0.55))
+      }
+      img.src = reader.result as string
+    }
+    reader.readAsDataURL(file)
+  })
+}
+
+/** Captura de foto de evidencia para el cierre (reusa bucket reports vía action). */
+function EvidencePhoto() {
+  const [photo, setPhoto] = useState<string | null>(null)
+  const [status, setStatus] = useState<"idle" | "loading" | "error">("idle")
+
+  async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setStatus("loading")
+    try {
+      setPhoto(await compressImage(file))
+      setStatus("idle")
+    } catch {
+      setPhoto(null)
+      setStatus("error")
+    }
+  }
+
+  return (
+    <div>
+      <input type="hidden" name="photo" value={photo ?? ""} />
+      {photo ? (
+        <div className="flex items-center gap-3">
+          {/* data: URL local; CSP permite img-src data:. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={photo} alt="Evidencia" className="size-16 rounded-lg border object-cover" />
+          <Button type="button" variant="ghost" size="sm" onClick={() => setPhoto(null)}>
+            <X className="mr-1 size-4" /> Quitar
+          </Button>
+        </div>
+      ) : (
+        <label className="flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-input text-sm text-muted-foreground hover:bg-muted/40">
+          {status === "loading" ? <Loader2 className="size-4 animate-spin" /> : <Camera className="size-4" />}
+          Tomar foto de evidencia
+          <input type="file" accept="image/*" capture="environment" className="hidden" onChange={onPick} />
+        </label>
+      )}
+      {status === "error" ? (
+        <p className="mt-1 text-xs text-muted-foreground">No pudimos procesar la imagen. Intenta otra.</p>
+      ) : null}
+    </div>
+  )
+}
 
 type Action = (s: WorkerActionState, fd: FormData) => Promise<WorkerActionState>
 
@@ -106,6 +182,7 @@ export function ExecutionActions({
             placeholder="Resumen del trabajo realizado (opcional)"
             rows={3}
           />
+          <EvidencePhoto />
         </ActionForm>
       ) : null}
 

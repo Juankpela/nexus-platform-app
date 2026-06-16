@@ -5,6 +5,7 @@ import { z } from "zod"
 
 import { ApplicationError } from "@/lib/errors/application-error"
 import { broadcastFieldMonitorUpdate } from "@/lib/realtime/field-monitor-broadcast"
+import { createAdminSupabaseClient } from "@/lib/supabase/admin"
 import {
   SERVICE_PERMISSIONS,
   hasPermission,
@@ -34,6 +35,31 @@ function field(formData: FormData, name: string): string | null {
   return t.length > 0 ? t : null
 }
 
+/**
+ * Sube la foto de evidencia del cierre al bucket público `reports` (mismo bucket
+ * e infraestructura del intake) y devuelve su URL pública, o null. Opcional: no
+ * bloquea el cierre si falla.
+ */
+async function uploadEvidence(
+  tenantId: string,
+  photoDataUrl: string | null,
+): Promise<string | null> {
+  if (!photoDataUrl) return null
+  const match = /^data:(image\/(?:jpeg|png|webp));base64,(.+)$/.exec(photoDataUrl)
+  if (!match) return null
+  const [, contentType, b64] = match
+  const ext = contentType.endsWith("png") ? "png" : contentType.endsWith("webp") ? "webp" : "jpg"
+  const bytes = Buffer.from(b64, "base64")
+  if (bytes.byteLength > 5_242_880) return null
+  const admin = createAdminSupabaseClient()
+  const path = `${tenantId}/${crypto.randomUUID()}.${ext}`
+  const { error } = await admin.storage
+    .from("reports")
+    .upload(path, bytes, { contentType, upsert: false })
+  if (error) return null
+  return admin.storage.from("reports").getPublicUrl(path).data.publicUrl
+}
+
 function describe(error: unknown): string {
   if (error instanceof ApplicationError) {
     switch (error.code) {
@@ -59,6 +85,7 @@ async function transition(
     resolutionNotes?: string | null
     unableReason?: string | null
     nonCompletionReason?: NonCompletionReason | null
+    photoDataUrl?: string | null
   },
 ): Promise<WorkerActionState> {
   const tenantSlug = field(formData, "tenantSlug")
@@ -92,6 +119,13 @@ async function transition(
       throw new ApplicationError("Assignment not found.", "ASSIGNMENT_NOT_FOUND")
     }
 
+    // Evidencia fotográfica del cierre: se sube y su URL se anexa a las notas
+    // (texto existente) — sin columnas ni tablas nuevas.
+    const evidenceUrl = await uploadEvidence(context.tenantId, extras?.photoDataUrl ?? null)
+    const resolutionNotes = [extras?.resolutionNotes, evidenceUrl ? `Foto: ${evidenceUrl}` : null]
+      .filter(Boolean)
+      .join("\n") || null
+
     await advanceExecutionRecord({
       actorId: context.userId,
       tenantId: context.tenantId,
@@ -100,7 +134,7 @@ async function transition(
       assignmentId: assignment.assignmentId,
       workOrderId: assignment.workOrderId,
       target,
-      resolutionNotes: extras?.resolutionNotes,
+      resolutionNotes,
       unableReason: extras?.unableReason,
       nonCompletionReason: extras?.nonCompletionReason,
     })
@@ -113,7 +147,7 @@ async function transition(
       assignmentId: assignment.assignmentId,
       target,
       technicianUserId: context.userId,
-      resolutionNotes: extras?.resolutionNotes,
+      resolutionNotes,
       unableReason: extras?.unableReason,
     })
 
@@ -159,6 +193,7 @@ export async function completeWorkAction(
 ): Promise<WorkerActionState> {
   return transition(formData, "completed", {
     resolutionNotes: field(formData, "resolution_notes"),
+    photoDataUrl: field(formData, "photo"),
   })
 }
 
