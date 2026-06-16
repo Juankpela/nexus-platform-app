@@ -17,15 +17,11 @@ import {
   recordPaymentAction,
   reversePaymentAction,
 } from "@/modules/billing/presentation/payment-actions"
+import { formatCOP } from "@/lib/format/money"
 
 const INITIAL = { ok: false, error: null as string | null }
 
-function money(n: number): string {
-  return n.toLocaleString("es-CO", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })
-}
+const money = formatCOP
 
 type Props = {
   tenantSlug: string

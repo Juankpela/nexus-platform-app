@@ -48,6 +48,13 @@ export default async function InvoicesPage({
     pageSize: PAGE_SIZE,
   })
 
+  const todayISO = new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" })
+  const isOverdue = (inv: (typeof items)[number]) =>
+    (inv.status === "issued" || inv.status === "partially_paid") &&
+    inv.balance > 0 &&
+    inv.dueDate != null &&
+    inv.dueDate < todayISO
+
   return (
     <>
       <PageHeader
@@ -141,11 +148,24 @@ export default async function InvoicesPage({
                     <td className="px-4 py-3 text-right tabular-nums">
                       {formatCOP(inv.totalAmount)}
                     </td>
-                    <td className="px-4 py-3 text-right tabular-nums">
+                    <td className={`px-4 py-3 text-right tabular-nums ${isOverdue(inv) ? "font-semibold text-destructive" : ""}`}>
                       {formatCOP(inv.balance)}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {inv.dueDate ? formatDateNumeric(inv.dueDate) : "—"}
+                      {inv.dueDate ? (
+                        isOverdue(inv) ? (
+                          <span className="inline-flex items-center gap-1.5">
+                            <span className="text-destructive">{formatDateNumeric(inv.dueDate)}</span>
+                            <span className="rounded-full bg-destructive/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-destructive">
+                              Vencida
+                            </span>
+                          </span>
+                        ) : (
+                          formatDateNumeric(inv.dueDate)
+                        )
+                      ) : (
+                        "—"
+                      )}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {formatDateNumeric(inv.createdAt)}
