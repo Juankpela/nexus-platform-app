@@ -31,10 +31,14 @@ describe("qr generator", () => {
   // Verificación independiente: decodifica el QR con jsqr (instalado --no-save
   // solo para esta corrida; el import es opcional para no romper CI).
   it("decodifica de vuelta al texto original (jsqr)", async () => {
-    let jsQR: ((d: Uint8ClampedArray, w: number, h: number) => { data: string } | null) | null = null
+    type JsQr = (d: Uint8ClampedArray, w: number, h: number) => { data: string } | null
+    let jsQR: JsQr | null = null
     try {
-      const mod = await import("jsqr")
-      jsQR = (mod.default ?? mod) as typeof jsQR
+      // Spec por variable: evita que tsc exija el módulo (instalado --no-save
+      // solo para validación manual; opcional en CI).
+      const spec = "jsqr"
+      const mod = (await import(spec)) as { default?: JsQr } & JsQr
+      jsQR = (mod.default ?? mod) as JsQr
     } catch {
       // jsqr no disponible (CI normal) → omitir.
     }
