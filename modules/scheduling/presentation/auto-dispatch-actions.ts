@@ -43,6 +43,7 @@ export async function autoDispatchCaseAction(
 
     revalidatePath(`/app/${tenantSlug}/cases/${caseId}`)
     revalidatePath(`/app/${tenantSlug}/dispatch`)
+    revalidatePath(`/app/${tenantSlug}/dispatch/assisted`)
     revalidatePath(`/app/${tenantSlug}/work-orders`)
     return { error: null, result }
   } catch (error) {

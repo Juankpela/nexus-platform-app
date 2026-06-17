@@ -1,6 +1,7 @@
 import {
   BarChart3,
   BookOpen,
+  Bot,
   Boxes,
   Building2,
   CalendarClock,
@@ -89,6 +90,7 @@ export const workspaceNavigation: NavigationItem[] = [
   { label: "Equipo técnico", segment: "technicians", icon: HardHat, permission: SERVICE_PERMISSIONS.techniciansRead, group: "Operación de campo" },
   { label: "Agenda", segment: "schedule", icon: CalendarClock, permission: SERVICE_PERMISSIONS.schedulingRead, group: "Operación de campo" },
   { label: "Despacho", segment: "dispatch", icon: Radar, permission: SERVICE_PERMISSIONS.dispatchRead, group: "Operación de campo" },
+  { label: "Despacho asistido", segment: "dispatch/assisted", icon: Bot, permission: SERVICE_PERMISSIONS.dispatchRead, group: "Operación de campo" },
   { label: "Monitor de campo", segment: "field-monitor", icon: Radio, permission: SERVICE_PERMISSIONS.dispatchRead, group: "Operación de campo" },
   { label: "Calendario", segment: "calendar", icon: CalendarDays, permission: SERVICE_PERMISSIONS.schedulingRead, group: "Operación de campo" },
 

@@ -50,8 +50,10 @@ import { SupabaseWorkOrderRepository } from "@/modules/service/infrastructure/su
 import {
   createWorkOrderRecord,
   getCaseRecord,
+  listTenantCases,
   listTenantSkills,
 } from "@/modules/service/composition"
+import type { EligibilityReasons } from "@/modules/scheduling/domain/eligibility"
 import { planAutoDispatch } from "@/modules/scheduling/application/use-cases/plan-auto-dispatch"
 import { KeywordReportClassifier } from "@/modules/scheduling/infrastructure/keyword-report-classifier"
 import { SupabaseDispatchCandidateReader } from "@/modules/scheduling/infrastructure/supabase-dispatch-candidate-reader"
@@ -380,6 +382,37 @@ export async function runAutoDispatchForCase(input: {
       },
     })
     assignmentId = assignment.id
+
+    // Notificación individual al técnico (in-app). Reusa la infra de
+    // notifications con cliente admin (RLS: insert para otro usuario). El técnico
+    // sin usuario vinculado simplemente no recibe (no bloquea el despacho).
+    const admin = createAdminSupabaseClient()
+    const { data: techRow } = await admin
+      .from("technicians")
+      .select("user_id")
+      .eq("tenant_id", input.tenantId)
+      .eq("id", plan.chosen.technicianId)
+      .maybeSingle()
+    const recipientUserId = (techRow as { user_id?: string | null } | null)?.user_id ?? null
+    if (recipientUserId) {
+      const when = new Date(plan.startsAt).toLocaleString("es-CO", {
+        timeZone: TENANT_TIMEZONE,
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+      await new SupabaseNotificationRepository(() => admin).createMany(input.tenantId, [
+        {
+          recipientUserId,
+          type: "work_order_assigned",
+          title: `Nueva orden de trabajo · ${workOrder.workOrderNumber}`,
+          body: `${serviceCase.subject} · ${plan.classification.skillLabel ?? "Servicio"} · ${when} · prioridad ${plan.classification.priority}`,
+          link: `work-orders/${workOrder.id}`,
+        },
+      ])
+    }
   }
 
   // Evento de atribución al sistema (admin client → RLS bypass). Persiste la
@@ -427,6 +460,77 @@ export async function runAutoDispatchForCase(input: {
     confidenceScore: plan.confidence.score,
     blockers: plan.confidence.blockers,
   }
+}
+
+export type AssistedDispatchProposal = {
+  caseId: UUID
+  caseNumber: string
+  subject: string
+  skillLabel: string | null
+  confidenceScore: number
+  technicianId: UUID
+  technicianName: string
+  chosenReasons: EligibilityReasons
+  startsAt: string
+  endsAt: string
+  priority: string
+  discarded: { technicianName: string; reasons: EligibilityReasons }[]
+}
+
+/** Casos nuevos de origen web a despachar (cap defensivo). */
+const ASSISTED_INBOX_LIMIT = 50
+
+/**
+ * Bandeja de Despacho Asistido (Hito C): casos `new` de origen `web` para los que
+ * el motor produce PROCEED y aún no tienen WO. SOLO LECTURA — recomputa el plan
+ * server-side (no confía en estado persistido), igual que plan-reschedule. La
+ * aprobación del supervisor aplica vía `runAutoDispatchForCase`.
+ */
+export async function listAssistedDispatchProposals(
+  tenantId: UUID,
+): Promise<AssistedDispatchProposal[]> {
+  const [casesPage, skills] = await Promise.all([
+    listTenantCases(tenantId, { search: null, status: "new", priority: null, ownerId: null }, 1, ASSISTED_INBOX_LIMIT),
+    listTenantSkills(tenantId),
+  ])
+  const webCases = casesPage.items.filter((c) => c.origin === "web")
+  const availableSkills = skills.map((s) => ({ id: s.id, name: s.name, aliases: s.aliases }))
+
+  const deps = {
+    classifier: new KeywordReportClassifier(),
+    candidates: new SupabaseDispatchCandidateReader(TENANT_TIMEZONE),
+    nowMs: Date.now(),
+    timeZone: TENANT_TIMEZONE,
+    horizonDays: AUTO_DISPATCH_HORIZON_DAYS,
+    confidenceThreshold: AUTO_DISPATCH_CONFIDENCE_THRESHOLD,
+  }
+
+  const proposals: AssistedDispatchProposal[] = []
+  for (const c of webCases) {
+    const plan = await planAutoDispatch(deps, {
+      tenantId,
+      caseId: c.id,
+      description: c.description ?? c.subject,
+      slaDueAt: c.slaDueAt,
+      availableSkills,
+    })
+    if (plan.verdict !== "PROCEED" || !plan.chosen || !plan.startsAt || !plan.endsAt) continue
+    proposals.push({
+      caseId: c.id,
+      caseNumber: c.caseNumber,
+      subject: c.subject,
+      skillLabel: plan.classification.skillLabel,
+      confidenceScore: plan.confidence.score,
+      technicianId: plan.chosen.technicianId,
+      technicianName: plan.chosen.technicianName,
+      chosenReasons: plan.chosen.reasons,
+      startsAt: plan.startsAt,
+      endsAt: plan.endsAt,
+      priority: plan.classification.priority,
+      discarded: plan.discarded.map((d) => ({ technicianName: d.technicianName, reasons: d.reasons })),
+    })
+  }
+  return proposals
 }
 
 /**
