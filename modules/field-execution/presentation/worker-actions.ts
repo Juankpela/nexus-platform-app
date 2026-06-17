@@ -5,6 +5,7 @@ import { z } from "zod"
 
 import { ApplicationError } from "@/lib/errors/application-error"
 import { broadcastFieldMonitorUpdate } from "@/lib/realtime/field-monitor-broadcast"
+import { confirmCustomerOnAcceptance } from "@/modules/scheduling/composition"
 import { createAdminSupabaseClient } from "@/lib/supabase/admin"
 import {
   SERVICE_PERMISSIONS,
@@ -153,6 +154,22 @@ async function transition(
 
     // Notify the tenant's Field Monitor (admin live view) to refresh.
     await broadcastFieldMonitorUpdate(context.tenantId)
+
+    // Hito D — cierre del lazo: solo al ACEPTAR se confirma la visita al cliente
+    // (una vez, idempotente). Un fallo de email no debe revertir la aceptación.
+    if (target === "accepted") {
+      try {
+        await confirmCustomerOnAcceptance({
+          tenantId: context.tenantId,
+          requestId: context.requestId,
+          assignmentId: assignment.assignmentId,
+          workOrderId: assignment.workOrderId,
+        })
+      } catch {
+        // Best-effort: la aceptación ya ocurrió; la confirmación se reintenta
+        // en una futura aceptación idempotente o vía reproceso.
+      }
+    }
 
     // Refresh the oversight surfaces that reference this work order.
     revalidatePath(`/app/${tenantSlug}/work-orders/${assignment.workOrderId}`)

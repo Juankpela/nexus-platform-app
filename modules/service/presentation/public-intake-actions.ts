@@ -30,6 +30,10 @@ export async function submitReportAction(
   const category = field(formData, "category")
   const reporterName = field(formData, "reporterName")
   const reporterPhone = field(formData, "reporterPhone")
+  const reporterEmailRaw = field(formData, "reporterEmail")
+  const reporterEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(reporterEmailRaw)
+    ? reporterEmailRaw
+    : null
   const photoDataUrl = field(formData, "photo")
 
   if (!slug) return { ok: false, error: "Enlace inválido." }
@@ -44,6 +48,7 @@ export async function submitReportAction(
       category: category || "Otro",
       reporterName,
       reporterPhone: reporterPhone || null,
+      reporterEmail,
       photoDataUrl: photoDataUrl || null,
     })
     if (!result) return { ok: false, error: "Enlace inválido." }

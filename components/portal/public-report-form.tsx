@@ -225,6 +225,10 @@ export function PublicReportForm({ tenantSlug }: { tenantSlug: string }) {
             <label htmlFor="reporterPhone" className={labelCls}>WhatsApp</label>
             <Input id="reporterPhone" name="reporterPhone" className={fieldCls} placeholder="Opcional, para avisarte" />
           </div>
+          <div className="sm:col-span-2">
+            <label htmlFor="reporterEmail" className={labelCls}>Email</label>
+            <Input id="reporterEmail" name="reporterEmail" type="email" className={fieldCls} placeholder="Opcional, para confirmarte la visita" />
+          </div>
         </div>
 
         {!state.ok && state.error ? (

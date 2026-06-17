@@ -1,6 +1,7 @@
 import "server-only"
 
 import { ApplicationError } from "@/lib/errors/application-error"
+import { sendEmail } from "@/lib/email/send-email"
 import { createAdminSupabaseClient } from "@/lib/supabase/admin"
 import { createServerSupabaseClient } from "@/lib/supabase/server"
 import {
@@ -461,6 +462,160 @@ export async function runAutoDispatchForCase(input: {
     confidenceScore: plan.confidence.score,
     blockers: plan.confidence.blockers,
   }
+}
+
+const ASSIGNMENT_ACCEPTED_EVENT = "assignment.accepted"
+const CONFIRMATION_SENT_EVENT = "customer.confirmation.sent"
+const CONFIRMATION_SKIPPED_EVENT = "customer.confirmation.skipped"
+
+/**
+ * Hito D — al aceptar el técnico (pending → accepted) confirma la visita al
+ * cliente UNA sola vez (idempotente por evento de auditoría) y solo entonces.
+ * Reutiliza la transición existente y `sendEmail`; no crea estados ni flujos.
+ * Todo lo lee/escribe con cliente admin (acción de sistema, RLS bypass).
+ */
+export async function confirmCustomerOnAcceptance(input: {
+  tenantId: UUID
+  requestId: UUID
+  assignmentId: UUID
+  workOrderId: UUID
+}): Promise<{ confirmed: boolean; skipped?: string }> {
+  const admin = createAdminSupabaseClient()
+  const audit = new SupabaseAuditRepository(() => admin)
+
+  // Idempotencia: si ya hay confirmación para este assignment, no repetir.
+  const prior = await audit.listBySubject(input.tenantId, input.assignmentId, 50)
+  if (prior.some((e) => e.eventType === CONFIRMATION_SENT_EVENT)) {
+    return { confirmed: false, skipped: "already_sent" }
+  }
+
+  const nowIso = new Date().toISOString()
+  // Evento de negocio: aceptación (actor sistema), reconstruye "cuándo aceptó".
+  if (!prior.some((e) => e.eventType === ASSIGNMENT_ACCEPTED_EVENT)) {
+    await audit.append({
+      eventType: ASSIGNMENT_ACCEPTED_EVENT,
+      actorType: "system",
+      actorId: null,
+      tenantId: input.tenantId,
+      subjectType: "work_order_assignment",
+      subjectId: input.assignmentId,
+      action: "assignment.accepted",
+      metadata: { workOrderId: input.workOrderId, acceptedAt: nowIso },
+      requestId: input.requestId,
+      source: "system",
+    })
+  }
+
+  // Datos de la confirmación (lectura admin).
+  const { data: wo } = await admin
+    .from("work_orders")
+    .select("*")
+    .eq("tenant_id", input.tenantId)
+    .eq("id", input.workOrderId)
+    .maybeSingle()
+  const { data: asg } = await admin
+    .from("work_order_assignments")
+    .select("technician_id, scheduled_start")
+    .eq("tenant_id", input.tenantId)
+    .eq("id", input.assignmentId)
+    .maybeSingle()
+  const woRow = wo as Record<string, unknown> | null
+  const caseId = (woRow?.case_id as string | null) ?? null
+
+  let customerEmail: string | null = null
+  let caseSubject = (woRow?.subject as string | null) ?? "su solicitud"
+  if (caseId) {
+    const { data: c } = await admin.from("cases").select("*").eq("id", caseId).maybeSingle()
+    const cRow = c as Record<string, unknown> | null
+    customerEmail = (cRow?.reporter_email as string | null) ?? null
+    caseSubject = (cRow?.subject as string | null) ?? caseSubject
+    const contactId = (cRow?.contact_id as string | null) ?? null
+    if (!customerEmail && contactId) {
+      const { data: ct } = await admin.from("contacts").select("email").eq("id", contactId).maybeSingle()
+      customerEmail = (ct as { email?: string | null } | null)?.email ?? null
+    }
+  }
+
+  if (!customerEmail) {
+    await audit.append({
+      eventType: CONFIRMATION_SKIPPED_EVENT,
+      actorType: "system",
+      actorId: null,
+      tenantId: input.tenantId,
+      subjectType: "work_order_assignment",
+      subjectId: input.assignmentId,
+      action: "customer.confirmation.skipped",
+      metadata: { reason: "no_email", workOrderId: input.workOrderId },
+      requestId: input.requestId,
+      source: "system",
+    })
+    return { confirmed: false, skipped: "no_email" }
+  }
+
+  const { data: tech } = await admin
+    .from("technicians")
+    .select("first_name, last_name")
+    .eq("id", asg?.technician_id ?? "")
+    .maybeSingle()
+  const techName = tech ? `${tech.first_name} ${tech.last_name}` : "su técnico asignado"
+  const { data: tenant } = await admin.from("tenants").select("name").eq("id", input.tenantId).maybeSingle()
+  const company = (tenant as { name?: string } | null)?.name ?? "Nexus"
+  const startIso = (asg?.scheduled_start as string | null) ?? (woRow?.scheduled_start as string | null)
+  const when = startIso
+    ? new Date(startIso).toLocaleString("es-CO", {
+        timeZone: TENANT_TIMEZONE,
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "por confirmar"
+  const woNumber = (woRow?.work_order_number as string | null) ?? "—"
+
+  await sendEmail({
+    to: customerEmail,
+    subject: "Visita confirmada",
+    text: [
+      `Hola,`,
+      ``,
+      `Tu visita ha sido confirmada.`,
+      ``,
+      `Orden: ${woNumber}`,
+      `Asunto: ${caseSubject}`,
+      `Técnico: ${techName}`,
+      `Fecha y hora: ${when}`,
+      `Empresa responsable: ${company}`,
+      ``,
+      `Estado: Visita confirmada`,
+      ``,
+      `Gracias,`,
+      `${company}`,
+    ].join("\n"),
+  })
+
+  await audit.append({
+    eventType: CONFIRMATION_SENT_EVENT,
+    actorType: "system",
+    actorId: null,
+    tenantId: input.tenantId,
+    subjectType: "work_order_assignment",
+    subjectId: input.assignmentId,
+    action: "customer.confirmation.sent",
+    metadata: {
+      displayActor: "Nexus Autonomous Dispatch",
+      to: customerEmail,
+      workOrderId: input.workOrderId,
+      workOrderNumber: woNumber,
+      technician: techName,
+      scheduledStart: startIso,
+      confirmedAt: nowIso,
+    },
+    requestId: input.requestId,
+    source: "system",
+  })
+
+  return { confirmed: true }
 }
 
 export type AssistedDispatchProposal = {

@@ -20,6 +20,8 @@ export type PublicReportInput = {
   category: string
   reporterName: string
   reporterPhone: string | null
+  /** Email opcional para confirmar la visita (Hito D). */
+  reporterEmail?: string | null
   /** Foto comprimida en el cliente, como data URL `data:image/jpeg;base64,...`. */
   photoDataUrl?: string | null
 }
@@ -95,8 +97,9 @@ export async function submitPublicReport(
     description,
     priority: "medium",
     origin: "web",
+    reporter_email: input.reporterEmail ?? null,
     sla_due_at: computeSlaDueAt(new Date().toISOString(), "medium"),
-  })
+  } as never)
   if (insErr) throw new Error("No se pudo registrar el reporte.")
 
   return { caseNumber: caseNumber as string }
