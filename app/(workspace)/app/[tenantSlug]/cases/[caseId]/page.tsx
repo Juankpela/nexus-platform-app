@@ -29,6 +29,7 @@ import {
 } from "@/modules/crm/domain/activity"
 import type { CompanyOption } from "@/modules/crm/domain/company"
 import type { ContactOption } from "@/modules/crm/domain/contact"
+import { AutoDispatchButton } from "@/components/service/auto-dispatch-button"
 import { WorkOrderFormDialog } from "@/components/service/work-order-form-dialog"
 import {
   getCaseRecord,
@@ -130,6 +131,10 @@ export default async function CaseDetailPage({
   const canReadWorkOrders = hasPermission(
     context.effectivePermissions,
     SERVICE_PERMISSIONS.workOrdersRead,
+  )
+  const canAutoDispatch = hasPermission(
+    context.effectivePermissions,
+    SERVICE_PERMISSIONS.schedulingWrite,
   )
 
   const [
@@ -301,6 +306,11 @@ export default async function CaseDetailPage({
                 />
               ) : null}
             </div>
+            {canAutoDispatch ? (
+              <div className="mb-4">
+                <AutoDispatchButton tenantSlug={tenantSlug} caseId={caseId} />
+              </div>
+            ) : null}
             {relatedWorkOrders.length === 0 ? (
               <div className="rounded-xl border border-dashed bg-card p-6 text-center text-sm text-muted-foreground">
                 Este caso no tiene órdenes de trabajo.

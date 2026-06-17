@@ -1,5 +1,6 @@
 import "server-only"
 
+import { ApplicationError } from "@/lib/errors/application-error"
 import { createAdminSupabaseClient } from "@/lib/supabase/admin"
 import { createServerSupabaseClient } from "@/lib/supabase/server"
 import {
@@ -46,6 +47,14 @@ import type {
 } from "@/modules/scheduling/domain/work-order-assignment"
 import { SupabaseTechnicianRepository } from "@/modules/service/infrastructure/supabase-technician-repository"
 import { SupabaseWorkOrderRepository } from "@/modules/service/infrastructure/supabase-work-order-repository"
+import {
+  createWorkOrderRecord,
+  getCaseRecord,
+  listTenantSkills,
+} from "@/modules/service/composition"
+import { planAutoDispatch } from "@/modules/scheduling/application/use-cases/plan-auto-dispatch"
+import { KeywordReportClassifier } from "@/modules/scheduling/infrastructure/keyword-report-classifier"
+import { SupabaseDispatchCandidateReader } from "@/modules/scheduling/infrastructure/supabase-dispatch-candidate-reader"
 import type { UUID } from "@/types/shared"
 
 function schedulingRepo() {
@@ -274,6 +283,150 @@ export async function applyRescheduleRecord(input: {
     })
   }
   return plan
+}
+
+/** Horizonte de búsqueda de slot para el despacho autónomo (ADR-033). */
+const AUTO_DISPATCH_HORIZON_DAYS = 14
+/** Umbral de confianza por defecto (config por tenant en hitos posteriores). */
+const AUTO_DISPATCH_CONFIDENCE_THRESHOLD = 0.7
+/** Actor del sistema para la atribución "Nexus Autonomous Dispatch". */
+const AUTONOMOUS_DISPATCH_EVENT = "autonomous_dispatch.assigned"
+
+export type AutoDispatchResult = {
+  verdict: "PROCEED" | "HOLD" | "ESCALATE"
+  workOrderId: UUID | null
+  assignmentId: UUID | null
+  technicianName: string | null
+  startsAt: string | null
+  endsAt: string | null
+  confidenceScore: number
+  blockers: string[]
+}
+
+/**
+ * Circuito autónomo (ADR-033, Hito A): clasifica un caso, planifica
+ * determinísticamente (selección + slot vía motores existentes) y, si Dispatch
+ * Confidence da PROCEED, crea la Work Order y la asigna reutilizando los
+ * use-cases validados. La DECISIÓN es 100% automática; toda asignación queda
+ * auditada como `actorType:"system"` ("Nexus Autonomous Dispatch") vía el cliente
+ * admin (evade la política RLS `actor_id = auth.uid()`). No notifica al cliente.
+ */
+export async function runAutoDispatchForCase(input: {
+  actorId: UUID
+  tenantId: UUID
+  requestId: UUID
+  caseId: UUID
+}): Promise<AutoDispatchResult> {
+  const [serviceCase, skills] = await Promise.all([
+    getCaseRecord(input.tenantId, input.caseId),
+    listTenantSkills(input.tenantId),
+  ])
+  if (!serviceCase) {
+    throw new ApplicationError("Caso no encontrado.", "CASE_NOT_FOUND")
+  }
+
+  const plan = await planAutoDispatch(
+    {
+      classifier: new KeywordReportClassifier(),
+      candidates: new SupabaseDispatchCandidateReader(TENANT_TIMEZONE),
+      nowMs: Date.now(),
+      timeZone: TENANT_TIMEZONE,
+      horizonDays: AUTO_DISPATCH_HORIZON_DAYS,
+      confidenceThreshold: AUTO_DISPATCH_CONFIDENCE_THRESHOLD,
+    },
+    {
+      tenantId: input.tenantId,
+      caseId: input.caseId,
+      description: serviceCase.description ?? serviceCase.subject,
+      slaDueAt: serviceCase.slaDueAt,
+      availableSkills: skills.map((s) => ({ id: s.id, name: s.name })),
+    },
+  )
+
+  let workOrderId: UUID | null = null
+  let assignmentId: UUID | null = null
+
+  if (plan.verdict === "PROCEED" && plan.chosen && plan.startsAt && plan.endsAt) {
+    const workOrder = await createWorkOrderRecord({
+      actorId: input.actorId,
+      tenantId: input.tenantId,
+      requestId: input.requestId,
+      data: {
+        subject: serviceCase.subject,
+        description: serviceCase.description,
+        priority: plan.classification.priority,
+        companyId: serviceCase.companyId,
+        caseId: serviceCase.id,
+        assetId: serviceCase.assetId,
+        scheduledStart: plan.startsAt,
+        scheduledEnd: plan.endsAt,
+        slaDueAt: serviceCase.slaDueAt,
+        laborHours: null,
+        resolutionSummary: null,
+        completionNotes: null,
+      },
+    })
+    workOrderId = workOrder.id
+
+    const assignment = await assignWorkOrderRecord({
+      actorId: input.actorId,
+      tenantId: input.tenantId,
+      requestId: input.requestId,
+      data: {
+        workOrderId: workOrder.id,
+        technicianId: plan.chosen.technicianId,
+        scheduledStart: plan.startsAt,
+        scheduledEnd: plan.endsAt,
+      },
+    })
+    assignmentId = assignment.id
+  }
+
+  // Evento de atribución al sistema (admin client → RLS bypass). Persiste la
+  // explicabilidad completa para responder "por qué este técnico/horario/descartes".
+  await new SupabaseAuditRepository(() => createAdminSupabaseClient()).append({
+    eventType: AUTONOMOUS_DISPATCH_EVENT,
+    actorType: "system",
+    actorId: null,
+    tenantId: input.tenantId,
+    subjectType: "case",
+    subjectId: input.caseId,
+    action: "autonomous_dispatch.evaluated",
+    metadata: {
+      displayActor: "Nexus Autonomous Dispatch",
+      verdict: plan.verdict,
+      confidence: plan.confidence,
+      classification: plan.classification,
+      workOrderId,
+      assignmentId,
+      chosen: plan.chosen
+        ? {
+            technicianId: plan.chosen.technicianId,
+            technicianName: plan.chosen.technicianName,
+            reasons: plan.chosen.reasons,
+            slot: plan.chosen.slot,
+          }
+        : null,
+      discarded: plan.discarded.map((d) => ({
+        technicianId: d.technicianId,
+        technicianName: d.technicianName,
+        reasons: d.reasons,
+      })),
+    },
+    requestId: input.requestId,
+    source: "system",
+  })
+
+  return {
+    verdict: plan.verdict,
+    workOrderId,
+    assignmentId,
+    technicianName: plan.chosen?.technicianName ?? null,
+    startsAt: plan.startsAt,
+    endsAt: plan.endsAt,
+    confidenceScore: plan.confidence.score,
+    blockers: plan.confidence.blockers,
+  }
 }
 
 /**
