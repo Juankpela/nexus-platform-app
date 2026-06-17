@@ -52,6 +52,7 @@ import {
   getCaseRecord,
   listTenantCases,
   listTenantSkills,
+  listWorkOrdersForCase,
 } from "@/modules/service/composition"
 import type { EligibilityReasons } from "@/modules/scheduling/domain/eligibility"
 import { planAutoDispatch } from "@/modules/scheduling/application/use-cases/plan-auto-dispatch"
@@ -507,6 +508,10 @@ export async function listAssistedDispatchProposals(
 
   const proposals: AssistedDispatchProposal[] = []
   for (const c of webCases) {
+    // Excluir casos que YA tienen una WO (no re-despachar).
+    const existing = await listWorkOrdersForCase(tenantId, c.id)
+    if (existing.length > 0) continue
+
     const plan = await planAutoDispatch(deps, {
       tenantId,
       caseId: c.id,
