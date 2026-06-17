@@ -76,18 +76,18 @@ describe("planAutoDispatch", () => {
     expect(plan.chosen).toBeNull()
   })
 
-  it("HOLD si la clasificación tiene baja confianza (skill no en catálogo)", async () => {
+  it("ESCALATE si no se identificó una skill del tenant (sin asignar a ciegas)", async () => {
     const plan = await planAutoDispatch(
       {
         ...deps,
-        classifier: classifier({ skillId: null, confidence: 0.3 }),
+        classifier: classifier({ skillId: null, confidence: 0 }),
         candidates: reader([tech()]),
       },
       { ...input, availableSkills: [] },
     )
-    // skillId null → el técnico igualmente pasa (skill no requerida), pero la
-    // confianza baja fuerza HOLD (propone, humano confirma).
-    expect(plan.verdict).toBe("HOLD")
+    // skillId null → bloqueo duro: nunca se asigna sin skill del tenant.
+    expect(plan.verdict).toBe("ESCALATE")
+    expect(plan.confidence.blockers).toContain("no_skill_identified")
   })
 
   it("ESCALATE si el slot rompe el SLA", async () => {

@@ -92,6 +92,8 @@ export async function planAutoDispatch(
   const confidence = evaluateDispatchConfidence({
     classificationConfidence: classification.confidence,
     confidenceThreshold: deps.confidenceThreshold,
+    // Bloqueo duro: sin una skill REAL del tenant identificada no se asigna.
+    hasSkill: classification.skillId != null,
     hasEligibleTechnician: chosen != null,
     hasCapacity: chosen?.reasons.capacity ?? false,
     hasSlot: chosen?.slot != null,

@@ -5,6 +5,7 @@ import { evaluateDispatchConfidence } from "./dispatch-confidence"
 const base = {
   classificationConfidence: 0.9,
   confidenceThreshold: 0.7,
+  hasSkill: true,
   hasEligibleTechnician: true,
   hasCapacity: true,
   hasSlot: true,
@@ -15,6 +16,12 @@ const base = {
 describe("evaluateDispatchConfidence", () => {
   it("PROCEED cuando todas las señales están OK", () => {
     expect(evaluateDispatchConfidence(base).verdict).toBe("PROCEED")
+  })
+
+  it("ESCALATE si no se identificó una skill del tenant", () => {
+    const r = evaluateDispatchConfidence({ ...base, hasSkill: false })
+    expect(r.verdict).toBe("ESCALATE")
+    expect(r.blockers).toContain("no_skill_identified")
   })
 
   it("ESCALATE si no hay técnico elegible", () => {

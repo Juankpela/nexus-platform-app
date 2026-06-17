@@ -5,76 +5,109 @@ import type {
 } from "@/modules/scheduling/application/ports/report-classifier"
 
 /**
- * Clasificador determinístico por palabras clave (ADR-033, Hito A). NO usa IA,
- * LLM, prompts ni APIs externas — su único fin es validar el MOTOR de despacho
- * con reglas explícitas y auditables. La implementación con Anthropic llegará en
- * el siguiente hito detrás del mismo puerto `ReportClassifier`.
+ * Clasificador determinístico TENANT-AWARE (ADR-033). NO contiene categorías de
+ * negocio: puntúa el texto del reporte EXCLUSIVAMENTE contra el catálogo de
+ * skills del tenant (`input.availableSkills`). El mismo código sirve para
+ * cualquier tenant (HVAC, Ascensores, Paneles Solares, …) sin modificarse.
  *
- * Mapea el texto a un nombre de skill canónico, luego a un `skillId` del catálogo
- * del tenant (match por nombre, case-insensitive). Si no reconoce skill o no
- * existe en el catálogo → confidence 0 (el gate de Dispatch Confidence escalará).
+ * Reglas (preferimos falsos negativos):
+ *  - Sin coincidencia        → ESCALATE (skillId null, confidence 0).
+ *  - Empate de mejor puntaje → ESCALATE (ambiguo).
+ *  - Cobertura insuficiente  → ESCALATE.
+ *  - Una única skill clara   → esa skill del tenant.
+ *
+ * Sin IA, sin LLM, sin APIs externas. Prioridad/duración son DEFAULTS neutrales
+ * (inyectables), no derivados de categorías globales.
  */
 
-type Rule = {
-  skill: string // nombre canónico esperado en el catálogo del tenant
-  durationMinutes: number
-  priority: ReportClassification["priority"]
-  keywords: string[]
+const STOPWORDS = new Set([
+  "senior", "junior", "general", "para", "con", "los", "las", "del", "una", "uno", "que",
+])
+
+const DIACRITICS = /[̀-ͯ]/g
+
+/** lowercase + sin diacríticos + solo alfanumérico separado por espacios. */
+function normalize(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(DIACRITICS, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
 }
 
-// Reglas base (es/EN). El nombre de skill debe coincidir con el catálogo del tenant.
-const RULES: Rule[] = [
-  {
-    skill: "HVAC",
-    durationMinutes: 120,
-    priority: "medium",
-    keywords: ["aire acondicionado", "aire", "clima", "hvac", "refriger", "enfri", "calefacc"],
-  },
-  {
-    skill: "Electrical",
-    durationMinutes: 90,
-    priority: "high",
-    keywords: ["electric", "luz", "corto", "breaker", "tablero", "energía", "energia", "enchufe", "toma"],
-  },
-  {
-    skill: "Plumbing",
-    durationMinutes: 90,
-    priority: "medium",
-    keywords: ["plomer", "fuga", "agua", "tuber", "baño", "bano", "inodoro", "drenaje", "filtrac"],
-  },
-]
+/** Tokens significativos (≥4 chars, sin stopwords/calificadores de nivel). */
+function tokenize(value: string): string[] {
+  return normalize(value)
+    .split(" ")
+    .filter((t) => t.length >= 4 && !STOPWORDS.has(t))
+}
 
-function normalize(text: string): string {
-  return text.toLowerCase()
+/** Coincidencia por prefijo común (≥4) — tolera plural/género (solar↔solares). */
+function tokenMatches(a: string, b: string): boolean {
+  const n = Math.min(a.length, b.length)
+  if (n < 4) return false
+  return a.slice(0, n) === b.slice(0, n)
+}
+
+/** Cobertura mínima de tokens de la skill para aceptar (preferir falsos negativos). */
+const MIN_COVERAGE = 0.5
+
+type ScoredSkill = {
+  skill: { id: string; name: string }
+  matched: number
+  coverage: number
 }
 
 export class KeywordReportClassifier implements ReportClassifier {
+  constructor(
+    private readonly defaultDurationMinutes = 60,
+    private readonly defaultPriority: ReportClassification["priority"] = "medium",
+  ) {}
+
   async classify(input: ClassifyReportInput): Promise<ReportClassification> {
-    const text = normalize(input.text)
-    const matched = RULES.find((r) => r.keywords.some((k) => text.includes(k)))
+    const reportTokens = tokenize(input.text)
 
-    if (!matched) {
-      return {
-        skillId: null,
-        skillLabel: null,
-        priority: "medium",
-        estimatedDurationMinutes: 60,
-        confidence: 0,
-      }
+    const escalate: ReportClassification = {
+      skillId: null,
+      skillLabel: null,
+      priority: this.defaultPriority,
+      estimatedDurationMinutes: this.defaultDurationMinutes,
+      confidence: 0,
     }
+    if (reportTokens.length === 0) return escalate
 
-    const skill = input.availableSkills.find(
-      (s) => s.name.trim().toLowerCase() === matched.skill.toLowerCase(),
-    )
+    // Puntuar cada skill del tenant por tokens propios presentes en el reporte.
+    const scored: ScoredSkill[] = input.availableSkills
+      .map((skill) => {
+        const skillTokens = tokenize(skill.name)
+        if (skillTokens.length === 0) return null
+        const matched = skillTokens.filter((st) =>
+          reportTokens.some((rt) => tokenMatches(st, rt)),
+        ).length
+        return { skill, matched, coverage: matched / skillTokens.length }
+      })
+      .filter((s): s is ScoredSkill => s !== null && s.matched > 0)
+
+    if (scored.length === 0) return escalate
+
+    const bestScore = Math.max(...scored.map((s) => s.matched))
+    const top = scored.filter((s) => s.matched === bestScore)
+
+    // Empate de mejor puntaje → ambiguo → ESCALATE.
+    if (top.length !== 1) return escalate
+
+    const winner = top[0]
+    // Evidencia insuficiente → ESCALATE.
+    if (winner.coverage < MIN_COVERAGE) return escalate
 
     return {
-      skillId: skill?.id ?? null,
-      skillLabel: matched.skill,
-      priority: matched.priority,
-      estimatedDurationMinutes: matched.durationMinutes,
-      // Alta si la skill existe en el catálogo; baja si se reconoció el tema
-      // pero el tenant no tiene esa skill configurada (el gate lo frena).
-      confidence: skill ? 0.9 : 0.3,
+      skillId: winner.skill.id,
+      skillLabel: winner.skill.name,
+      priority: this.defaultPriority,
+      estimatedDurationMinutes: this.defaultDurationMinutes,
+      // Confianza derivada de la cobertura (única skill clara → alta).
+      confidence: Math.min(0.95, 0.6 + 0.35 * winner.coverage),
     }
   }
 }

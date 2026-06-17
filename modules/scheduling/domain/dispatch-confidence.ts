@@ -19,6 +19,13 @@ export type DispatchConfidenceInput = {
   classificationConfidence: number
   /** Umbral mínimo de confianza del tenant (default sugerido 0.7). */
   confidenceThreshold: number
+  /**
+   * ¿La clasificación resolvió una skill REAL del tenant? Falso si no hubo
+   * coincidencia o si hubo empate ambiguo. Bloqueo duro: el despacho autónomo
+   * nunca asigna sin una skill del tenant identificada (preferimos falsos
+   * negativos). Ver ADR-033 / clasificación tenant-aware.
+   */
+  hasSkill: boolean
   /** ¿El selector encontró al menos un técnico elegible? */
   hasEligibleTechnician: boolean
   /** ¿El técnico #1 pasa el tope de capacidad del día? */
@@ -42,6 +49,7 @@ export type DispatchConfidenceResult = {
 /** Bloqueos operativos duros → ESCALATE (bandeja humana). */
 function hardBlockers(input: DispatchConfidenceInput): string[] {
   const b: string[] = []
+  if (!input.hasSkill) b.push("no_skill_identified")
   if (!input.hasEligibleTechnician) b.push("no_eligible_technician")
   if (!input.hasSlot) b.push("no_slot")
   if (!input.slaOk) b.push("sla_risk")
