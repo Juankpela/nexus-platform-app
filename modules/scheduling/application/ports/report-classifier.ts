@@ -17,14 +17,16 @@ export type ReportClassification = {
   estimatedDurationMinutes: number
   /** 0..1 — qué tan seguro está el clasificador. */
   confidence: number
+  /** Término del tenant (nombre o alias) que produjo la coincidencia — explicabilidad. */
+  matchedTerm?: string | null
 }
 
 export type ClassifyReportInput = {
   tenantId: UUID
   /** Texto del reporte (descripción del cliente). */
   text: string
-  /** Catálogo de skills del tenant para mapear nombre → id. */
-  availableSkills: { id: UUID; name: string }[]
+  /** Catálogo de skills del tenant (nombre + vocabulario propio) para mapear → id. */
+  availableSkills: { id: UUID; name: string; aliases?: string[] }[]
 }
 
 export interface ReportClassifier {

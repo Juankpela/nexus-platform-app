@@ -23,10 +23,18 @@ function toSkill(row: SkillRow): Skill {
   return {
     id: row.id,
     name: row.name,
+    // `aliases` se añadió en la migración Hito B; los tipos generados pueden no
+    // incluirla aún → acceso defensivo.
+    aliases: (row as { aliases?: string[] | null }).aliases ?? [],
     archivedAt: row.archived_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }
+}
+
+/** Normaliza/limpia la lista de aliases (sin vacíos, sin duplicados, recortados). */
+function cleanAliases(aliases: string[] | undefined): string[] {
+  return [...new Set((aliases ?? []).map((a) => a.trim()).filter((a) => a.length > 0))]
 }
 
 export class SupabaseSkillRepository implements SkillRepository {
@@ -49,7 +57,7 @@ export class SupabaseSkillRepository implements SkillRepository {
     const client = await createServerSupabaseClient()
     const { data, error } = await client
       .from("skills")
-      .insert({ tenant_id: tenantId, name: input.name })
+      .insert({ tenant_id: tenantId, name: input.name, aliases: cleanAliases(input.aliases) } as never)
       .select("*")
       .single()
 
@@ -60,6 +68,20 @@ export class SupabaseSkillRepository implements SkillRepository {
       throw new ApplicationError("Unable to create skill.", "SKILL_CREATE_FAILED", error)
     }
     return toSkill(data)
+  }
+
+  /** Reemplaza el vocabulario (aliases) de una skill del tenant. */
+  async setSkillAliases(tenantId: UUID, id: UUID, aliases: string[]): Promise<void> {
+    const client = await createServerSupabaseClient()
+    const { error } = await client
+      .from("skills")
+      .update({ aliases: cleanAliases(aliases) } as never)
+      .eq("tenant_id", tenantId)
+      .eq("id", id)
+
+    if (error) {
+      throw new ApplicationError("Unable to set skill aliases.", "SKILL_ALIASES_FAILED", error)
+    }
   }
 
   async archiveSkill(tenantId: UUID, id: UUID, archivedAt: string): Promise<void> {

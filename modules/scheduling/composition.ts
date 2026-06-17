@@ -339,7 +339,7 @@ export async function runAutoDispatchForCase(input: {
       caseId: input.caseId,
       description: serviceCase.description ?? serviceCase.subject,
       slaDueAt: serviceCase.slaDueAt,
-      availableSkills: skills.map((s) => ({ id: s.id, name: s.name })),
+      availableSkills: skills.map((s) => ({ id: s.id, name: s.name, aliases: s.aliases })),
     },
   )
 

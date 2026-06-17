@@ -24,8 +24,13 @@ class InMemorySkillRepo implements SkillRepository {
     void tenantId
     return [...this.skills.values()]
       .filter((s) => s.archivedAt === null)
-      .map((s) => ({ id: s.id, name: s.name, archivedAt: s.archivedAt, createdAt: "t", updatedAt: "t" }))
+      .map((s) => ({ id: s.id, name: s.name, aliases: [], archivedAt: s.archivedAt, createdAt: "t", updatedAt: "t" }))
       .sort((a, b) => a.name.localeCompare(b.name))
+  }
+  async setSkillAliases(tenantId: string, id: string, aliases: string[]) {
+    void tenantId
+    void id
+    void aliases
   }
   async createSkill(tenantId: string, input: { name: string }) {
     void tenantId
@@ -39,7 +44,7 @@ class InMemorySkillRepo implements SkillRepository {
     }
     const id = `skill-${++this.seq}`
     this.skills.set(id, { id, name: input.name, archivedAt: null })
-    return { id, name: input.name, archivedAt: null, createdAt: "t", updatedAt: "t" }
+    return { id, name: input.name, aliases: [], archivedAt: null, createdAt: "t", updatedAt: "t" }
   }
   async archiveSkill(tenantId: string, id: string, archivedAt: string) {
     void tenantId

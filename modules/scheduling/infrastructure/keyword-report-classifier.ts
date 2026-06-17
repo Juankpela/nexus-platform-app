@@ -5,19 +5,21 @@ import type {
 } from "@/modules/scheduling/application/ports/report-classifier"
 
 /**
- * Clasificador determinístico TENANT-AWARE (ADR-033). NO contiene categorías de
- * negocio: puntúa el texto del reporte EXCLUSIVAMENTE contra el catálogo de
- * skills del tenant (`input.availableSkills`). El mismo código sirve para
- * cualquier tenant (HVAC, Ascensores, Paneles Solares, …) sin modificarse.
+ * Clasificador determinístico TENANT-AWARE (ADR-033, Hito B). NO contiene
+ * categorías de negocio: reconoce skills puntuando el texto contra el catálogo
+ * del tenant — su NOMBRE y su VOCABULARIO propio (`aliases`). El mismo código
+ * sirve para cualquier tenant sin modificarse.
+ *
+ * Una skill es candidata si:
+ *   - el NOMBRE coincide con cobertura ≥ 0.5 (umbral de Hito A, sin regresión), o
+ *   - algún ALIAS del tenant coincide por completo.
  *
  * Reglas (preferimos falsos negativos):
- *  - Sin coincidencia        → ESCALATE (skillId null, confidence 0).
- *  - Empate de mejor puntaje → ESCALATE (ambiguo).
- *  - Cobertura insuficiente  → ESCALATE.
- *  - Una única skill clara   → esa skill del tenant.
+ *   - 0 candidatas  → ESCALATE.
+ *   - >1 candidatas → ESCALATE (ambiguo).
+ *   - exactamente 1 → esa skill del tenant.
  *
- * Sin IA, sin LLM, sin APIs externas. Prioridad/duración son DEFAULTS neutrales
- * (inyectables), no derivados de categorías globales.
+ * Sin IA, sin LLM, sin APIs, sin catálogo global.
  */
 
 const STOPWORDS = new Set([
@@ -26,7 +28,6 @@ const STOPWORDS = new Set([
 
 const DIACRITICS = /[̀-ͯ]/g
 
-/** lowercase + sin diacríticos + solo alfanumérico separado por espacios. */
 function normalize(value: string): string {
   return value
     .toLowerCase()
@@ -36,7 +37,7 @@ function normalize(value: string): string {
     .trim()
 }
 
-/** Tokens significativos (≥4 chars, sin stopwords/calificadores de nivel). */
+/** Tokens significativos del NOMBRE de skill / del reporte (≥4, sin stopwords). */
 function tokenize(value: string): string[] {
   return normalize(value)
     .split(" ")
@@ -50,13 +51,32 @@ function tokenMatches(a: string, b: string): boolean {
   return a.slice(0, n) === b.slice(0, n)
 }
 
-/** Cobertura mínima de tokens de la skill para aceptar (preferir falsos negativos). */
-const MIN_COVERAGE = 0.5
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+}
 
-type ScoredSkill = {
+/**
+ * ¿Un alias del tenant está presente "por completo"? Alias multi-palabra con
+ * tokens ≥4 → todos sus tokens deben aparecer (prefijo). Alias corto (p.ej.
+ * "luz", "red", "gas") → coincidencia por palabra exacta en el texto normalizado.
+ */
+function aliasMatches(aliasRaw: string, reportNorm: string, reportTokens: string[]): boolean {
+  const aliasNorm = normalize(aliasRaw)
+  if (!aliasNorm) return false
+  const aliasTokens = aliasNorm.split(" ").filter((t) => t.length >= 4 && !STOPWORDS.has(t))
+  if (aliasTokens.length > 0) {
+    return aliasTokens.every((at) => reportTokens.some((rt) => tokenMatches(at, rt)))
+  }
+  // Alias corto: palabra exacta (con frontera) en el texto normalizado.
+  return new RegExp(`(^| )${escapeRegExp(aliasNorm)}( |$)`).test(reportNorm)
+}
+
+const MIN_NAME_COVERAGE = 0.5
+
+type Candidate = {
   skill: { id: string; name: string }
-  matched: number
-  coverage: number
+  strength: number
+  matchedTerm: string
 }
 
 export class KeywordReportClassifier implements ReportClassifier {
@@ -66,6 +86,7 @@ export class KeywordReportClassifier implements ReportClassifier {
   ) {}
 
   async classify(input: ClassifyReportInput): Promise<ReportClassification> {
+    const reportNorm = normalize(input.text)
     const reportTokens = tokenize(input.text)
 
     const escalate: ReportClassification = {
@@ -74,40 +95,44 @@ export class KeywordReportClassifier implements ReportClassifier {
       priority: this.defaultPriority,
       estimatedDurationMinutes: this.defaultDurationMinutes,
       confidence: 0,
+      matchedTerm: null,
     }
     if (reportTokens.length === 0) return escalate
 
-    // Puntuar cada skill del tenant por tokens propios presentes en el reporte.
-    const scored: ScoredSkill[] = input.availableSkills
-      .map((skill) => {
-        const skillTokens = tokenize(skill.name)
-        if (skillTokens.length === 0) return null
-        const matched = skillTokens.filter((st) =>
-          reportTokens.some((rt) => tokenMatches(st, rt)),
-        ).length
-        return { skill, matched, coverage: matched / skillTokens.length }
-      })
-      .filter((s): s is ScoredSkill => s !== null && s.matched > 0)
+    const candidates: Candidate[] = []
+    for (const skill of input.availableSkills) {
+      // 1) Coincidencia por NOMBRE (umbral de Hito A).
+      const nameTokens = tokenize(skill.name)
+      const nameMatched = nameTokens.filter((nt) =>
+        reportTokens.some((rt) => tokenMatches(nt, rt)),
+      ).length
+      const nameCov = nameTokens.length > 0 ? nameMatched / nameTokens.length : 0
 
-    if (scored.length === 0) return escalate
+      // 2) Coincidencia por ALIAS propio del tenant.
+      const aliasHit = (skill.aliases ?? []).find((a) =>
+        aliasMatches(a, reportNorm, reportTokens),
+      )
 
-    const bestScore = Math.max(...scored.map((s) => s.matched))
-    const top = scored.filter((s) => s.matched === bestScore)
+      if (nameCov >= MIN_NAME_COVERAGE || aliasHit) {
+        candidates.push({
+          skill,
+          strength: aliasHit ? 1 : nameCov,
+          matchedTerm: aliasHit ?? skill.name,
+        })
+      }
+    }
 
-    // Empate de mejor puntaje → ambiguo → ESCALATE.
-    if (top.length !== 1) return escalate
+    // 0 o >1 candidatas → ambiguo / sin evidencia → ESCALATE.
+    if (candidates.length !== 1) return escalate
 
-    const winner = top[0]
-    // Evidencia insuficiente → ESCALATE.
-    if (winner.coverage < MIN_COVERAGE) return escalate
-
+    const winner = candidates[0]
     return {
       skillId: winner.skill.id,
       skillLabel: winner.skill.name,
       priority: this.defaultPriority,
       estimatedDurationMinutes: this.defaultDurationMinutes,
-      // Confianza derivada de la cobertura (única skill clara → alta).
-      confidence: Math.min(0.95, 0.6 + 0.35 * winner.coverage),
+      confidence: Math.min(0.95, 0.6 + 0.35 * winner.strength),
+      matchedTerm: winner.matchedTerm,
     }
   }
 }

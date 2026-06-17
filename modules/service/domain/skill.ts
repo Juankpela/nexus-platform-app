@@ -36,6 +36,8 @@ export function meetsSkillLevel(held: SkillLevel, required: SkillLevel): boolean
 export type Skill = {
   id: UUID
   name: string
+  /** Vocabulario propio del tenant para reconocer la skill en texto libre (Hito B). */
+  aliases: string[]
   archivedAt: string | null
   createdAt: string
   updatedAt: string
@@ -43,4 +45,5 @@ export type Skill = {
 
 export type SkillInput = {
   name: string
+  aliases?: string[]
 }

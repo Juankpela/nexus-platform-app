@@ -9,6 +9,8 @@ export interface SkillRepository {
   /** Active (non-archived) skill catalog for the tenant, ordered by name. */
   listSkills(tenantId: UUID): Promise<Skill[]>
   createSkill(tenantId: UUID, input: SkillInput): Promise<Skill>
+  /** Reemplaza el vocabulario (aliases) propio del tenant para una skill (Hito B). */
+  setSkillAliases(tenantId: UUID, id: UUID, aliases: string[]): Promise<void>
   /** Soft-archive: hides from the catalog without breaking technician_skills refs. */
   archiveSkill(tenantId: UUID, id: UUID, archivedAt: string): Promise<void>
 

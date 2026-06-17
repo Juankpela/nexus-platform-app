@@ -77,6 +77,7 @@ import {
 import { archiveSkill, type ArchiveSkillInput } from "@/modules/service/application/use-cases/archive-skill"
 import { assignTechnicianSkill, type AssignTechnicianSkillInput } from "@/modules/service/application/use-cases/assign-technician-skill"
 import { createSkill, type CreateSkillInput } from "@/modules/service/application/use-cases/create-skill"
+import { setSkillAliases, type SetSkillAliasesInput } from "@/modules/service/application/use-cases/set-skill-aliases"
 import { removeTechnicianSkill, type RemoveTechnicianSkillInput } from "@/modules/service/application/use-cases/remove-technician-skill"
 import {
   addAvailabilityException,
@@ -329,6 +330,10 @@ export function listTechnicianSkillsRecord(tenantId: UUID, technicianId: UUID) {
 
 export function createSkillRecord(input: CreateSkillInput) {
   return createSkill({ skills: skillRepo(), audit: audit() }, input)
+}
+
+export function setSkillAliasesRecord(input: SetSkillAliasesInput) {
+  return setSkillAliases({ skills: skillRepo(), audit: audit() }, input)
 }
 
 export function archiveSkillRecord(input: ArchiveSkillInput) {

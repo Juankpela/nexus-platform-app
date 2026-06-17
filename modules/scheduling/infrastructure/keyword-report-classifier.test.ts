@@ -74,3 +74,53 @@ describe("KeywordReportClassifier — tenant-aware, sin categorías globales", (
     expect(r.skillId).toBeNull()
   })
 })
+
+// ── Hito B: recall por vocabulario propio del tenant (aliases) ───────────────
+const A_ALIAS = [
+  { id: "a-elec", name: "Electricidad", aliases: ["eléctrico", "corriente", "breaker", "luz"] },
+  { id: "a-plom", name: "Plomería", aliases: ["fuga", "tubería", "agua", "grifo"] },
+  { id: "a-refri", name: "Refrigeración", aliases: ["nevera", "congelador", "cámara fría", "frío"] },
+]
+const B_ALIAS = [
+  { id: "b-asc", name: "Ascensores", aliases: ["elevador", "montacargas"] },
+  { id: "b-elec", name: "Electrónica Industrial", aliases: ["plc", "automatización"] },
+]
+
+describe("KeywordReportClassifier — recall con aliases del tenant", () => {
+  it("'Problema eléctrico' → Electricidad vía alias (antes ESCALATE)", async () => {
+    const r = await classify("Tenemos un problema eléctrico en el segundo piso.", A_ALIAS)
+    expect(r.skillId).toBe("a-elec")
+    expect(r.matchedTerm).toBe("eléctrico")
+    expect(r.confidence).toBeGreaterThanOrEqual(0.7)
+  })
+
+  it("'se dañó la nevera' → Refrigeración vía alias", async () => {
+    const r = await classify("Se dañó la nevera del comedor.", A_ALIAS)
+    expect(r.skillId).toBe("a-refri")
+  })
+
+  it("alias corto 'luz' → Electricidad (palabra exacta)", async () => {
+    const r = await classify("No hay luz en la bodega.", A_ALIAS)
+    expect(r.skillId).toBe("a-elec")
+  })
+
+  it("alias multi-palabra 'cámara fría' → Refrigeración", async () => {
+    const r = await classify("La cámara fría no mantiene temperatura.", A_ALIAS)
+    expect(r.skillId).toBe("a-refri")
+  })
+
+  it("aliases del Tenant B no contaminan al Tenant A (multi-tenant)", async () => {
+    const r = await classify("El elevador está atascado.", A_ALIAS)
+    expect(r.skillId).toBeNull() // 'elevador' es alias de B, no de A
+  })
+
+  it("'elevador' → Ascensores en el Tenant B", async () => {
+    const r = await classify("El elevador está atascado.", B_ALIAS)
+    expect(r.skillId).toBe("b-asc")
+  })
+
+  it("reporte que toca dos skills del tenant → ESCALATE (ambiguo)", async () => {
+    const r = await classify("Hay una fuga de agua y un problema eléctrico.", A_ALIAS)
+    expect(r.skillId).toBeNull()
+  })
+})

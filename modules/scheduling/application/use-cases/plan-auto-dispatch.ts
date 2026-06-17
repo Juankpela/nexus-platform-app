@@ -35,8 +35,8 @@ export type PlanAutoDispatchInput = {
   description: string
   /** Deadline SLA del caso (ISO) o null. */
   slaDueAt: string | null
-  /** Catálogo de skills del tenant para mapear nombre → id. */
-  availableSkills: { id: UUID; name: string }[]
+  /** Catálogo de skills del tenant (nombre + vocabulario propio) para mapear → id. */
+  availableSkills: { id: UUID; name: string; aliases?: string[] }[]
 }
 
 export type AutoDispatchPlan = {

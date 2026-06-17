@@ -10,6 +10,7 @@ import {
   assignTechnicianSkillRecord,
   createSkillRecord,
   removeTechnicianSkillRecord,
+  setSkillAliasesRecord,
 } from "@/modules/service/composition"
 import { SKILL_LEVELS } from "@/modules/service/domain/skill"
 import {
@@ -56,13 +57,47 @@ export async function createSkillAction(
       actorId: context.userId,
       tenantId: context.tenantId,
       requestId: context.requestId,
-      data: { name },
+      data: { name, aliases: parseAliases(field(formData, "aliases")) },
     })
   } catch (error) {
     return fail(describeError(error))
   }
 
   revalidateTechnician(tenantSlug, technicianId ?? undefined)
+  return { error: null, ok: true }
+}
+
+/** Vocabulario libre del tenant separado por coma o salto de línea. */
+function parseAliases(raw: string | null): string[] {
+  if (!raw) return []
+  return [...new Set(raw.split(/[\n,]/).map((a) => a.trim()).filter((a) => a.length > 0))]
+}
+
+export async function setSkillAliasesAction(
+  _state: ServiceActionState,
+  formData: FormData,
+): Promise<ServiceActionState> {
+  const tenantSlug = field(formData, "tenantSlug")
+  const id = idSchema.safeParse(field(formData, "id"))
+  if (!tenantSlug || !id.success) return fail("Solicitud inválida.")
+
+  try {
+    const context = await requireServiceContext(
+      tenantSlug,
+      SERVICE_PERMISSIONS.techniciansWrite,
+    )
+    await setSkillAliasesRecord({
+      actorId: context.userId,
+      tenantId: context.tenantId,
+      requestId: context.requestId,
+      skillId: id.data,
+      aliases: parseAliases(field(formData, "aliases")),
+    })
+  } catch (error) {
+    return fail(describeError(error))
+  }
+
+  revalidateTechnician(tenantSlug)
   return { error: null, ok: true }
 }
 
