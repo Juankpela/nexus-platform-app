@@ -10,6 +10,8 @@ import {
 } from "@/modules/scheduling/application/use-cases/plan-reschedule"
 import { SupabaseAuditRepository } from "@/modules/audit/infrastructure/supabase-audit-repository"
 import { SERVICE_PERMISSIONS } from "@/modules/authorization/domain/permission"
+import type { CommunicationChannel } from "@/modules/notifications/domain/communication-channel"
+import { EmailChannel } from "@/modules/notifications/infrastructure/email-channel"
 import { notifyAudience } from "@/modules/notifications/application/use-cases/notify-audience"
 import { SupabaseNotificationRepository } from "@/modules/notifications/infrastructure/supabase-notification-repository"
 import { SupabaseRecipientResolver } from "@/modules/notifications/infrastructure/supabase-recipient-resolver"
@@ -467,6 +469,73 @@ export async function runAutoDispatchForCase(input: {
 const ASSIGNMENT_ACCEPTED_EVENT = "assignment.accepted"
 const CONFIRMATION_SENT_EVENT = "customer.confirmation.sent"
 const CONFIRMATION_SKIPPED_EVENT = "customer.confirmation.skipped"
+const ENROUTE_SENT_EVENT = "customer.enroute.sent"
+const ENROUTE_SKIPPED_EVENT = "customer.enroute.skipped"
+
+type CustomerCommContext = {
+  customerEmail: string | null
+  techName: string
+  company: string
+  woNumber: string
+  caseSubject: string
+  startIso: string | null
+}
+
+/**
+ * Resolución (solo lectura, cliente admin) de los datos que ambas comunicaciones
+ * al cliente comparten: email (reporter_email → contacts.email), técnico, empresa,
+ * número/asunto de la orden y arranque programado. Sin esto, las dos funciones
+ * duplicarían las mismas cuatro consultas.
+ */
+async function resolveCustomerCommContext(
+  admin: ReturnType<typeof createAdminSupabaseClient>,
+  tenantId: UUID,
+  workOrderId: UUID,
+  assignmentId: UUID,
+): Promise<CustomerCommContext> {
+  const { data: wo } = await admin
+    .from("work_orders")
+    .select("*")
+    .eq("tenant_id", tenantId)
+    .eq("id", workOrderId)
+    .maybeSingle()
+  const { data: asg } = await admin
+    .from("work_order_assignments")
+    .select("technician_id, scheduled_start")
+    .eq("tenant_id", tenantId)
+    .eq("id", assignmentId)
+    .maybeSingle()
+  const woRow = wo as Record<string, unknown> | null
+  const caseId = (woRow?.case_id as string | null) ?? null
+
+  let customerEmail: string | null = null
+  let caseSubject = (woRow?.subject as string | null) ?? "su solicitud"
+  if (caseId) {
+    const { data: c } = await admin.from("cases").select("*").eq("id", caseId).maybeSingle()
+    const cRow = c as Record<string, unknown> | null
+    customerEmail = (cRow?.reporter_email as string | null) ?? null
+    caseSubject = (cRow?.subject as string | null) ?? caseSubject
+    const contactId = (cRow?.contact_id as string | null) ?? null
+    if (!customerEmail && contactId) {
+      const { data: ct } = await admin.from("contacts").select("email").eq("id", contactId).maybeSingle()
+      customerEmail = (ct as { email?: string | null } | null)?.email ?? null
+    }
+  }
+
+  const { data: tech } = await admin
+    .from("technicians")
+    .select("first_name, last_name")
+    .eq("id", asg?.technician_id ?? "")
+    .maybeSingle()
+  const techName = tech ? `${tech.first_name} ${tech.last_name}` : "su técnico asignado"
+  const { data: tenant } = await admin.from("tenants").select("name").eq("id", tenantId).maybeSingle()
+  const company = (tenant as { name?: string } | null)?.name ?? "Nexus"
+  const startIso =
+    (asg?.scheduled_start as string | null) ?? (woRow?.scheduled_start as string | null) ?? null
+  const woNumber = (woRow?.work_order_number as string | null) ?? "—"
+
+  return { customerEmail, techName, company, woNumber, caseSubject, startIso }
+}
 
 /**
  * Hito D — al aceptar el técnico (pending → accepted) confirma la visita al
@@ -506,35 +575,14 @@ export async function confirmCustomerOnAcceptance(input: {
     })
   }
 
-  // Datos de la confirmación (lectura admin).
-  const { data: wo } = await admin
-    .from("work_orders")
-    .select("*")
-    .eq("tenant_id", input.tenantId)
-    .eq("id", input.workOrderId)
-    .maybeSingle()
-  const { data: asg } = await admin
-    .from("work_order_assignments")
-    .select("technician_id, scheduled_start")
-    .eq("tenant_id", input.tenantId)
-    .eq("id", input.assignmentId)
-    .maybeSingle()
-  const woRow = wo as Record<string, unknown> | null
-  const caseId = (woRow?.case_id as string | null) ?? null
-
-  let customerEmail: string | null = null
-  let caseSubject = (woRow?.subject as string | null) ?? "su solicitud"
-  if (caseId) {
-    const { data: c } = await admin.from("cases").select("*").eq("id", caseId).maybeSingle()
-    const cRow = c as Record<string, unknown> | null
-    customerEmail = (cRow?.reporter_email as string | null) ?? null
-    caseSubject = (cRow?.subject as string | null) ?? caseSubject
-    const contactId = (cRow?.contact_id as string | null) ?? null
-    if (!customerEmail && contactId) {
-      const { data: ct } = await admin.from("contacts").select("email").eq("id", contactId).maybeSingle()
-      customerEmail = (ct as { email?: string | null } | null)?.email ?? null
-    }
-  }
+  // Datos de la confirmación (lectura admin, compartida con el aviso de salida).
+  const ctx = await resolveCustomerCommContext(
+    admin,
+    input.tenantId,
+    input.workOrderId,
+    input.assignmentId,
+  )
+  const { customerEmail, techName, company, woNumber, caseSubject, startIso } = ctx
 
   if (!customerEmail) {
     await audit.append({
@@ -552,15 +600,6 @@ export async function confirmCustomerOnAcceptance(input: {
     return { confirmed: false, skipped: "no_email" }
   }
 
-  const { data: tech } = await admin
-    .from("technicians")
-    .select("first_name, last_name")
-    .eq("id", asg?.technician_id ?? "")
-    .maybeSingle()
-  const techName = tech ? `${tech.first_name} ${tech.last_name}` : "su técnico asignado"
-  const { data: tenant } = await admin.from("tenants").select("name").eq("id", input.tenantId).maybeSingle()
-  const company = (tenant as { name?: string } | null)?.name ?? "Nexus"
-  const startIso = (asg?.scheduled_start as string | null) ?? (woRow?.scheduled_start as string | null)
   const when = startIso
     ? new Date(startIso).toLocaleString("es-CO", {
         timeZone: TENANT_TIMEZONE,
@@ -571,7 +610,6 @@ export async function confirmCustomerOnAcceptance(input: {
         minute: "2-digit",
       })
     : "por confirmar"
-  const woNumber = (woRow?.work_order_number as string | null) ?? "—"
 
   await sendEmail({
     to: customerEmail,
@@ -616,6 +654,102 @@ export async function confirmCustomerOnAcceptance(input: {
   })
 
   return { confirmed: true }
+}
+
+/**
+ * Acción lateral de comunicación (NO transición): cuando el técnico sale hacia el
+ * cliente, avisa UNA sola vez (idempotente por evento de auditoría). No modifica
+ * la máquina de estados de ejecución; el técnico permanece en `accepted`.
+ *
+ * Depende del contrato `CommunicationChannel`, no de un canal concreto: el MVP
+ * inyecta `EmailChannel`; WhatsApp/SMS se enchufan sin tocar esta lógica.
+ * Reutiliza la resolución de contexto de `confirmCustomerOnAcceptance`.
+ */
+export async function notifyCustomerEnRoute(input: {
+  tenantId: UUID
+  requestId: UUID
+  assignmentId: UUID
+  workOrderId: UUID
+  triggeredByUserId: UUID
+  channel?: CommunicationChannel
+}): Promise<{ sent: boolean; skipped?: string }> {
+  const channel = input.channel ?? new EmailChannel()
+  const admin = createAdminSupabaseClient()
+  const audit = new SupabaseAuditRepository(() => admin)
+
+  // Idempotencia: máximo un aviso de salida por assignment (mismo patrón que
+  // customer.confirmation.sent).
+  const prior = await audit.listBySubject(input.tenantId, input.assignmentId, 50)
+  if (prior.some((e) => e.eventType === ENROUTE_SENT_EVENT)) {
+    return { sent: false, skipped: "already_sent" }
+  }
+
+  const ctx = await resolveCustomerCommContext(
+    admin,
+    input.tenantId,
+    input.workOrderId,
+    input.assignmentId,
+  )
+
+  if (!ctx.customerEmail) {
+    await audit.append({
+      eventType: ENROUTE_SKIPPED_EVENT,
+      actorType: "system",
+      actorId: null,
+      tenantId: input.tenantId,
+      subjectType: "work_order_assignment",
+      subjectId: input.assignmentId,
+      action: "customer.enroute.skipped",
+      metadata: { reason: "no_email", workOrderId: input.workOrderId },
+      requestId: input.requestId,
+      source: "field",
+    })
+    return { sent: false, skipped: "no_email" }
+  }
+
+  const nowIso = new Date().toISOString()
+  await channel.send({
+    to: ctx.customerEmail,
+    subject: "Su técnico va en camino",
+    body: [
+      `Hola,`,
+      ``,
+      `Tu técnico va en camino para atender tu solicitud.`,
+      ``,
+      `Orden: ${ctx.woNumber}`,
+      `Asunto: ${ctx.caseSubject}`,
+      `Técnico: ${ctx.techName}`,
+      ``,
+      `Por favor prepárate para recibir la visita.`,
+      ``,
+      `Gracias,`,
+      `${ctx.company}`,
+    ].join("\n"),
+  })
+
+  await audit.append({
+    eventType: ENROUTE_SENT_EVENT,
+    actorType: "system",
+    actorId: null,
+    tenantId: input.tenantId,
+    subjectType: "work_order_assignment",
+    subjectId: input.assignmentId,
+    action: "customer.enroute.sent",
+    metadata: {
+      displayActor: "Nexus Field Execution",
+      channel: channel.kind,
+      to: ctx.customerEmail,
+      workOrderId: input.workOrderId,
+      workOrderNumber: ctx.woNumber,
+      technician: ctx.techName,
+      triggeredByUserId: input.triggeredByUserId,
+      sentAt: nowIso,
+    },
+    requestId: input.requestId,
+    source: "field",
+  })
+
+  return { sent: true }
 }
 
 export type AssistedDispatchProposal = {

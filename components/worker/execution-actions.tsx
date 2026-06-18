@@ -1,6 +1,6 @@
 "use client"
 
-import { Camera, CheckCircle2, Loader2, MapPin, Play, ThumbsUp, X, XCircle } from "lucide-react"
+import { Camera, CheckCircle2, Loader2, MapPin, Play, Send, ThumbsUp, X, XCircle } from "lucide-react"
 import { useActionState, useState } from "react"
 
 import { Button } from "@/components/ui/button"
@@ -14,6 +14,7 @@ import {
   acceptAssignmentAction,
   arriveOnSiteAction,
   completeWorkAction,
+  notifyEnRouteAction,
   reportUnableAction,
   startWorkAction,
   type WorkerActionState,
@@ -106,6 +107,7 @@ function ActionForm({
   label,
   icon: Icon,
   variant = "default",
+  successLabel,
   children,
 }: {
   action: Action
@@ -114,6 +116,7 @@ function ActionForm({
   label: string
   icon: typeof Play
   variant?: "default" | "outline"
+  successLabel?: string
   children?: React.ReactNode
 }) {
   const [state, formAction, pending] = useActionState(action, initial)
@@ -129,6 +132,11 @@ function ActionForm({
       {state.error ? (
         <p role="alert" className="text-center text-sm text-destructive">
           {state.error}
+        </p>
+      ) : null}
+      {state.ok && successLabel ? (
+        <p className="text-center text-sm font-medium text-emerald-600 dark:text-emerald-400">
+          {successLabel}
         </p>
       ) : null}
     </form>
@@ -168,7 +176,19 @@ export function ExecutionActions({
       ) : null}
 
       {status === "accepted" ? (
-        <ActionForm {...common} action={arriveOnSiteAction} label="Llegué al sitio" icon={MapPin} />
+        <>
+          {/* Acción lateral: avisa al cliente que el técnico va en camino. NO
+              cambia el estado de ejecución (sigue en "accepted"). */}
+          <ActionForm
+            {...common}
+            action={notifyEnRouteAction}
+            label="Avisar al cliente"
+            icon={Send}
+            variant="outline"
+            successLabel="✓ Cliente avisado"
+          />
+          <ActionForm {...common} action={arriveOnSiteAction} label="Llegué al sitio" icon={MapPin} />
+        </>
       ) : null}
 
       {status === "on_site" ? (

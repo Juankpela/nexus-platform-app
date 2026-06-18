@@ -5,7 +5,10 @@ import { z } from "zod"
 
 import { ApplicationError } from "@/lib/errors/application-error"
 import { broadcastFieldMonitorUpdate } from "@/lib/realtime/field-monitor-broadcast"
-import { confirmCustomerOnAcceptance } from "@/modules/scheduling/composition"
+import {
+  confirmCustomerOnAcceptance,
+  notifyCustomerEnRoute,
+} from "@/modules/scheduling/composition"
 import { createAdminSupabaseClient } from "@/lib/supabase/admin"
 import {
   SERVICE_PERMISSIONS,
@@ -195,6 +198,65 @@ export async function arriveOnSiteAction(
   formData: FormData,
 ): Promise<WorkerActionState> {
   return transition(formData, "on_site")
+}
+
+/**
+ * Acción LATERAL (no transición): el técnico avisa al cliente que va en camino.
+ * NO toca la máquina de estados — la ejecución permanece en `accepted`. Solo
+ * válida tras aceptar y antes de llegar (`accepted`). Idempotente del lado del
+ * caso de uso; un fallo del canal se reporta al técnico sin afectar la operación.
+ */
+export async function notifyEnRouteAction(
+  _state: WorkerActionState,
+  formData: FormData,
+): Promise<WorkerActionState> {
+  const tenantSlug = field(formData, "tenantSlug")
+  const assignmentId = idSchema.safeParse(field(formData, "assignment_id"))
+  if (!tenantSlug || !assignmentId.success) {
+    return { error: "Solicitud inválida.", ok: false }
+  }
+
+  try {
+    const context = await getRequestContext(tenantSlug)
+    if (!hasPermission(context.effectivePermissions, SERVICE_PERMISSIONS.fieldExecute)) {
+      throw new ApplicationError("Forbidden.", "FORBIDDEN")
+    }
+
+    const technician = await resolveCurrentTechnician(context.tenantId, context.userId)
+    if (!technician) {
+      throw new ApplicationError("Not a technician.", "NOT_A_TECHNICIAN")
+    }
+
+    const assignment = await getMyAssignment(
+      context.tenantId,
+      technician.id,
+      assignmentId.data,
+    )
+    if (!assignment) {
+      throw new ApplicationError("Assignment not found.", "ASSIGNMENT_NOT_FOUND")
+    }
+
+    // Solo se avisa "voy en camino" tras aceptar y antes de llegar al sitio.
+    if (assignment.executionStatus !== "accepted") {
+      throw new ApplicationError(
+        "El aviso de salida solo está disponible tras aceptar y antes de llegar.",
+        "INVALID_EXECUTION_TRANSITION",
+      )
+    }
+
+    await notifyCustomerEnRoute({
+      tenantId: context.tenantId,
+      requestId: context.requestId,
+      assignmentId: assignment.assignmentId,
+      workOrderId: assignment.workOrderId,
+      triggeredByUserId: context.userId,
+    })
+  } catch (error) {
+    return { error: describe(error), ok: false }
+  }
+
+  revalidatePath(`/app/${tenantSlug}/worker/${assignmentId.data}`)
+  return { error: null, ok: true }
 }
 
 export async function startWorkAction(
