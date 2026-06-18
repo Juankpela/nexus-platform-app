@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest"
 
-import { evaluateDispatchConfidence } from "./dispatch-confidence"
+import {
+  DISPATCH_BLOCKER_ACTIONS,
+  DISPATCH_BLOCKER_LABELS,
+  evaluateDispatchConfidence,
+} from "./dispatch-confidence"
 
 const base = {
   classificationConfidence: 0.9,
@@ -56,5 +60,29 @@ describe("evaluateDispatchConfidence", () => {
     const full = evaluateDispatchConfidence(base).score
     const partial = evaluateDispatchConfidence({ ...base, hasSlot: false }).score
     expect(partial).toBeLessThan(full)
+  })
+
+  // H2: ningún bloqueo puede quedar sin "qué falló" ni "qué acción tomar".
+  it("cada bloqueo posible tiene etiqueta y acción legibles", () => {
+    const keys = new Set<string>()
+    for (const f of [
+      "hasSkill",
+      "hasEligibleTechnician",
+      "hasCapacity",
+      "hasSlot",
+      "slaOk",
+      "reportQualityOk",
+    ] as const) {
+      for (const conf of [0.3, 0.9]) {
+        evaluateDispatchConfidence({ ...base, classificationConfidence: conf, [f]: false }).blockers.forEach(
+          (b) => keys.add(b),
+        )
+      }
+    }
+    expect(keys.size).toBeGreaterThan(0)
+    for (const key of keys) {
+      expect(DISPATCH_BLOCKER_LABELS[key], `label faltante: ${key}`).toBeTruthy()
+      expect(DISPATCH_BLOCKER_ACTIONS[key], `acción faltante: ${key}`).toBeTruthy()
+    }
   })
 })

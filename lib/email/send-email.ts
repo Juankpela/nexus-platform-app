@@ -7,6 +7,24 @@ import { ApplicationError } from "@/lib/errors/application-error"
 
 export type EmailAttachment = { filename: string; content: Buffer }
 
+/**
+ * Estado real de configuración de email, para que la auditoría y la operación
+ * NUNCA afirmen una entrega que no ocurrirá:
+ *  - "disabled": faltan credenciales → `sendEmail` lanza EMAIL_NOT_CONFIGURED.
+ *  - "sandbox": remitente `@resend.dev` → Resend ACEPTA (200) pero SOLO entrega
+ *    al dueño de la cuenta; los clientes reales no reciben. No detectable por la
+ *    respuesta del API, solo por el remitente.
+ *  - "production": remitente de dominio propio (requiere verificación + DKIM/SPF).
+ */
+export type EmailDeliverability = "disabled" | "sandbox" | "production"
+
+export function emailConfigStatus(): EmailDeliverability {
+  if (!env.RESEND_API_KEY || !env.EMAIL_FROM) return "disabled"
+  // El remitente puede venir como "Nombre <correo@dominio>" o "correo@dominio".
+  const addr = /<([^>]+)>/.exec(env.EMAIL_FROM)?.[1] ?? env.EMAIL_FROM
+  return /@resend\.dev\s*$/i.test(addr) ? "sandbox" : "production"
+}
+
 export type SendEmailInput = {
   to: string
   subject: string

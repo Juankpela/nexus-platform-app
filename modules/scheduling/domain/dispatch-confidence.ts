@@ -46,6 +46,35 @@ export type DispatchConfidenceResult = {
   blockers: string[]
 }
 
+/**
+ * Etiquetas legibles (es-CO) de cada bloqueo, para la bandeja de excepciones.
+ * Claves estables = las que emite hardBlockers/softBlockers.
+ */
+export const DISPATCH_BLOCKER_LABELS: Record<string, string> = {
+  no_skill_identified: "No se identificó la especialidad del reporte",
+  no_eligible_technician: "Ningún técnico elegible",
+  no_slot: "Sin horario disponible en el horizonte",
+  sla_risk: "El horario disponible excede el SLA",
+  no_capacity: "El técnico no tiene cupo en el día",
+  low_classification_confidence: "Clasificación de baja confianza",
+  poor_report_quality: "Reporte incompleto (poca descripción)",
+}
+
+/** Acción operativa sugerida al supervisor por cada bloqueo. */
+export const DISPATCH_BLOCKER_ACTIONS: Record<string, string> = {
+  no_skill_identified:
+    "Revisa el reporte y asigna manualmente, o agrega un alias a la especialidad correcta.",
+  no_eligible_technician:
+    "Verifica skills y zonas de los técnicos, o asigna manualmente.",
+  no_slot: "Amplía la disponibilidad del equipo o agenda fuera del horizonte.",
+  sla_risk: "Prioriza el caso o asígnalo manualmente como urgente.",
+  no_capacity: "Asigna a otro técnico o reprograma la carga del día.",
+  low_classification_confidence:
+    "Confirma la especialidad y aprueba la propuesta si es correcta.",
+  poor_report_quality:
+    "Pide más detalle al reportante o aprueba con criterio si es claro.",
+}
+
 /** Bloqueos operativos duros → ESCALATE (bandeja humana). */
 function hardBlockers(input: DispatchConfidenceInput): string[] {
   const b: string[] = []

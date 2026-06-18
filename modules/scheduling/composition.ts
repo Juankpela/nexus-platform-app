@@ -1,7 +1,7 @@
 import "server-only"
 
 import { ApplicationError } from "@/lib/errors/application-error"
-import { sendEmail } from "@/lib/email/send-email"
+import { emailConfigStatus, sendEmail } from "@/lib/email/send-email"
 import { createAdminSupabaseClient } from "@/lib/supabase/admin"
 import { createServerSupabaseClient } from "@/lib/supabase/server"
 import {
@@ -23,6 +23,10 @@ import { getSchedulingStats } from "@/modules/scheduling/application/use-cases/g
 import { listAssignments } from "@/modules/scheduling/application/use-cases/list-assignments"
 import { scanOverdueWorkOrders } from "@/modules/scheduling/application/use-cases/scan-overdue-work-orders"
 import { projectSlaAlertBoard } from "@/modules/scheduling/domain/sla-alert-board"
+import {
+  DISPATCH_BLOCKER_ACTIONS,
+  DISPATCH_BLOCKER_LABELS,
+} from "@/modules/scheduling/domain/dispatch-confidence"
 import type { EligibilityRequirement } from "@/modules/scheduling/domain/eligibility"
 import {
   proposeReschedulesForTenant,
@@ -469,8 +473,10 @@ export async function runAutoDispatchForCase(input: {
 const ASSIGNMENT_ACCEPTED_EVENT = "assignment.accepted"
 const CONFIRMATION_SENT_EVENT = "customer.confirmation.sent"
 const CONFIRMATION_SKIPPED_EVENT = "customer.confirmation.skipped"
+const CONFIRMATION_FAILED_EVENT = "customer.confirmation.failed"
 const ENROUTE_SENT_EVENT = "customer.enroute.sent"
 const ENROUTE_SKIPPED_EVENT = "customer.enroute.skipped"
+const ENROUTE_FAILED_EVENT = "customer.enroute.failed"
 
 type CustomerCommContext = {
   customerEmail: string | null
@@ -611,26 +617,51 @@ export async function confirmCustomerOnAcceptance(input: {
       })
     : "por confirmar"
 
-  await sendEmail({
-    to: customerEmail,
-    subject: "Visita confirmada",
-    text: [
-      `Hola,`,
-      ``,
-      `Tu visita ha sido confirmada.`,
-      ``,
-      `Orden: ${woNumber}`,
-      `Asunto: ${caseSubject}`,
-      `Técnico: ${techName}`,
-      `Fecha y hora: ${when}`,
-      `Empresa responsable: ${company}`,
-      ``,
-      `Estado: Visita confirmada`,
-      ``,
-      `Gracias,`,
-      `${company}`,
-    ].join("\n"),
-  })
+  const deliverability = emailConfigStatus()
+  try {
+    await sendEmail({
+      to: customerEmail,
+      subject: "Visita confirmada",
+      text: [
+        `Hola,`,
+        ``,
+        `Tu visita ha sido confirmada.`,
+        ``,
+        `Orden: ${woNumber}`,
+        `Asunto: ${caseSubject}`,
+        `Técnico: ${techName}`,
+        `Fecha y hora: ${when}`,
+        `Empresa responsable: ${company}`,
+        ``,
+        `Estado: Visita confirmada`,
+        ``,
+        `Gracias,`,
+        `${company}`,
+      ].join("\n"),
+    })
+  } catch (error) {
+    // Observabilidad: el fallo de envío queda auditado (no se traga en silencio).
+    // No marcamos `sent`, así un reintento idempotente puede volver a intentarlo.
+    await audit.append({
+      eventType: CONFIRMATION_FAILED_EVENT,
+      actorType: "system",
+      actorId: null,
+      tenantId: input.tenantId,
+      subjectType: "work_order_assignment",
+      subjectId: input.assignmentId,
+      action: "customer.confirmation.failed",
+      metadata: {
+        displayActor: "Nexus Autonomous Dispatch",
+        to: customerEmail,
+        workOrderId: input.workOrderId,
+        deliverability,
+        error: error instanceof Error ? error.message : String(error),
+      },
+      requestId: input.requestId,
+      source: "system",
+    })
+    throw error
+  }
 
   await audit.append({
     eventType: CONFIRMATION_SENT_EVENT,
@@ -647,6 +678,8 @@ export async function confirmCustomerOnAcceptance(input: {
       workOrderNumber: woNumber,
       technician: techName,
       scheduledStart: startIso,
+      // Honestidad de entrega: "sandbox" significa que el cliente real NO recibe.
+      deliverability,
       confirmedAt: nowIso,
     },
     requestId: input.requestId,
@@ -708,24 +741,51 @@ export async function notifyCustomerEnRoute(input: {
   }
 
   const nowIso = new Date().toISOString()
-  await channel.send({
-    to: ctx.customerEmail,
-    subject: "Su técnico va en camino",
-    body: [
-      `Hola,`,
-      ``,
-      `Tu técnico va en camino para atender tu solicitud.`,
-      ``,
-      `Orden: ${ctx.woNumber}`,
-      `Asunto: ${ctx.caseSubject}`,
-      `Técnico: ${ctx.techName}`,
-      ``,
-      `Por favor prepárate para recibir la visita.`,
-      ``,
-      `Gracias,`,
-      `${ctx.company}`,
-    ].join("\n"),
-  })
+  const deliverability = channel.kind === "email" ? emailConfigStatus() : "production"
+  try {
+    await channel.send({
+      to: ctx.customerEmail,
+      subject: "Su técnico va en camino",
+      body: [
+        `Hola,`,
+        ``,
+        `Tu técnico va en camino para atender tu solicitud.`,
+        ``,
+        `Orden: ${ctx.woNumber}`,
+        `Asunto: ${ctx.caseSubject}`,
+        `Técnico: ${ctx.techName}`,
+        ``,
+        `Por favor prepárate para recibir la visita.`,
+        ``,
+        `Gracias,`,
+        `${ctx.company}`,
+      ].join("\n"),
+    })
+  } catch (error) {
+    // Observabilidad: fallo de envío auditado; no marcamos `sent`, así un
+    // reintento idempotente puede reintentar.
+    await audit.append({
+      eventType: ENROUTE_FAILED_EVENT,
+      actorType: "system",
+      actorId: null,
+      tenantId: input.tenantId,
+      subjectType: "work_order_assignment",
+      subjectId: input.assignmentId,
+      action: "customer.enroute.failed",
+      metadata: {
+        displayActor: "Nexus Field Execution",
+        channel: channel.kind,
+        to: ctx.customerEmail,
+        workOrderId: input.workOrderId,
+        deliverability,
+        triggeredByUserId: input.triggeredByUserId,
+        error: error instanceof Error ? error.message : String(error),
+      },
+      requestId: input.requestId,
+      source: "field",
+    })
+    throw error
+  }
 
   await audit.append({
     eventType: ENROUTE_SENT_EVENT,
@@ -743,6 +803,7 @@ export async function notifyCustomerEnRoute(input: {
       workOrderNumber: ctx.woNumber,
       technician: ctx.techName,
       triggeredByUserId: input.triggeredByUserId,
+      deliverability,
       sentAt: nowIso,
     },
     requestId: input.requestId,
@@ -767,18 +828,44 @@ export type AssistedDispatchProposal = {
   discarded: { technicianName: string; reasons: EligibilityReasons }[]
 }
 
+/**
+ * Excepción de despacho (H2): un caso web `new` sin WO que el motor NO pudo
+ * despachar con confianza (HOLD o ESCALATE). Hace visible "qué falló, por qué y
+ * qué acción tomar" para que ningún caso desaparezca de la operación.
+ */
+export type DispatchException = {
+  caseId: UUID
+  caseNumber: string
+  subject: string
+  priority: string
+  verdict: "HOLD" | "ESCALATE"
+  skillLabel: string | null
+  confidenceScore: number
+  /** Claves estables de bloqueo (auditoría/tests). */
+  blockers: string[]
+  /** Bloqueos legibles (es-CO). */
+  reasons: string[]
+  /** Acción operativa sugerida (1ra causa). */
+  suggestedAction: string
+}
+
+export type DispatchInbox = {
+  proposals: AssistedDispatchProposal[]
+  exceptions: DispatchException[]
+}
+
 /** Casos nuevos de origen web a despachar (cap defensivo). */
 const ASSISTED_INBOX_LIMIT = 50
 
 /**
- * Bandeja de Despacho Asistido (Hito C): casos `new` de origen `web` para los que
- * el motor produce PROCEED y aún no tienen WO. SOLO LECTURA — recomputa el plan
- * server-side (no confía en estado persistido), igual que plan-reschedule. La
- * aprobación del supervisor aplica vía `runAutoDispatchForCase`.
+ * Bandeja de Despacho (Hito C + H2): escanea en UNA pasada los casos `new` de
+ * origen `web` sin WO y recomputa el plan server-side (no confía en estado
+ * persistido, igual que plan-reschedule). Devuelve:
+ *  - `proposals`: PROCEED → aprobables en un clic vía `runAutoDispatchForCase`.
+ *  - `exceptions`: HOLD/ESCALATE → bandeja de excepciones (qué falló y por qué).
+ * SOLO LECTURA. Ningún caso bloqueado queda invisible.
  */
-export async function listAssistedDispatchProposals(
-  tenantId: UUID,
-): Promise<AssistedDispatchProposal[]> {
+export async function listDispatchInbox(tenantId: UUID): Promise<DispatchInbox> {
   const [casesPage, skills] = await Promise.all([
     listTenantCases(tenantId, { search: null, status: "new", priority: null, ownerId: null }, 1, ASSISTED_INBOX_LIMIT),
     listTenantSkills(tenantId),
@@ -796,6 +883,7 @@ export async function listAssistedDispatchProposals(
   }
 
   const proposals: AssistedDispatchProposal[] = []
+  const exceptions: DispatchException[] = []
   for (const c of webCases) {
     // Excluir casos que YA tienen una WO (no re-despachar).
     const existing = await listWorkOrdersForCase(tenantId, c.id)
@@ -808,23 +896,50 @@ export async function listAssistedDispatchProposals(
       slaDueAt: c.slaDueAt,
       availableSkills,
     })
-    if (plan.verdict !== "PROCEED" || !plan.chosen || !plan.startsAt || !plan.endsAt) continue
-    proposals.push({
+
+    if (plan.verdict === "PROCEED" && plan.chosen && plan.startsAt && plan.endsAt) {
+      proposals.push({
+        caseId: c.id,
+        caseNumber: c.caseNumber,
+        subject: c.subject,
+        skillLabel: plan.classification.skillLabel,
+        confidenceScore: plan.confidence.score,
+        technicianId: plan.chosen.technicianId,
+        technicianName: plan.chosen.technicianName,
+        chosenReasons: plan.chosen.reasons,
+        startsAt: plan.startsAt,
+        endsAt: plan.endsAt,
+        priority: plan.classification.priority,
+        discarded: plan.discarded.map((d) => ({ technicianName: d.technicianName, reasons: d.reasons })),
+      })
+      continue
+    }
+
+    // HOLD / ESCALATE → excepción visible.
+    const blockers = plan.confidence.blockers
+    exceptions.push({
       caseId: c.id,
       caseNumber: c.caseNumber,
       subject: c.subject,
+      priority: plan.classification.priority,
+      verdict: plan.verdict === "HOLD" ? "HOLD" : "ESCALATE",
       skillLabel: plan.classification.skillLabel,
       confidenceScore: plan.confidence.score,
-      technicianId: plan.chosen.technicianId,
-      technicianName: plan.chosen.technicianName,
-      chosenReasons: plan.chosen.reasons,
-      startsAt: plan.startsAt,
-      endsAt: plan.endsAt,
-      priority: plan.classification.priority,
-      discarded: plan.discarded.map((d) => ({ technicianName: d.technicianName, reasons: d.reasons })),
+      blockers,
+      reasons: blockers.map((b) => DISPATCH_BLOCKER_LABELS[b] ?? b),
+      suggestedAction:
+        (blockers[0] && DISPATCH_BLOCKER_ACTIONS[blockers[0]]) ??
+        "Revisa el caso y asigna manualmente.",
     })
   }
-  return proposals
+  return { proposals, exceptions }
+}
+
+/** Compatibilidad: solo las propuestas PROCEED. */
+export async function listAssistedDispatchProposals(
+  tenantId: UUID,
+): Promise<AssistedDispatchProposal[]> {
+  return (await listDispatchInbox(tenantId)).proposals
 }
 
 /**
