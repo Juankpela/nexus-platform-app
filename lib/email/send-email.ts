@@ -44,11 +44,20 @@ export async function sendEmail(input: SendEmailInput): Promise<void> {
     )
   }
 
+  // En sandbox, Resend solo entrega al dueño de la cuenta. Si hay un destinatario
+  // de redirección configurado, mandamos AHÍ (para que la notificación llegue de
+  // verdad en pruebas) e indicamos en el asunto a quién iba dirigida originalmente.
+  // En producción (dominio verificado) esto no aplica: se respeta el destinatario.
+  const redirectTo =
+    emailConfigStatus() === "sandbox" && env.EMAIL_SANDBOX_TO ? env.EMAIL_SANDBOX_TO : null
+  const to = redirectTo ?? input.to
+  const subject = redirectTo ? `[→ ${input.to}] ${input.subject}` : input.subject
+
   const resend = new Resend(env.RESEND_API_KEY)
   const { error } = await resend.emails.send({
     from: env.EMAIL_FROM,
-    to: input.to,
-    subject: input.subject,
+    to,
+    subject,
     text: input.text,
     attachments: input.attachments?.map((a) => ({
       filename: a.filename,

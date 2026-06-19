@@ -14,6 +14,11 @@ const serverEnvSchema = z.object({
   // (sendEmail throws EMAIL_NOT_CONFIGURED) when these are empty/unset.
   RESEND_API_KEY: z.string().optional(),
   EMAIL_FROM: z.string().optional(),
+  // Mientras el remitente sea sandbox (@resend.dev), Resend SOLO entrega al dueño
+  // de la cuenta. Si se define, TODAS las notificaciones se redirigen a esta
+  // dirección para que lleguen de verdad durante pruebas/demo. En producción
+  // (dominio verificado) se ignora y se envía al destinatario real.
+  EMAIL_SANDBOX_TO: z.string().optional(),
 })
 
 export const env = serverEnvSchema.parse({
@@ -25,4 +30,5 @@ export const env = serverEnvSchema.parse({
   CRON_SECRET: process.env.CRON_SECRET,
   RESEND_API_KEY: process.env.RESEND_API_KEY,
   EMAIL_FROM: process.env.EMAIL_FROM,
+  EMAIL_SANDBOX_TO: process.env.EMAIL_SANDBOX_TO,
 })

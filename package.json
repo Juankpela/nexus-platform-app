@@ -15,6 +15,7 @@
     "db:push": "supabase db push",
     "db:types": "supabase gen types typescript --linked --schema public > types/database.ts",
     "db:seed": "node scripts/seed-tenant.mjs",
+    "db:seed-northgate": "node scripts/seed-northgate.mjs",
     "db:grant-admin": "node scripts/grant-platform-admin.mjs",
     "brand:build": "node scripts/build-brand.mjs"
   },

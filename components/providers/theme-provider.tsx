@@ -28,9 +28,11 @@ function getSystemTheme(): ResolvedTheme {
  * layout; this provider only manages runtime toggling and the React context.
  */
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = React.useState<Theme>("system")
+  // Default a oscuro: identidad "Sistema Operacional" (mockups de diseño).
+  // El usuario puede cambiarlo con el toggle; la preferencia persiste.
+  const [theme, setThemeState] = React.useState<Theme>("dark")
   const [resolvedTheme, setResolvedTheme] =
-    React.useState<ResolvedTheme>("light")
+    React.useState<ResolvedTheme>("dark")
 
   // Read the persisted preference once on mount.
   React.useEffect(() => {

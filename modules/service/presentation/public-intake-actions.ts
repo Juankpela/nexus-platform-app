@@ -40,6 +40,10 @@ export async function submitReportAction(
   if (!description) return { ok: false, error: "Cuéntanos qué ocurrió." }
   if (!location) return { ok: false, error: "Indícanos dónde ocurrió." }
   if (!reporterName) return { ok: false, error: "Déjanos tu nombre." }
+  // El correo es obligatorio: es el canal por el que confirmamos la visita y
+  // avisamos que el técnico va en camino. Sin él, ambas notificaciones se omiten.
+  if (!reporterEmailRaw) return { ok: false, error: "Déjanos tu correo para confirmarte la visita." }
+  if (!reporterEmail) return { ok: false, error: "El correo no parece válido. Revísalo, por favor." }
 
   try {
     const result = await submitPublicReport(slug, {

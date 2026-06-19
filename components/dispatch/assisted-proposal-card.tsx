@@ -1,15 +1,9 @@
 "use client"
 
-import { Bot, Check, ChevronDown, Loader2, X } from "lucide-react"
+import { Check, ChevronDown, Clock, Loader2 } from "lucide-react"
 import { useState, useTransition } from "react"
 
-import { Button } from "@/components/ui/button"
 import { autoDispatchCaseAction } from "@/modules/scheduling/presentation/auto-dispatch-actions"
-import {
-  failedReasons,
-  passedReasons,
-  primaryFailure,
-} from "@/modules/scheduling/domain/dispatch-explanation"
 import type { EligibilityReasons } from "@/modules/scheduling/domain/eligibility"
 
 export type ProposalView = {
@@ -25,6 +19,20 @@ export type ProposalView = {
   discarded: { technicianName: string; reasons: EligibilityReasons }[]
 }
 
+function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? "")
+    .join("")
+}
+
+/**
+ * Pieza B — Tarjeta "Listo para confirmar". Héroe del momento de decisión:
+ * Problema → Decisión de Nexus (técnico + horario) → Acción humana (Confirmar).
+ * Sin porcentajes/score: el razonamiento es prosa ejecutiva. Props sin cambios.
+ */
 export function AssistedProposalCard({
   tenantSlug,
   proposal,
@@ -42,7 +50,7 @@ export function AssistedProposalCard({
       const r = await autoDispatchCaseAction(tenantSlug, proposal.caseId)
       if (r.error) setError(r.error)
       else if (r.result?.verdict === "PROCEED")
-        setDone(`Despachado a ${r.result.technicianName} · técnico notificado`)
+        setDone(`Técnico confirmado: ${r.result.technicianName}`)
       else setError("La propuesta cambió; revísala de nuevo.")
     })
   }
@@ -56,70 +64,108 @@ export function AssistedProposalCard({
     minute: "2-digit",
   })
 
-  return (
-    <div className="rounded-xl border bg-card p-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-xs text-muted-foreground">{proposal.caseNumber}</p>
-          <h3 className="truncate font-medium text-foreground">{proposal.subject}</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {proposal.skillLabel ?? "Servicio"} · <span className="text-foreground">{proposal.technicianName}</span> · {when}
-          </p>
+  const skill = proposal.skillLabel ?? "Servicio"
+  const reasoning =
+    `Nexus recomienda a ${proposal.technicianName} porque es el técnico de ` +
+    `${skill} disponible más adecuado para atender, puede llegar dentro del ` +
+    `tiempo comprometido con el cliente y tiene cupo en su agenda.` +
+    (proposal.discarded.length > 0
+      ? ` Se evaluaron otras ${proposal.discarded.length} alternativas.`
+      : "")
+
+  if (done) {
+    return (
+      <div className="rounded-2xl border border-emerald-500/25 bg-card p-5">
+        <div className="flex items-center gap-3">
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-xs font-bold text-emerald-950">
+            ✓
+          </span>
+          <div>
+            <p className="font-semibold text-emerald-400">{done}</p>
+            <p className="text-sm text-muted-foreground">Pendiente de aceptación del técnico</p>
+          </div>
         </div>
-        <span className="shrink-0 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
-          Confianza {Math.round(proposal.confidenceScore * 100)}%
+      </div>
+    )
+  }
+
+  return (
+    <div className="rounded-2xl border bg-card p-5">
+      {/* Encabezado: folio + estado coordinado */}
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <span className="rounded-md border border-blue-500/20 bg-blue-500/10 px-2 py-0.5 font-mono text-[11px] text-blue-400">
+          {proposal.caseNumber}
+        </span>
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-400">
+          <span className="size-1.5 rounded-full bg-emerald-400" />
+          Coordinado
         </span>
       </div>
 
-      {done ? (
-        <p className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300">
-          ✓ {done} · Pendiente de aceptación del técnico
-        </p>
-      ) : (
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <Button size="sm" onClick={approve} disabled={pending}>
-            {pending ? <Loader2 className="size-4 animate-spin" /> : <Bot className="size-4" />}
-            Aprobar despacho
-          </Button>
-          <Button size="sm" variant="ghost" onClick={() => setOpen((v) => !v)}>
-            Ver explicación
-            <ChevronDown className={`size-4 transition-transform ${open ? "rotate-180" : ""}`} />
-          </Button>
-          {error ? <span className="text-sm text-destructive">{error}</span> : null}
+      {/* Problema */}
+      <h3 className="text-lg font-bold leading-tight tracking-tight text-foreground">
+        {proposal.subject}
+      </h3>
+
+      {/* Decisión de Nexus */}
+      <div className="mt-4 rounded-xl border border-emerald-500/25 bg-emerald-500/[0.07] p-4">
+        <div className="flex items-center gap-3">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-blue-500/30 bg-blue-500/10 text-sm font-bold text-blue-300">
+            {initials(proposal.technicianName)}
+          </span>
+          <div className="min-w-0">
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-400">
+              Técnico recomendado
+            </p>
+            <p className="truncate text-lg font-bold text-foreground">{proposal.technicianName}</p>
+            <p className="text-xs text-muted-foreground">{skill}</p>
+          </div>
         </div>
-      )}
+        <div className="my-3 h-px bg-white/5" />
+        <div className="flex items-center gap-3">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-emerald-500/25 bg-emerald-500/10 text-emerald-400">
+            <Clock className="size-5" />
+          </span>
+          <div className="min-w-0">
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-400">
+              Horario recomendado
+            </p>
+            <p className="truncate text-lg font-bold capitalize text-foreground">{when}</p>
+            <p className="text-xs text-muted-foreground">Dentro del tiempo comprometido</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Acción humana */}
+      <button
+        type="button"
+        onClick={approve}
+        disabled={pending}
+        className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
+      >
+        {pending ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
+        Confirmar
+      </button>
+
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="mt-2 flex w-full items-center justify-center gap-1 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+      >
+        Ver razonamiento de Nexus
+        <ChevronDown className={`size-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
 
       {open ? (
-        <div className="mt-3 grid gap-4 rounded-lg border bg-muted/20 p-3 sm:grid-cols-2">
-          <div>
-            <p className="mb-1 text-sm font-medium text-foreground">
-              Técnico elegido: {proposal.technicianName}
-            </p>
-            <ul className="space-y-1 text-sm text-muted-foreground">
-              {passedReasons(proposal.chosenReasons).map((r) => (
-                <li key={r} className="flex items-center gap-1.5">
-                  <Check className="size-3.5 text-emerald-600" /> {r}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <p className="mb-1 text-sm font-medium text-foreground">Técnicos descartados</p>
-            {proposal.discarded.length === 0 ? (
-              <p className="text-sm text-muted-foreground/60">Sin otros candidatos.</p>
-            ) : (
-              <ul className="space-y-1 text-sm text-muted-foreground">
-                {proposal.discarded.map((d) => (
-                  <li key={d.technicianName} className="flex items-center gap-1.5">
-                    <X className="size-3.5 text-red-500" /> {d.technicianName} —{" "}
-                    {primaryFailure(d.reasons) ?? failedReasons(d.reasons)[0] ?? "no preferido"}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+        <div className="mt-2 rounded-xl border border-blue-500/15 bg-blue-500/[0.06] p-3">
+          <p className="mb-1 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-blue-400">
+            Nexus
+          </p>
+          <p className="text-sm leading-relaxed text-muted-foreground">{reasoning}</p>
         </div>
       ) : null}
+
+      {error ? <p className="mt-2 text-sm text-destructive">{error}</p> : null}
     </div>
   )
 }
