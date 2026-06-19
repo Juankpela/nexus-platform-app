@@ -64,11 +64,11 @@ export async function getPublicReportTarget(
   return { tenantId: data.id, tenantName: data.name }
 }
 
-/** Create a Case (origin "web") from a public report. Returns its number. */
+/** Create a Case (origin "web") from a public report. Returns its number + token. */
 export async function submitPublicReport(
   slug: string,
   input: PublicReportInput,
-): Promise<{ caseNumber: string } | null> {
+): Promise<{ caseNumber: string; trackingToken: string } | null> {
   const target = await getPublicReportTarget(slug)
   if (!target) return null
 
@@ -80,6 +80,10 @@ export async function submitPublicReport(
   if (numErr || !caseNumber) throw new Error("No se pudo generar el folio.")
 
   const photoUrl = await uploadReportPhoto(target.tenantId, input.photoDataUrl)
+
+  // Token de seguimiento: lo generamos aquí para devolverlo de inmediato (la BD
+  // también tiene un default, pero queremos el valor sin un segundo viaje).
+  const trackingToken = crypto.randomUUID()
 
   const subject = `${input.category}: ${input.description}`.slice(0, 200)
   const description = [
@@ -98,9 +102,10 @@ export async function submitPublicReport(
     priority: "medium",
     origin: "web",
     reporter_email: input.reporterEmail ?? null,
+    tracking_token: trackingToken,
     sla_due_at: computeSlaDueAt(new Date().toISOString(), "medium"),
   } as never)
   if (insErr) throw new Error("No se pudo registrar el reporte.")
 
-  return { caseNumber: caseNumber as string }
+  return { caseNumber: caseNumber as string, trackingToken }
 }

@@ -116,6 +116,15 @@ export function PublicReportForm({ tenantSlug }: { tenantSlug: string }) {
         <p className="mt-4 inline-block rounded-lg bg-muted px-4 py-2 text-base font-semibold tabular-nums">
           Folio: {state.folio}
         </p>
+        <a
+          href={`/seguimiento/${state.trackingToken}`}
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+        >
+          Ver el estado de mi solicitud
+        </a>
+        <p className="mt-2 text-xs text-muted-foreground">
+          También te enviaremos este enlace por correo.
+        </p>
       </div>
     )
   }

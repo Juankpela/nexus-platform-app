@@ -412,3 +412,10 @@ export {
   submitPublicReport,
   type PublicReportInput,
 } from "@/modules/service/infrastructure/supabase-public-intake-repository"
+
+// ── Línea de vida (seguimiento público + detalle de WO) ──────────────────────
+export {
+  getPublicTracking,
+  getWorkOrderLifecycle,
+  type PublicTrackingView,
+} from "@/modules/service/infrastructure/supabase-service-lifecycle-repository"

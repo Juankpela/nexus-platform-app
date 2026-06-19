@@ -438,6 +438,7 @@ export type Database = {
           status: Database["public"]["Enums"]["case_status"]
           subject: string
           tenant_id: string
+          tracking_token: string
           updated_at: string
           work_order_id: string | null
         }
@@ -459,6 +460,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["case_status"]
           subject: string
           tenant_id: string
+          tracking_token?: string
           updated_at?: string
           work_order_id?: string | null
         }
@@ -480,6 +482,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["case_status"]
           subject?: string
           tenant_id?: string
+          tracking_token?: string
           updated_at?: string
           work_order_id?: string | null
         }

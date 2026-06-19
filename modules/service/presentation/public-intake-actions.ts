@@ -4,7 +4,7 @@ import { submitPublicReport } from "@/modules/service/composition"
 
 export type PublicReportState =
   | { ok: false; error: string | null }
-  | { ok: true; folio: string }
+  | { ok: true; folio: string; trackingToken: string }
 
 function field(form: FormData, name: string): string {
   const v = form.get(name)
@@ -21,8 +21,9 @@ export async function submitReportAction(
   _state: PublicReportState,
   formData: FormData,
 ): Promise<PublicReportState> {
-  // Honeypot: real users never fill this hidden field.
-  if (field(formData, "website")) return { ok: true, folio: "REP-OK" }
+  // Honeypot: real users never fill this hidden field. Devolvemos un éxito falso
+  // (sin token real) para no darle señal al bot.
+  if (field(formData, "website")) return { ok: true, folio: "REP-OK", trackingToken: "" }
 
   const slug = field(formData, "tenantSlug")
   const description = field(formData, "description")
@@ -57,7 +58,7 @@ export async function submitReportAction(
     })
     if (!result) return { ok: false, error: "Enlace inválido." }
     const folio = result.caseNumber.replace(/^CASE/i, "REP")
-    return { ok: true, folio }
+    return { ok: true, folio, trackingToken: result.trackingToken }
   } catch {
     return { ok: false, error: "No se pudo enviar el reporte. Inténtalo de nuevo." }
   }

@@ -1,6 +1,7 @@
 import "server-only"
 
 import { ApplicationError } from "@/lib/errors/application-error"
+import { env } from "@/lib/config/env"
 import { emailConfigStatus, sendEmail } from "@/lib/email/send-email"
 import { createAdminSupabaseClient } from "@/lib/supabase/admin"
 import { createServerSupabaseClient } from "@/lib/supabase/server"
@@ -485,6 +486,14 @@ type CustomerCommContext = {
   woNumber: string
   caseSubject: string
   startIso: string | null
+  /** Token de seguimiento del caso (para el link público en los correos). */
+  trackingToken: string | null
+}
+
+/** Link público de seguimiento, o null si falta token o URL base. */
+function trackingUrl(trackingToken: string | null): string | null {
+  if (!trackingToken || !env.NEXT_PUBLIC_APP_URL) return null
+  return `${env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "")}/seguimiento/${trackingToken}`
 }
 
 /**
@@ -516,11 +525,13 @@ async function resolveCustomerCommContext(
 
   let customerEmail: string | null = null
   let caseSubject = (woRow?.subject as string | null) ?? "su solicitud"
+  let trackingToken: string | null = null
   if (caseId) {
     const { data: c } = await admin.from("cases").select("*").eq("id", caseId).maybeSingle()
     const cRow = c as Record<string, unknown> | null
     customerEmail = (cRow?.reporter_email as string | null) ?? null
     caseSubject = (cRow?.subject as string | null) ?? caseSubject
+    trackingToken = (cRow?.tracking_token as string | null) ?? null
     const contactId = (cRow?.contact_id as string | null) ?? null
     if (!customerEmail && contactId) {
       const { data: ct } = await admin.from("contacts").select("email").eq("id", contactId).maybeSingle()
@@ -540,7 +551,7 @@ async function resolveCustomerCommContext(
     (asg?.scheduled_start as string | null) ?? (woRow?.scheduled_start as string | null) ?? null
   const woNumber = (woRow?.work_order_number as string | null) ?? "—"
 
-  return { customerEmail, techName, company, woNumber, caseSubject, startIso }
+  return { customerEmail, techName, company, woNumber, caseSubject, startIso, trackingToken }
 }
 
 /**
@@ -618,6 +629,7 @@ export async function confirmCustomerOnAcceptance(input: {
     : "por confirmar"
 
   const deliverability = emailConfigStatus()
+  const confirmTrackUrl = trackingUrl(ctx.trackingToken)
   try {
     await sendEmail({
       to: customerEmail,
@@ -634,6 +646,9 @@ export async function confirmCustomerOnAcceptance(input: {
         `Empresa responsable: ${company}`,
         ``,
         `Estado: Visita confirmada`,
+        ...(confirmTrackUrl
+          ? ["", `Sigue el avance de tu visita en tiempo real:`, confirmTrackUrl]
+          : []),
         ``,
         `Gracias,`,
         `${company}`,
@@ -743,6 +758,7 @@ export async function notifyCustomerEnRoute(input: {
   const nowIso = new Date().toISOString()
   const deliverability = channel.kind === "email" ? emailConfigStatus() : "production"
   try {
+    const enrouteTrackUrl = trackingUrl(ctx.trackingToken)
     await channel.send({
       to: ctx.customerEmail,
       subject: "Su técnico va en camino",
@@ -756,6 +772,9 @@ export async function notifyCustomerEnRoute(input: {
         `Técnico: ${ctx.techName}`,
         ``,
         `Por favor prepárate para recibir la visita.`,
+        ...(enrouteTrackUrl
+          ? ["", `Sigue el avance en tiempo real:`, enrouteTrackUrl]
+          : []),
         ``,
         `Gracias,`,
         `${ctx.company}`,

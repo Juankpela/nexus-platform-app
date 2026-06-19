@@ -4,6 +4,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 
 import { ActivityTimeline } from "@/components/crm/activity-timeline"
+import { LifecycleTimeline } from "@/components/service/lifecycle-timeline"
 import { PageHeader } from "@/components/layout/page-header"
 import { WorkOrderFormDialog } from "@/components/service/work-order-form-dialog"
 import { WorkOrderStatusControl } from "@/components/service/work-order-status-control"
@@ -31,6 +32,7 @@ import {
 } from "@/modules/crm/domain/activity"
 import type { CompanyOption } from "@/modules/crm/domain/company"
 import {
+  getWorkOrderLifecycle,
   getWorkOrderRecord,
   listAssetOptions,
   listTenantCases,
@@ -133,7 +135,7 @@ export default async function WorkOrderDetailPage({
   const filters = parseActivityFilters(sp)
   const returnPath = `/app/${tenantSlug}/work-orders/${workOrderId}`
 
-  const [techPage, companyOptions, assetOptions, caseResult, activities, auditEvents, skillCatalog, zoneCatalog, activeAssignmentMap] =
+  const [techPage, companyOptions, assetOptions, caseResult, activities, auditEvents, skillCatalog, zoneCatalog, activeAssignmentMap, lifecycle] =
     await Promise.all([
       listTenantTechnicians(
         context.tenantId,
@@ -163,6 +165,7 @@ export default async function WorkOrderDetailPage({
       listTenantSkills(context.tenantId),
       listTenantZones(context.tenantId),
       getActiveAssignmentsByWorkOrder(context.tenantId, [workOrder.id]),
+      getWorkOrderLifecycle(context.tenantId, workOrder.id),
     ])
 
   // ADR-031: technician + assignment derive from the scheduling aggregate.
@@ -392,6 +395,15 @@ export default async function WorkOrderDetailPage({
             filters={filters}
             canWrite={canWriteActivities}
           />
+        ) : null}
+
+        {lifecycle && lifecycle.length > 0 ? (
+          <div className="space-y-3">
+            <h2 className="text-sm font-semibold">Línea de vida de la solicitud</h2>
+            <div className="rounded-xl border bg-card p-5">
+              <LifecycleTimeline milestones={lifecycle} />
+            </div>
+          </div>
         ) : null}
 
         {canReadAudit && auditEvents.length > 0 ? (
