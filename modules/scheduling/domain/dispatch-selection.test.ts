@@ -69,6 +69,42 @@ describe("selectDispatch", () => {
     expect(chosen?.technicianId).toBe("t-light")
   })
 
+  it("a igual slot y carga, prefiere el de MAYOR nivel (pericia)", () => {
+    // Mismo slot (ambos libres), misma carga (0): debe ganar el senior sobre el
+    // junior, aunque el junior tenga nombre alfabéticamente anterior.
+    const junior = tech({
+      technicianId: "t-jr",
+      technicianName: "Aaa",
+      skills: [{ skillId: HVAC, level: "mid" }],
+    })
+    const senior = tech({
+      technicianId: "t-sr",
+      technicianName: "Zzz",
+      skills: [{ skillId: HVAC, level: "expert" }],
+    })
+    const { chosen } = selectDispatch([junior, senior], req)
+    expect(chosen?.technicianId).toBe("t-sr")
+    expect(chosen?.skillRank).toBe(4)
+  })
+
+  it("la carga pesa más que la pericia (orden de desempate)", () => {
+    // El senior está más cargado: gana el de menor carga aunque sea de menor nivel.
+    const seniorCargado = tech({
+      technicianId: "t-sr",
+      technicianName: "Aaa",
+      skills: [{ skillId: HVAC, level: "expert" }],
+      dayAssignmentCount: 3,
+    })
+    const midLiviano = tech({
+      technicianId: "t-mid",
+      technicianName: "Zzz",
+      skills: [{ skillId: HVAC, level: "mid" }],
+      dayAssignmentCount: 0,
+    })
+    const { chosen } = selectDispatch([seniorCargado, midLiviano], req)
+    expect(chosen?.technicianId).toBe("t-mid")
+  })
+
   it("no elige a un técnico inactivo", () => {
     const { chosen, discarded } = selectDispatch([tech({ status: "inactive" })], req)
     expect(chosen).toBeNull()

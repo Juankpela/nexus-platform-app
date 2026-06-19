@@ -3,7 +3,7 @@ import {
   type EligibilityReasons,
 } from "@/modules/scheduling/domain/eligibility"
 import { findNextSlot, type LocalSlot } from "@/modules/scheduling/domain/next-slot"
-import { meetsSkillLevel, type SkillLevel } from "@/modules/service/domain/skill"
+import { meetsSkillLevel, skillLevelRank, type SkillLevel } from "@/modules/service/domain/skill"
 import type {
   AvailabilityException,
   TechnicianCapacity,
@@ -56,6 +56,8 @@ export type DispatchCandidate = {
   /** Slot local encontrado (null si no hay). */
   slot: LocalSlot | null
   dayAssignmentCount: number
+  /** Rango del nivel del técnico en la skill requerida (4=experto … 1=junior; 0=n/a). */
+  skillRank: number
 }
 
 export type DispatchSelection = {
@@ -111,6 +113,12 @@ export function selectDispatch(
         })
       : null
 
+    // Nivel del técnico en la skill requerida (para el desempate por pericia).
+    const level =
+      req.skillId === null
+        ? null
+        : (snap.skills.find((s) => s.skillId === req.skillId)?.level ?? null)
+
     return {
       technicianId: snap.technicianId,
       technicianName: snap.technicianName,
@@ -121,6 +129,7 @@ export function selectDispatch(
       },
       slot,
       dayAssignmentCount: snap.dayAssignmentCount,
+      skillRank: level ? skillLevelRank(level) : 0,
     }
   })
 
@@ -133,8 +142,11 @@ export function selectDispatch(
       : [...eligible].sort((a, b) => {
           if (earlier(a.slot as LocalSlot, b.slot as LocalSlot)) return -1
           if (earlier(b.slot as LocalSlot, a.slot as LocalSlot)) return 1
+          // A igual slot y carga, preferir MAYOR nivel en la skill (pericia),
+          // y solo entonces desempatar por nombre (determinístico).
           return (
             a.dayAssignmentCount - b.dayAssignmentCount ||
+            b.skillRank - a.skillRank ||
             a.technicianName.localeCompare(b.technicianName)
           )
         })[0]
