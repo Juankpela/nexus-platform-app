@@ -300,6 +300,14 @@ export async function applyRescheduleRecord(input: {
 const AUTO_DISPATCH_HORIZON_DAYS = 14
 /** Umbral de confianza por defecto (config por tenant en hitos posteriores). */
 const AUTO_DISPATCH_CONFIDENCE_THRESHOLD = 0.7
+/**
+ * Coordinación visible (PR2): margen de preparación/desplazamiento y redondeo del
+ * inicio. Nexus NO agenda a la hora exacta de entrada del caso; propone el primer
+ * slot coordinado (≥ ahora + lead, en medias horas). Es la evidencia de que está
+ * coordinando recursos y agenda, no solo creando una orden.
+ */
+const AUTO_DISPATCH_LEAD_MINUTES = 60
+const AUTO_DISPATCH_SLOT_GRANULARITY_MINUTES = 30
 /** Actor del sistema para la atribución "Nexus Autonomous Dispatch". */
 const AUTONOMOUS_DISPATCH_EVENT = "autonomous_dispatch.assigned"
 
@@ -344,6 +352,8 @@ export async function runAutoDispatchForCase(input: {
       timeZone: TENANT_TIMEZONE,
       horizonDays: AUTO_DISPATCH_HORIZON_DAYS,
       confidenceThreshold: AUTO_DISPATCH_CONFIDENCE_THRESHOLD,
+      leadMinutes: AUTO_DISPATCH_LEAD_MINUTES,
+      slotGranularityMinutes: AUTO_DISPATCH_SLOT_GRANULARITY_MINUTES,
     },
     {
       tenantId: input.tenantId,
@@ -899,6 +909,8 @@ export async function listDispatchInbox(tenantId: UUID): Promise<DispatchInbox> 
     timeZone: TENANT_TIMEZONE,
     horizonDays: AUTO_DISPATCH_HORIZON_DAYS,
     confidenceThreshold: AUTO_DISPATCH_CONFIDENCE_THRESHOLD,
+    leadMinutes: AUTO_DISPATCH_LEAD_MINUTES,
+    slotGranularityMinutes: AUTO_DISPATCH_SLOT_GRANULARITY_MINUTES,
   }
 
   const proposals: AssistedDispatchProposal[] = []

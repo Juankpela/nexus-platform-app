@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { planAutoDispatch } from "./plan-auto-dispatch"
+import { coordinatedStart, planAutoDispatch } from "./plan-auto-dispatch"
 import type { ReportClassifier } from "@/modules/scheduling/application/ports/report-classifier"
 import type { DispatchCandidateReader } from "@/modules/scheduling/application/ports/dispatch-candidate-reader"
 import type { TechnicianDispatchSnapshot } from "@/modules/scheduling/domain/dispatch-selection"
@@ -88,6 +88,41 @@ describe("planAutoDispatch", () => {
     // skillId null → bloqueo duro: nunca se asigna sin skill del tenant.
     expect(plan.verdict).toBe("ESCALATE")
     expect(plan.confidence.blockers).toContain("no_skill_identified")
+  })
+
+  it("coordina el horario: aplica lead + redondeo, no la hora exacta de entrada", async () => {
+    // Entra 08:00 Bogotá (minuto 480), ventana del técnico 08:00–17:00.
+    // Sin coordinación, el slot sería 480. Con lead 45 + granularidad 30 → 540 (09:00).
+    const plan = await planAutoDispatch(
+      {
+        ...deps,
+        leadMinutes: 45,
+        slotGranularityMinutes: 30,
+        classifier: classifier(),
+        candidates: reader([tech()]),
+      },
+      { ...input, availableSkills: [{ id: HVAC, name: "HVAC" }] },
+    )
+    expect(plan.verdict).toBe("PROCEED")
+    expect(plan.chosen?.slot?.startMinute).toBe(540)
+  })
+
+  it("coordinatedStart redondea y desborda al día siguiente tras medianoche", () => {
+    // Sin lead ni granularidad: queda igual.
+    expect(coordinatedStart("2024-01-01", 480, 0, 0)).toEqual({
+      fromDate: "2024-01-01",
+      fromMinute: 480,
+    })
+    // Lead 60 + granularidad 30 sobre 14:22 (862) → 922 → ceil a 930 (15:30).
+    expect(coordinatedStart("2024-01-01", 862, 60, 30)).toEqual({
+      fromDate: "2024-01-01",
+      fromMinute: 930,
+    })
+    // 23:50 (1430) + 60 = 1490 → redondeo a 1500 → cruza medianoche → 01:00 (60).
+    expect(coordinatedStart("2024-01-01", 1430, 60, 30)).toEqual({
+      fromDate: "2024-01-02",
+      fromMinute: 60,
+    })
   })
 
   it("ESCALATE si el slot rompe el SLA", async () => {
