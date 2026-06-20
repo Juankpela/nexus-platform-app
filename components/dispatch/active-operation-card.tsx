@@ -72,30 +72,33 @@ export function ActiveOperationCard({
         </span>
       </div>
 
-      {/* Ribbon = línea de vida real (compacta). El hito ACTUAL late "en vivo"
-          para que se sienta una operación avanzando, no una lista de estados. */}
-      <div className="mt-3 flex flex-wrap items-center gap-x-1 gap-y-1.5">
+      {/* Línea de vida operacional full-width: 9 hitos conectados. El hito ACTUAL
+          late "en vivo" → se siente una operación AVANZANDO, no una lista. */}
+      <div className="mt-4 flex items-start">
         {milestones.map((m, i) => {
           const { dot, text } = dotTone(m.state, m.key)
           const live = m.state === "current"
+          const last = i === milestones.length - 1
+          const leftDone = i > 0 && (m.state === "done" || milestones[i - 1]?.state === "done")
+          const rightDone = !last && (milestones[i + 1]?.state === "done" || m.state === "done")
           return (
-            <span key={m.key} className="inline-flex items-center">
-              {i > 0 ? (
+            <div key={m.key} className="flex min-w-0 flex-1 flex-col items-center">
+              <div className="flex w-full items-center">
+                <span className={`h-0.5 flex-1 ${i === 0 ? "opacity-0" : leftDone ? "bg-emerald-400/50" : "bg-border"}`} />
                 <span
-                  className={`mr-1 h-px w-3 ${
-                    m.state === "done" || milestones[i - 1]?.state === "done"
-                      ? "bg-emerald-400/40"
-                      : "bg-border"
+                  className={`size-2.5 shrink-0 rounded-full ${dot} ${
+                    live ? "animate-pulse ring-4 ring-current/20" : ""
                   }`}
                 />
-              ) : null}
-              <span className={`inline-flex items-center gap-1.5 text-xs ${text} ${live ? "font-semibold" : ""}`}>
-                <span
-                  className={`size-1.5 rounded-full ${dot} ${live ? "animate-pulse ring-2 ring-current/30" : ""}`}
-                />
+                <span className={`h-0.5 flex-1 ${last ? "opacity-0" : rightDone ? "bg-emerald-400/50" : "bg-border"}`} />
+              </div>
+              <span
+                className={`mt-1.5 truncate text-[10px] ${text} ${live ? "font-semibold" : ""}`}
+                title={SHORT_LABEL[m.key] ?? m.label}
+              >
                 {SHORT_LABEL[m.key] ?? m.label}
               </span>
-            </span>
+            </div>
           )
         })}
       </div>

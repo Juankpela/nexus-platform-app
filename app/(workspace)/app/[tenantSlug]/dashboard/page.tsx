@@ -4,8 +4,6 @@ import { OperationalCenter } from "@/components/dispatch/operational-center"
 import { StartReceivingCard } from "@/components/dashboard/start-receiving-card"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
 import { FOUNDATION_PERMISSIONS } from "@/modules/authorization/domain/permission"
-import { getCachedCurrentUser } from "@/modules/identity/composition"
-import { greetingFor } from "@/modules/platform/presentation/mission-control"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 
 export const metadata: Metadata = { title: "Centro Operacional" }
@@ -19,24 +17,22 @@ export default async function MissionControlPage({
   const context = await getRequestContext(tenantSlug)
   requirePermission(context.effectivePermissions, FOUNDATION_PERMISSIONS.dashboardRead)
 
-  const user = await getCachedCurrentUser()
-
   // Enlace público de reportes: hace visible la entrada del Golden Path (reporte).
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/\/$/, "")
   const reportUrl = appUrl ? `${appUrl}/r/${tenantSlug}` : null
-
-  const name = (user?.email?.split("@")[0] ?? "").replace(/[._-]/g, " ")
-  const greeting = greetingFor(new Date().getUTCHours())
 
   return (
     <div className="space-y-7 px-5 py-6 sm:px-8">
       <header>
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          {greeting}
-          {name ? `, ${name}` : ""}
+          Centro de Monitoreo Operacional
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          ¿Qué necesita tu atención ahora?
+        <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+            <span className="size-1.5 animate-pulse rounded-full bg-emerald-500" />
+            Operación en vivo
+          </span>
+          · {context.tenant.name} · ¿Qué necesita tu atención ahora?
         </p>
       </header>
 

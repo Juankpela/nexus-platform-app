@@ -1,11 +1,10 @@
-import { ArrowRight, Gauge, Sparkles, UserCheck, Users, Wallet } from "lucide-react"
+import { ArrowRight, Sparkles } from "lucide-react"
 import Link from "next/link"
 
 import { ActiveOperationCard } from "@/components/dispatch/active-operation-card"
 import { AssistedProposalCard } from "@/components/dispatch/assisted-proposal-card"
 import { CompletedOperationCard } from "@/components/dispatch/completed-operation-card"
 import { DispatchExceptionCard } from "@/components/dispatch/dispatch-exception-card"
-import { MissionMetricCard } from "@/components/dashboard/mission/mission-metric-card"
 import { MissionSection } from "@/components/dashboard/mission/mission-section"
 import {
   BILLING_PERMISSIONS,
@@ -20,12 +19,61 @@ import { getWorkOrderLifecycle, listTenantWorkOrders } from "@/modules/service/c
 import { formatCOP } from "@/lib/format/money"
 import type { UUID } from "@/types/shared"
 
+/** Tile compacto de la barra de PULSO. El dinero va `muted` (menor peso visual). */
+function PulseTile({
+  label,
+  value,
+  hint,
+  accent = "blue",
+  muted = false,
+  href,
+}: {
+  label: string
+  value: string | number
+  hint?: string
+  accent?: "blue" | "emerald" | "orange" | "silver"
+  muted?: boolean
+  href?: string
+}) {
+  const accentText = {
+    blue: "text-nexus-blue",
+    emerald: "text-emerald-500 dark:text-emerald-400",
+    orange: "text-orange-500 dark:text-orange-400",
+    silver: "text-muted-foreground",
+  }[accent]
+  const inner = (
+    <>
+      <div className="flex items-center gap-1.5">
+        <span className={`size-1.5 rounded-full ${muted ? "bg-muted-foreground/40" : accentText.replace("text-", "bg-")}`} />
+        <span className="truncate text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+          {label}
+        </span>
+      </div>
+      <p
+        className={`mt-1 tabular-nums font-semibold tracking-tight ${
+          muted ? "text-base text-muted-foreground" : `text-2xl ${accentText}`
+        }`}
+      >
+        {value}
+      </p>
+      {hint ? <p className="text-[10px] text-muted-foreground">{hint}</p> : null}
+    </>
+  )
+  const cls = "rounded-xl border bg-card px-3 py-2.5"
+  return href ? (
+    <Link href={href} className={`${cls} block transition-colors hover:bg-muted/30`}>
+      {inner}
+    </Link>
+  ) : (
+    <div className={cls}>{inner}</div>
+  )
+}
+
 /**
- * Centro Operacional — la ÚNICA superficie de Inicio. Responde una sola pregunta:
- * "¿Qué necesita mi atención ahora?". Por eso todo es un gradiente de atención:
- * la decisión de Nexus manda; lo que ya fluye pesa menos; el dinero es contexto
- * al pie. Reutiliza por completo consultas y tarjetas existentes — no crea
- * pantallas, estados ni consultas nuevas. Único orquestador visual.
+ * Centro Operacional — Inicio. Torre de control: barra de PULSO arriba, la
+ * decisión de Nexus (héroe) + las excepciones a dos columnas, y la operación viva
+ * con su línea de vida full-width. Único orquestador. Reutiliza por completo
+ * consultas y tarjetas existentes — sin pantallas, estados ni consultas nuevas.
  */
 export async function OperationalCenter({
   tenantSlug,
@@ -76,8 +124,8 @@ export async function OperationalCenter({
 
   const { proposals, exceptions } = inbox
 
-  // Operaciones activas: técnicos con un job en ejecución. La mini línea de vida
-  // se resuelve con la MISMA función canónica (sin timeline nuevo).
+  // Operaciones activas: técnicos con un job en ejecución. Línea de vida con la
+  // MISMA función canónica (sin timeline nuevo).
   const activeRaw = board.entries.filter((e) => e.activeJob)
   const lifecycles = await Promise.all(
     activeRaw.map((e) => getWorkOrderLifecycle(tenantId, e.activeJob!.workOrderId)),
@@ -94,7 +142,7 @@ export async function OperationalCenter({
     milestones: lifecycles[i] ?? [],
   }))
 
-  // Operaciones completadas: WO completadas + su factura (match por workOrderId).
+  // Completadas: WO completadas + su factura (match por workOrderId).
   const invByWo = new Map(
     (invoicesPage?.items ?? [])
       .filter((i) => i.workOrderId)
@@ -112,69 +160,95 @@ export async function OperationalCenter({
     invoice: invByWo.get(w.id) ?? null,
   }))
 
-  // Dinero (peso mínimo): por cobrar + borradores, de las facturas ya cargadas.
+  // Dinero (peso mínimo): por cobrar de las facturas ya cargadas.
   const invoices = invoicesPage?.items ?? []
   const porCobrar = invoices.reduce((s, i) => s + (i.balance > 0 ? i.balance : 0), 0)
-  const borradores = invoices.filter((i) => i.status === "draft").length
-
-  // Línea de pulso (una sola fila, tenue): el subtítulo de "¿qué necesita atención?".
-  const pulse = [
-    proposals.length > 0
-      ? `${proposals.length} ${proposals.length === 1 ? "decisión pendiente" : "decisiones pendientes"}`
-      : null,
-    exceptions.length > 0 ? `${exceptions.length} requieren tu criterio` : null,
-    activeOps.length > 0 ? `${activeOps.length} en marcha` : null,
-  ].filter(Boolean)
-  const pulseText = pulse.length > 0 ? pulse.join(" · ") : "Operación al día — nada requiere tu decisión ahora."
 
   return (
-    <div className="space-y-7">
-      {/* Pulso: una sola fila tenue, responde el subtítulo de la pregunta única. */}
-      <p className="text-sm text-muted-foreground">{pulseText}</p>
+    <div className="space-y-6">
+      {/* ── BARRA DE PULSO ── operacional grande, dinero pequeño ──────────────── */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <PulseTile label="Operaciones activas" value={activeOps.length} accent="blue" />
+        <PulseTile
+          label="Requieren atención"
+          value={exceptions.length}
+          accent={exceptions.length > 0 ? "orange" : "silver"}
+        />
+        <PulseTile
+          label="Decisiones de Nexus"
+          value={proposals.length}
+          accent={proposals.length > 0 ? "emerald" : "silver"}
+        />
+        {stats ? (
+          <PulseTile
+            label="Técnicos disponibles"
+            value={stats.availableTechnicians}
+            accent="emerald"
+            hint={`${stats.busyTechnicians} ocupados · ${stats.overloadedTechnicians} sobrecargados`}
+            href={`/app/${tenantSlug}/field-monitor`}
+          />
+        ) : null}
+        {canInvoices ? (
+          <PulseTile label="Por cobrar" value={formatCOP(porCobrar)} muted href={`/app/${tenantSlug}/invoices`} />
+        ) : null}
+      </div>
 
-      {/* ── NIVEL 1 · Decisión de Nexus (el elemento más importante de la app) ── */}
-      <section aria-label="Nexus recomienda">
-        <div className="mb-3 flex items-center gap-2">
-          <span className="grid size-7 place-items-center rounded-lg bg-nexus-blue/10 text-nexus-blue">
-            <Sparkles className="size-4" />
-          </span>
-          <h2 className="text-base font-semibold text-foreground">
-            Nexus recomienda
-            {proposals.length ? (
-              <span className="ml-2 text-sm font-normal text-muted-foreground">
-                · {proposals.length}
-              </span>
-            ) : null}
-          </h2>
-        </div>
-        {proposals.length === 0 ? (
-          <div className="rounded-2xl border border-emerald-200/60 bg-emerald-50/40 p-5 text-sm text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-300">
-            Nexus tiene la operación al día. Nada requiere tu decisión en este momento.
+      {/* ── N1 · Decisión de Nexus (héroe) + Requiere tu atención (excepciones) ── */}
+      <div className="grid gap-5 lg:grid-cols-3">
+        {/* Héroe — el elemento más importante de toda la app */}
+        <section aria-label="Nexus recomienda" className="lg:col-span-2">
+          <div className="mb-3 flex items-center gap-2">
+            <span className="grid size-7 place-items-center rounded-lg bg-nexus-blue/10 text-nexus-blue">
+              <Sparkles className="size-4" />
+            </span>
+            <h2 className="text-base font-semibold text-foreground">
+              Nexus recomienda
+              {proposals.length ? (
+                <span className="ml-2 text-sm font-normal text-muted-foreground">· {proposals.length}</span>
+              ) : null}
+            </h2>
           </div>
-        ) : (
-          <div className="space-y-3">
-            {proposals.map((p) => (
-              <AssistedProposalCard key={p.caseId} tenantSlug={tenantSlug} proposal={p} />
-            ))}
-          </div>
-        )}
-      </section>
+          {proposals.length === 0 ? (
+            <div className="rounded-2xl border border-emerald-200/60 bg-emerald-50/40 p-5 text-sm text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-300">
+              Nexus tiene la operación al día. Nada requiere tu decisión en este momento.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {proposals.map((p) => (
+                <AssistedProposalCard key={p.caseId} tenantSlug={tenantSlug} proposal={p} />
+              ))}
+            </div>
+          )}
+        </section>
 
-      {/* ── NIVEL 1b · Requiere tu criterio (solo si Nexus no pudo coordinar solo) ── */}
-      {exceptions.length > 0 ? (
-        <MissionSection
-          title={`Requiere tu criterio · ${exceptions.length}`}
-          description="Casos que Nexus no pudo coordinar solo. Necesitan tu decisión."
-        >
-          <div className="space-y-3">
-            {exceptions.map((e) => (
-              <DispatchExceptionCard key={e.caseId} exception={e} />
-            ))}
+        {/* Requiere tu atención (excepciones) — columna lateral */}
+        <section aria-label="Requiere tu atención">
+          <div className="mb-3 flex items-center gap-2">
+            <span
+              className={`size-2.5 rounded-full ${exceptions.length > 0 ? "bg-orange-500" : "bg-muted-foreground/40"}`}
+            />
+            <h2 className="text-base font-semibold text-foreground">
+              Requiere tu atención
+              {exceptions.length ? (
+                <span className="ml-2 text-sm font-normal text-muted-foreground">· {exceptions.length}</span>
+              ) : null}
+            </h2>
           </div>
-        </MissionSection>
-      ) : null}
+          {exceptions.length === 0 ? (
+            <div className="rounded-2xl border bg-card p-5 text-sm text-muted-foreground">
+              Nada bloqueado. Nexus está coordinando todo solo.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {exceptions.map((e) => (
+                <DispatchExceptionCard key={e.caseId} exception={e} />
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
 
-      {/* ── NIVEL 2 · Operación en marcha (fluye sola; la operación viva manda) ── */}
+      {/* ── N2 · Operación en marcha (full-width, línea de vida viva) ── */}
       <MissionSection
         title={`Operación en marcha${activeOps.length ? ` · ${activeOps.length}` : ""}`}
         description="Nexus está coordinando estas operaciones en este momento."
@@ -195,7 +269,6 @@ export async function OperationalCenter({
           </div>
         )}
 
-        {/* Completadas: secundario, plegado. */}
         {canWorkOrders && completedOps.length > 0 ? (
           <details className="mt-3 rounded-2xl border bg-card p-4">
             <summary className="cursor-pointer text-sm font-medium text-muted-foreground">
@@ -210,72 +283,13 @@ export async function OperationalCenter({
         ) : null}
       </MissionSection>
 
-      {/* ── NIVEL 3 · Capacidad operativa (¿podemos tomar más? — NO directorio) ── */}
-      {canDispatch && stats ? (
-        <section aria-label="Capacidad operativa">
-          <div className="mb-3 flex items-center justify-between gap-2">
-            <h2 className="text-base font-semibold text-foreground">Capacidad operativa</h2>
-            <Link
-              href={`/app/${tenantSlug}/field-monitor`}
-              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-            >
-              Monitor de campo <ArrowRight className="size-3.5" />
-            </Link>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <MissionMetricCard
-              label="Disponibles"
-              value={stats.availableTechnicians}
-              icon={UserCheck}
-              accent="emerald"
-              hint={
-                stats.availableTechnicians > 0
-                  ? "Con cupo para tomar más trabajo hoy"
-                  : "Sin cupo libre ahora"
-              }
-            />
-            <MissionMetricCard
-              label="Ocupados"
-              value={stats.busyTechnicians}
-              icon={Users}
-              accent="blue"
-              hint={
-                stats.averageUtilization != null
-                  ? `Utilización promedio ${stats.averageUtilization}%`
-                  : undefined
-              }
-            />
-            <MissionMetricCard
-              label="Sobrecargados"
-              value={stats.overloadedTechnicians}
-              icon={Gauge}
-              accent={stats.overloadedTechnicians > 0 ? "orange" : "silver"}
-              hint={stats.overloadedTechnicians > 0 ? "Reasignar para equilibrar carga" : "Carga equilibrada"}
-            />
-          </div>
-        </section>
-      ) : null}
-
-      {/* ── NIVEL 4 · Negocio (visible, pero el MENOR peso visual de la pantalla) ── */}
+      {/* Negocio: enlace tenue al pie (el dinero ya vive pequeño en el pulso). */}
       {canInvoices ? (
         <Link
           href={`/app/${tenantSlug}/invoices`}
-          className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t pt-4 text-xs text-muted-foreground hover:text-foreground"
+          className="inline-flex items-center gap-1 border-t pt-4 text-xs text-muted-foreground hover:text-foreground"
         >
-          <span className="inline-flex items-center gap-1.5">
-            <Wallet className="size-3.5" /> Negocio
-          </span>
-          <span>
-            Por cobrar <span className="font-medium tabular-nums text-foreground">{formatCOP(porCobrar)}</span>
-          </span>
-          {borradores > 0 ? (
-            <span>
-              {borradores} {borradores === 1 ? "factura en borrador" : "facturas en borrador"}
-            </span>
-          ) : null}
-          <span className="ml-auto inline-flex items-center gap-1">
-            Ir a Facturación <ArrowRight className="size-3.5" />
-          </span>
+          Ir a Facturación <ArrowRight className="size-3.5" />
         </Link>
       ) : null}
     </div>

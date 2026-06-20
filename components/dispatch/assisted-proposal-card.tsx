@@ -41,7 +41,7 @@ export function AssistedProposalCard({
   tenantSlug: string
   proposal: ProposalView
 }) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(true)
   const [done, setDone] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [pending, start] = useTransition()
@@ -132,7 +132,7 @@ export function AssistedProposalCard({
         className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
       >
         {pending ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
-        Confirmar
+        Confirmar coordinación
       </button>
 
       {/* Resumen del razonamiento — visible SIN expandir: el usuario entiende que
@@ -144,7 +144,7 @@ export function AssistedProposalCard({
         onClick={() => setOpen((v) => !v)}
         className="mt-1.5 flex w-full items-center justify-center gap-1 py-1 text-xs font-medium text-blue-500 transition-colors hover:text-blue-400 dark:text-blue-400"
       >
-        Ver razonamiento de Nexus
+        {open ? "Ocultar razonamiento" : "Ver razonamiento de Nexus"}
         <ChevronDown className={`size-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
@@ -153,9 +153,9 @@ export function AssistedProposalCard({
           {/* Por qué el seleccionado */}
           <div>
             <p className="mb-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-blue-400">
-              Por qué {selected.name}
+              Por qué {selected.name}, y no los demás
             </p>
-            <ul className="space-y-1">
+            <ul className="grid gap-x-4 gap-y-1 sm:grid-cols-2">
               {selected.motives.map((m) => (
                 <li key={m} className="flex gap-2 text-sm text-muted-foreground">
                   <span className="mt-0.5 text-emerald-500 dark:text-emerald-400">✓</span>
