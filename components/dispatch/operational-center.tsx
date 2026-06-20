@@ -240,7 +240,7 @@ export async function OperationalCenter({
           ) : (
             <div className="space-y-3">
               {exceptions.map((e) => (
-                <DispatchExceptionCard key={e.caseId} exception={e} />
+                <DispatchExceptionCard key={e.caseId} exception={e} tenantSlug={tenantSlug} />
               ))}
             </div>
           )}

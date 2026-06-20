@@ -45,10 +45,16 @@ function initials(name: string): string {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("")
 }
 
-/** Color del segmento de línea entre el hito a (izq) y b (der). */
+/**
+ * Color del segmento de línea entre el hito a (izq) y b (der).
+ * TODOS los segmentos miden `h-0.5` para alinear perfecto en la misma fila
+ * (el punteado se dibuja con un gradiente repetido, no con border, que rompía
+ * la altura y dejaba la línea desnivelada).
+ */
 function segTone(a: LifecycleMilestone | undefined, b: LifecycleMilestone | undefined): string {
   if (!a || !b) return "opacity-0"
-  if (b.state === "current") return "border-t-2 border-dashed border-teal-400/70"
+  if (b.state === "current")
+    return "h-0.5 bg-[repeating-linear-gradient(90deg,#2dd4bf_0_5px,transparent_5px_10px)]"
   if (a.state === "done") return "h-0.5 bg-emerald-400/60"
   return "h-0.5 bg-border"
 }

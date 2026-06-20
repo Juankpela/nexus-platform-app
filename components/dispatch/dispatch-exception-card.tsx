@@ -1,4 +1,5 @@
-import { AlertTriangle, PauseCircle } from "lucide-react"
+import { AlertTriangle, ArrowRight, PauseCircle } from "lucide-react"
+import Link from "next/link"
 
 export type DispatchExceptionView = {
   caseId: string
@@ -14,20 +15,30 @@ export type DispatchExceptionView = {
 
 /**
  * Tarjeta de excepción de despacho (H2): hace visible un caso que el motor NO
- * pudo despachar. Solo lectura: muestra qué falló, por qué y la acción sugerida.
+ * pudo despachar. Es la puerta de acción: toda la tarjeta enlaza al caso para
+ * resolverlo (asignar técnico manual / agregar alias de especialidad) desde aquí.
  */
-export function DispatchExceptionCard({ exception }: { exception: DispatchExceptionView }) {
+export function DispatchExceptionCard({
+  exception,
+  tenantSlug,
+}: {
+  exception: DispatchExceptionView
+  tenantSlug: string
+}) {
   const escalate = exception.verdict === "ESCALATE"
   const tone = escalate
-    ? "border-red-200 dark:border-red-900/50"
-    : "border-amber-200 dark:border-amber-900/50"
+    ? "border-red-200 hover:border-red-300 dark:border-red-900/50 dark:hover:border-red-800"
+    : "border-amber-200 hover:border-amber-300 dark:border-amber-900/50 dark:hover:border-amber-800"
   const badge = escalate
     ? "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300"
     : "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
   const Icon = escalate ? AlertTriangle : PauseCircle
 
   return (
-    <div className={`rounded-xl border bg-card p-4 ${tone}`}>
+    <Link
+      href={`/app/${tenantSlug}/cases/${exception.caseId}`}
+      className={`group block rounded-xl border bg-card p-4 transition-colors ${tone}`}
+    >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-xs text-muted-foreground">{exception.caseNumber}</p>
@@ -57,6 +68,12 @@ export function DispatchExceptionCard({ exception }: { exception: DispatchExcept
           <span className="text-muted-foreground">{exception.suggestedAction}</span>
         </p>
       </div>
-    </div>
+
+      {/* CTA: la tarjeta es la puerta para resolver el caso */}
+      <span className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-nexus-blue">
+        Resolver ahora
+        <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+      </span>
+    </Link>
   )
 }
