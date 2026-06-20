@@ -1,10 +1,12 @@
 import type { Metadata } from "next"
+import { redirect } from "next/navigation"
 
 import { OperationalCenter } from "@/components/dispatch/operational-center"
 import { StartReceivingCard } from "@/components/dashboard/start-receiving-card"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
 import { FOUNDATION_PERMISSIONS } from "@/modules/authorization/domain/permission"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
+import { isTechnicianOnly } from "@/modules/request-context/domain/role"
 
 export const metadata: Metadata = { title: "Centro Operacional" }
 
@@ -15,6 +17,8 @@ export default async function MissionControlPage({
 }) {
   const { tenantSlug } = await params
   const context = await getRequestContext(tenantSlug)
+  // El técnico puro no vive en el back-office: su casa es el móvil de campo.
+  if (isTechnicianOnly(context.roleKeys)) redirect(`/app/${tenantSlug}/worker`)
   requirePermission(context.effectivePermissions, FOUNDATION_PERMISSIONS.dashboardRead)
 
   // Enlace público de reportes: hace visible la entrada del Golden Path (reporte).

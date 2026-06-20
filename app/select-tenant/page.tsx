@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button"
 import { getCachedCurrentUser } from "@/modules/identity/composition"
 import { logoutAction } from "@/modules/identity/presentation/actions"
 import { isCurrentUserPlatformAdmin } from "@/modules/platform/composition"
-import { listCachedUserTenants } from "@/modules/tenancy/composition"
+import { landingPathFor } from "@/modules/request-context/domain/role"
+import { listCachedUserTenants, resolveCachedTenantAccess } from "@/modules/tenancy/composition"
 
 export default async function SelectTenantPage() {
   const user = await getCachedCurrentUser()
@@ -23,9 +24,12 @@ export default async function SelectTenantPage() {
   if (tenants.length === 0 && platformAdmin) {
     redirect("/platform")
   }
-  // Regular users with a single workspace skip the chooser.
+  // Regular users with a single workspace skip the chooser. Los técnicos puros
+  // aterrizan directo en su móvil de campo (/worker), no en el back-office.
   if (tenants.length === 1 && !platformAdmin) {
-    redirect(`/app/${tenants[0].slug}/dashboard`)
+    const access = await resolveCachedTenantAccess(tenants[0].slug)
+    const roleKeys = access?.roleKeys ?? []
+    redirect(landingPathFor(tenants[0].slug, roleKeys))
   }
 
   return (
