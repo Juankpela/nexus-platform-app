@@ -16,7 +16,8 @@ import {
   listInvoiceLines,
   listInvoicePayments,
 } from "@/modules/billing/composition"
-import { getContactRecord } from "@/modules/crm/composition"
+import { getCompanyRecord, getContactRecord } from "@/modules/crm/composition"
+import { buildWhatsAppUrl } from "@/modules/notifications/domain/whatsapp-link"
 import { sendInvoiceEmailAction } from "@/modules/billing/presentation/invoice-actions"
 import {
   INVOICE_ORIGIN_LABELS,
@@ -72,8 +73,23 @@ export default async function InvoiceDetailPage({
   const whatsappMessage = hasBalance
     ? `Hola, te ${isOverdue ? "recordamos" : "compartimos"} la factura ${invoiceNumber} por ${formatCOP(invoice.totalAmount)}, con saldo pendiente de ${formatCOP(invoice.balance)}${isOverdue && invoice.dueDate ? ` (vencida el ${formatDateNumeric(invoice.dueDate)})` : ""}. Quedamos atentos a tu pago. Saludos, ${context.tenant.name}.`
     : `Hola, te compartimos la factura ${invoiceNumber} por ${formatCOP(invoice.totalAmount)} de ${context.tenant.name}.`
-  const whatsappHref = `https://wa.me/?text=${encodeURIComponent(whatsappMessage)}`
-  const whatsappLabel = hasBalance ? "Cobrar por WhatsApp" : "Compartir por WhatsApp"
+  // Teléfono del cliente (el "cliente exprés" guarda el WhatsApp del reportante).
+  // Si lo tenemos, el enlace va DIRECTO a ese número; si no, abre el selector de
+  // contactos de WhatsApp como respaldo.
+  const customer = invoice.companyId
+    ? await getCompanyRecord(context.tenantId, invoice.companyId)
+    : null
+  const customerPhone = customer?.phone ?? null
+  const whatsappHref =
+    buildWhatsAppUrl(customerPhone, whatsappMessage) ??
+    `https://wa.me/?text=${encodeURIComponent(whatsappMessage)}`
+  const whatsappLabel = customerPhone
+    ? hasBalance
+      ? "Cobrar al cliente por WhatsApp"
+      : "Enviar al cliente por WhatsApp"
+    : hasBalance
+      ? "Cobrar por WhatsApp"
+      : "Compartir por WhatsApp"
 
   const canPaymentsRead = hasPermission(
     context.effectivePermissions,
