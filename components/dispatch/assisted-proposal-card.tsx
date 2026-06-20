@@ -13,6 +13,8 @@ export type ProposalView = {
   skillLabel: string | null
   technicianName: string
   startsAt: string
+  /** Horario YA formateado en el servidor (evita mismatch de hidratación). */
+  scheduleLabel: string
   priority: string
   /** Justificación ejecutiva (por qué este técnico y por qué no los otros). */
   explanation: DispatchExplanation
@@ -54,15 +56,8 @@ export function AssistedProposalCard({
     })
   }
 
-  const when = new Date(proposal.startsAt).toLocaleString("es-CO", {
-    timeZone: "America/Bogota",
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  })
-
+  // Formateado en el servidor (proposal.scheduleLabel): el cliente solo lo muestra.
+  const when = proposal.scheduleLabel
   const skill = proposal.skillLabel ?? "Servicio"
   const { selected, discarded } = proposal.explanation
 
@@ -140,10 +135,14 @@ export function AssistedProposalCard({
         Confirmar
       </button>
 
+      {/* Resumen del razonamiento — visible SIN expandir: el usuario entiende que
+          Nexus tomó una decisión fundamentada antes de hacer clic. */}
+      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{selected.summary}</p>
+
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="mt-2 flex w-full items-center justify-center gap-1 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+        className="mt-1.5 flex w-full items-center justify-center gap-1 py-1 text-xs font-medium text-blue-500 transition-colors hover:text-blue-400 dark:text-blue-400"
       >
         Ver razonamiento de Nexus
         <ChevronDown className={`size-3.5 transition-transform ${open ? "rotate-180" : ""}`} />

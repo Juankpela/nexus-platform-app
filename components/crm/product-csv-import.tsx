@@ -129,21 +129,21 @@ export function ProductCsvImport({
         const { headers, rows } = parseCsv(text)
         if (!headers.includes("name")) {
           setParseError(
-            'CSV must have a "Name" column. Expected columns: Name, SKU, Description, Product Type, Product Family, Unit of Measure.',
+            'El CSV debe tener una columna "Name". Columnas esperadas: Name, SKU, Description, Product Type, Product Family, Unit of Measure.',
           )
           setPreview(null)
           return
         }
         const parsed = rowsToImport(headers, rows)
         if (parsed.length === 0) {
-          setParseError("No data rows found in the CSV.")
+          setParseError("No se encontraron filas de datos en el CSV.")
           setPreview(null)
           return
         }
         setParseError(null)
         setPreview(parsed)
       } catch {
-        setParseError("Could not parse the CSV file.")
+        setParseError("No se pudo leer el archivo CSV.")
         setPreview(null)
       }
     }
@@ -158,11 +158,11 @@ export function ProductCsvImport({
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Import products from CSV</DialogTitle>
+          <DialogTitle>Importar productos desde CSV</DialogTitle>
           <DialogDescription>
-            Upload a CSV with columns: <strong>Name</strong>,{" "}
+            Sube un CSV con columnas: <strong>Nombre</strong>,{" "}
             <strong>Product Type</strong>, <strong>Product Family</strong>{" "}
-            (required), plus optional SKU, Description, Unit of Measure.
+            (obligatorias), más SKU, Description, Unit of Measure (opcionales).
           </DialogDescription>
         </DialogHeader>
 
@@ -170,15 +170,17 @@ export function ProductCsvImport({
           <div className="space-y-3">
             <div className="rounded-lg bg-emerald-500/10 p-4 text-sm text-emerald-700 dark:text-emerald-400">
               <p className="font-medium">
-                Import complete — {state.imported ?? 0} product
-                {(state.imported ?? 0) !== 1 ? "s" : ""} imported.
+                Importación completa — {state.imported ?? 0} producto
+                {(state.imported ?? 0) !== 1 ? "s" : ""} importado
+                {(state.imported ?? 0) !== 1 ? "s" : ""}.
               </p>
             </div>
             {(state.rowErrors?.length ?? 0) > 0 ? (
               <div className="space-y-1">
                 <p className="text-sm font-medium text-destructive">
-                  {state.rowErrors!.length} row
-                  {state.rowErrors!.length !== 1 ? "s" : ""} skipped:
+                  {state.rowErrors!.length} fila
+                  {state.rowErrors!.length !== 1 ? "s" : ""} omitida
+                  {state.rowErrors!.length !== 1 ? "s" : ""}:
                 </p>
                 <ul className="max-h-40 space-y-1 overflow-y-auto text-xs text-muted-foreground">
                   {state.rowErrors!.map((e, i) => (
@@ -189,7 +191,7 @@ export function ProductCsvImport({
             ) : null}
             <div className="flex justify-end">
               <DialogClose asChild>
-                <Button>Done</Button>
+                <Button>Listo</Button>
               </DialogClose>
             </div>
           </div>
@@ -204,7 +206,7 @@ export function ProductCsvImport({
                 className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-dashed px-4 py-2 text-sm text-muted-foreground hover:border-primary hover:text-primary"
               >
                 <FileUp className="size-4" />
-                Choose CSV file
+                Elegir archivo CSV
               </label>
               <input
                 ref={fileRef}
@@ -216,8 +218,8 @@ export function ProductCsvImport({
               />
               {preview ? (
                 <span className="text-sm text-muted-foreground">
-                  {preview.length} row{preview.length !== 1 ? "s" : ""} ready
-                  to import
+                  {preview.length} fila{preview.length !== 1 ? "s" : ""} listas
+                  para importar
                 </span>
               ) : null}
             </div>
@@ -233,11 +235,11 @@ export function ProductCsvImport({
                     <thead className="sticky top-0 border-b bg-muted/60 text-left">
                       <tr>
                         <th className="px-3 py-2 font-medium">#</th>
-                        <th className="px-3 py-2 font-medium">Name</th>
+                        <th className="px-3 py-2 font-medium">Nombre</th>
                         <th className="px-3 py-2 font-medium">SKU</th>
-                        <th className="px-3 py-2 font-medium">Type</th>
-                        <th className="px-3 py-2 font-medium">Family</th>
-                        <th className="px-3 py-2 font-medium">UOM</th>
+                        <th className="px-3 py-2 font-medium">Tipo</th>
+                        <th className="px-3 py-2 font-medium">Familia</th>
+                        <th className="px-3 py-2 font-medium">U. medida</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y">
@@ -255,7 +257,7 @@ export function ProductCsvImport({
                           </td>
                           <td className="px-3 py-1.5">
                             {row.name || (
-                              <span className="text-destructive">Missing</span>
+                              <span className="text-destructive">Falta</span>
                             )}
                           </td>
                           <td className="px-3 py-1.5 text-muted-foreground">
@@ -263,12 +265,12 @@ export function ProductCsvImport({
                           </td>
                           <td className="px-3 py-1.5 text-muted-foreground">
                             {row.productType ?? (
-                              <span className="text-destructive">Missing</span>
+                              <span className="text-destructive">Falta</span>
                             )}
                           </td>
                           <td className="px-3 py-1.5 text-muted-foreground">
                             {row.productFamily ?? (
-                              <span className="text-destructive">Missing</span>
+                              <span className="text-destructive">Falta</span>
                             )}
                           </td>
                           <td className="px-3 py-1.5 text-muted-foreground">

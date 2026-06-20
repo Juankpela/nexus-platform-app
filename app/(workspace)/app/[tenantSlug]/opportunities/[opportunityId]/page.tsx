@@ -34,7 +34,7 @@ import {
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 import { listCachedTenantMembers } from "@/modules/tenancy/composition"
 
-export const metadata: Metadata = { title: "Opportunity" }
+export const metadata: Metadata = { title: "Oportunidad" }
 
 function parseActivityFilters(sp: {
   type?: string

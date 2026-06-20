@@ -31,7 +31,7 @@ import {
 } from "@/modules/service/domain/asset"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 
-export const metadata: Metadata = { title: "Assets" }
+export const metadata: Metadata = { title: "Activos" }
 
 const PAGE_SIZE = 10
 

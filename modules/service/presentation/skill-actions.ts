@@ -11,6 +11,7 @@ import {
   createSkillRecord,
   removeTechnicianSkillRecord,
   setSkillAliasesRecord,
+  setSkillIncidentTypesRecord,
 } from "@/modules/service/composition"
 import { SKILL_LEVELS } from "@/modules/service/domain/skill"
 import {
@@ -36,6 +37,12 @@ function describeError(error: unknown): string {
 function revalidateTechnician(tenantSlug: string, technicianId?: string) {
   revalidatePath(`/app/${tenantSlug}/technicians`)
   if (technicianId) revalidatePath(`/app/${tenantSlug}/technicians/${technicianId}`)
+}
+
+/** El catálogo de servicios y la ficha de técnicos comparten las skills. */
+function revalidateServices(tenantSlug: string) {
+  revalidatePath(`/app/${tenantSlug}/services`)
+  revalidatePath(`/app/${tenantSlug}/technicians`)
 }
 
 export async function createSkillAction(
@@ -64,6 +71,7 @@ export async function createSkillAction(
   }
 
   revalidateTechnician(tenantSlug, technicianId ?? undefined)
+  revalidateServices(tenantSlug)
   return { error: null, ok: true }
 }
 
@@ -98,6 +106,41 @@ export async function setSkillAliasesAction(
   }
 
   revalidateTechnician(tenantSlug)
+  revalidateServices(tenantSlug)
+  return { error: null, ok: true }
+}
+
+/** Tipos de daño (Paso 2) separados por coma o salto de línea. */
+function parseIncidentTypes(raw: string | null): string[] {
+  if (!raw) return []
+  return [...new Set(raw.split(/[\n,]/).map((t) => t.trim()).filter((t) => t.length > 0))]
+}
+
+export async function setSkillIncidentTypesAction(
+  _state: ServiceActionState,
+  formData: FormData,
+): Promise<ServiceActionState> {
+  const tenantSlug = field(formData, "tenantSlug")
+  const id = idSchema.safeParse(field(formData, "id"))
+  if (!tenantSlug || !id.success) return fail("Solicitud inválida.")
+
+  try {
+    const context = await requireServiceContext(
+      tenantSlug,
+      SERVICE_PERMISSIONS.techniciansWrite,
+    )
+    await setSkillIncidentTypesRecord({
+      actorId: context.userId,
+      tenantId: context.tenantId,
+      requestId: context.requestId,
+      skillId: id.data,
+      incidentTypes: parseIncidentTypes(field(formData, "incident_types")),
+    })
+  } catch (error) {
+    return fail(describeError(error))
+  }
+
+  revalidateServices(tenantSlug)
   return { error: null, ok: true }
 }
 
@@ -127,6 +170,7 @@ export async function archiveSkillAction(
   }
 
   revalidateTechnician(tenantSlug, technicianId ?? undefined)
+  revalidateServices(tenantSlug)
   return { error: null, ok: true }
 }
 

@@ -59,7 +59,7 @@ export function AppHeader({
         <div className="mx-1.5 hidden h-5 w-px bg-border sm:block" />
         <Link
           href={`/app/${tenantSlug}/settings`}
-          aria-label="Account settings"
+          aria-label="Configuración de cuenta"
           title={userEmail ?? "Account"}
           className="grid size-8 shrink-0 place-items-center rounded-full bg-primary text-xs font-semibold text-primary-foreground transition-opacity hover:opacity-90"
         >
@@ -70,7 +70,7 @@ export function AppHeader({
             type="submit"
             variant="ghost"
             size="icon"
-            aria-label="Sign out"
+            aria-label="Cerrar sesión"
           >
             <LogOut />
           </Button>

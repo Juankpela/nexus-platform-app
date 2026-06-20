@@ -1,7 +1,8 @@
 "use client"
 
 import { Camera, CheckCircle2, Loader2, MapPin, Play, Send, ThumbsUp, X, XCircle } from "lucide-react"
-import { useActionState, useState } from "react"
+import { useRouter } from "next/navigation"
+import { useActionState, useEffect, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -106,7 +107,7 @@ function ActionForm({
   assignmentId,
   label,
   icon: Icon,
-  variant = "default",
+  emphasis = "primary",
   successLabel,
   children,
 }: {
@@ -115,17 +116,31 @@ function ActionForm({
   assignmentId: string
   label: string
   icon: typeof Play
-  variant?: "default" | "outline"
+  /** "primary" = acción DOMINANTE de la pantalla; "secondary" = subordinada. */
+  emphasis?: "primary" | "secondary"
   successLabel?: string
   children?: React.ReactNode
 }) {
   const [state, formAction, pending] = useActionState(action, initial)
+  const router = useRouter()
+  const primary = emphasis === "primary"
+  // Al completarse la acción, refrescamos el RSC para que la pantalla avance al
+  // siguiente paso de la misión sin que el técnico tenga que recargar a mano.
+  useEffect(() => {
+    if (state.ok) router.refresh()
+  }, [state.ok, router])
   return (
     <form action={formAction} className="space-y-2">
       <input type="hidden" name="tenantSlug" value={tenantSlug} />
       <input type="hidden" name="assignment_id" value={assignmentId} />
       {children}
-      <Button type="submit" size="lg" variant={variant} className="w-full" disabled={pending}>
+      <Button
+        type="submit"
+        size="lg"
+        variant={primary ? "default" : "outline"}
+        className={primary ? "h-14 w-full text-base font-semibold" : "w-full"}
+        disabled={pending}
+      >
         {pending ? <Loader2 className="animate-spin" /> : <Icon className="size-4" />}
         {label}
       </Button>
@@ -153,6 +168,7 @@ export function ExecutionActions({
   status: ExecutionStatus
 }) {
   const common = { tenantSlug, assignmentId }
+  const [showUnable, setShowUnable] = useState(false)
 
   if (status === "completed") {
     return (
@@ -171,23 +187,30 @@ export function ExecutionActions({
 
   return (
     <div className="space-y-3">
+      {/* UNA acción dominante por pantalla (el siguiente paso de la misión). */}
       {status === "pending" ? (
         <ActionForm {...common} action={acceptAssignmentAction} label="Aceptar asignación" icon={ThumbsUp} />
       ) : null}
 
       {status === "accepted" ? (
         <>
-          {/* Acción lateral: avisa al cliente que el técnico va en camino. NO
-              cambia el estado de ejecución (sigue en "accepted"). */}
+          {/* Dominante: salir hacia el cliente (avisa al cliente; acción lateral
+              que NO cambia el estado de ejecución). */}
           <ActionForm
             {...common}
             action={notifyEnRouteAction}
-            label="Avisar al cliente"
+            label="Voy en camino"
             icon={Send}
-            variant="outline"
             successLabel="✓ Cliente avisado"
           />
-          <ActionForm {...common} action={arriveOnSiteAction} label="Llegué al sitio" icon={MapPin} />
+          {/* Subordinada: ya llegué (para cuando esté en el sitio). */}
+          <ActionForm
+            {...common}
+            action={arriveOnSiteAction}
+            label="Ya llegué al sitio"
+            icon={MapPin}
+            emphasis="secondary"
+          />
         </>
       ) : null}
 
@@ -206,33 +229,48 @@ export function ExecutionActions({
         </ActionForm>
       ) : null}
 
-      {/* Unable-to-complete available while the work is open */}
+      {/* "No puedo completar" como salida DISCRETA (no compite con la dominante):
+          un enlace que despliega el formulario solo cuando se necesita. */}
       {status === "accepted" || status === "on_site" || status === "working" ? (
-        <ActionForm
-          {...common}
-          action={reportUnableAction}
-          label="No puedo completar"
-          icon={XCircle}
-          variant="outline"
-        >
-          <select
-            name="non_completion_reason"
-            defaultValue="customer_absent"
-            className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none transition-shadow focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30"
-            aria-label="Motivo de no completar"
-          >
-            {NON_COMPLETION_REASONS.map((r) => (
-              <option key={r} value={r}>
-                {NON_COMPLETION_REASON_LABELS[r]}
-              </option>
-            ))}
-          </select>
-          <Textarea
-            name="unable_reason"
-            placeholder="Detalle adicional (opcional)"
-            rows={2}
-          />
-        </ActionForm>
+        <div className="pt-1">
+          {showUnable ? (
+            <div className="rounded-xl border border-dashed p-3">
+              <ActionForm
+                {...common}
+                action={reportUnableAction}
+                label="Reportar que no se pudo completar"
+                icon={XCircle}
+                emphasis="secondary"
+              >
+                <select
+                  name="non_completion_reason"
+                  defaultValue="customer_absent"
+                  className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none transition-shadow focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30"
+                  aria-label="Motivo de no completar"
+                >
+                  {NON_COMPLETION_REASONS.map((r) => (
+                    <option key={r} value={r}>
+                      {NON_COMPLETION_REASON_LABELS[r]}
+                    </option>
+                  ))}
+                </select>
+                <Textarea
+                  name="unable_reason"
+                  placeholder="Detalle adicional (opcional)"
+                  rows={2}
+                />
+              </ActionForm>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowUnable(true)}
+              className="mx-auto block text-xs text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
+            >
+              No puedo completar este trabajo
+            </button>
+          )}
+        </div>
       ) : null}
     </div>
   )

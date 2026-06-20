@@ -13,7 +13,7 @@ import { INVENTORY_PERMISSIONS } from "@/modules/authorization/domain/permission
 import { searchInventoryMaterials } from "@/modules/inventory/composition"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 
-export const metadata: Metadata = { title: "Materials" }
+export const metadata: Metadata = { title: "Materiales" }
 
 const PAGE_SIZE = 20
 
@@ -50,18 +50,18 @@ export default async function MaterialsListPage({
       <div className="space-y-4 px-5 py-6 sm:px-8">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <form action={base} className="flex flex-wrap items-center gap-2">
-            <Input type="search" name="search" defaultValue={search ?? ""} placeholder="Search by name..." className="w-52" />
+            <Input type="search" name="search" defaultValue={search ?? ""} placeholder="Buscar por nombre..." className="w-52" />
             <Input type="search" name="sku" defaultValue={sku ?? ""} placeholder="SKU..." className="w-36" />
             <select
               name="active"
               defaultValue={active === true ? "true" : active === false ? "false" : ""}
               className="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
-              <option value="">All statuses</option>
+              <option value="">Todos los estados</option>
               <option value="true">Active</option>
               <option value="false">Inactive</option>
             </select>
-            <Button type="submit" variant="outline" size="sm">Filter</Button>
+            <Button type="submit" variant="outline" size="sm">Filtrar</Button>
           </form>
           <div className="flex items-center gap-2">
             <ExportButton
@@ -90,7 +90,7 @@ export default async function MaterialsListPage({
                   <th className="px-4 py-3 font-medium">Material</th>
                   <th className="px-4 py-3 font-medium">SKU</th>
                   <th className="px-4 py-3 font-medium">UOM</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium">Estado</th>
                 </tr>
               </thead>
               <tbody className="divide-y">

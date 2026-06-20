@@ -8,6 +8,7 @@ import { broadcastFieldMonitorUpdate } from "@/lib/realtime/field-monitor-broadc
 import {
   confirmCustomerOnAcceptance,
   notifyCustomerEnRoute,
+  notifyCustomerWorkCompleted,
 } from "@/modules/scheduling/composition"
 import { createAdminSupabaseClient } from "@/lib/supabase/admin"
 import {
@@ -171,6 +172,22 @@ async function transition(
       } catch {
         // Best-effort: la aceptación ya ocurrió; la confirmación se reintenta
         // en una futura aceptación idempotente o vía reproceso.
+      }
+    }
+
+    // Cierre del lazo: al COMPLETAR, avisa al cliente (idempotente, best-effort).
+    // Un fallo de email no revierte el cierre del trabajo.
+    if (target === "completed") {
+      try {
+        await notifyCustomerWorkCompleted({
+          tenantId: context.tenantId,
+          requestId: context.requestId,
+          assignmentId: assignment.assignmentId,
+          workOrderId: assignment.workOrderId,
+          triggeredByUserId: context.userId,
+        })
+      } catch {
+        // Best-effort: el trabajo ya quedó completado; el aviso es reintentable.
       }
     }
 

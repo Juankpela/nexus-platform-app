@@ -15,7 +15,6 @@ import {
   LifeBuoy,
   Package,
   PackageSearch,
-  Radar,
   Radio,
   Receipt,
   Settings,
@@ -63,9 +62,10 @@ export type NavigationGroup = (typeof NAVIGATION_GROUP_ORDER)[number]
 
 export const workspaceNavigation: NavigationItem[] = [
   // ── Golden Path (primarios, planos, en orden) ─────────────────────────────
+  // Inicio ES el Centro Operacional (4 zonas) — absorbe "Coordinación", que sale
+  // del nav. La ruta /dispatch/assisted sigue viva (misma experiencia).
   { label: "Inicio", segment: "dashboard", icon: LayoutDashboard, permission: FOUNDATION_PERMISSIONS.dashboardRead },
   { label: "Solicitudes", segment: "cases", icon: LifeBuoy, permission: SERVICE_PERMISSIONS.casesRead },
-  { label: "Coordinación", segment: "dispatch/assisted", icon: Radar, permission: SERVICE_PERMISSIONS.dispatchRead },
   { label: "Trabajo", segment: "work-orders", icon: Wrench, permission: SERVICE_PERMISSIONS.workOrdersRead },
   { label: "Facturación", segment: "invoices", icon: Receipt, permission: BILLING_PERMISSIONS.invoicesRead },
   { label: "Clientes", segment: "companies", icon: Building2, permission: CRM_PERMISSIONS.companiesRead },
@@ -80,6 +80,7 @@ export const workspaceNavigation: NavigationItem[] = [
   { label: "Pagos", segment: "payments", icon: Wallet, permission: BILLING_PERMISSIONS.paymentsRead, group: "Ventas e ingresos" },
 
   // ── Servicio y campo (Service) ────────────────────────────────────────────
+  { label: "Catálogo de servicios", segment: "services", icon: Wrench, permission: SERVICE_PERMISSIONS.techniciansRead, group: "Servicio y campo" },
   { label: "Activos", segment: "assets", icon: Cpu, permission: SERVICE_PERMISSIONS.assetsRead, group: "Servicio y campo" },
   { label: "Equipo técnico", segment: "technicians", icon: HardHat, permission: SERVICE_PERMISSIONS.techniciansRead, group: "Servicio y campo" },
   { label: "Agenda", segment: "schedule", icon: CalendarClock, permission: SERVICE_PERMISSIONS.schedulingRead, group: "Servicio y campo" },

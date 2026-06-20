@@ -31,7 +31,7 @@ import { technicianFullName } from "@/modules/service/domain/technician"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 import { cn } from "@/lib/utils"
 
-export const metadata: Metadata = { title: "Schedule" }
+export const metadata: Metadata = { title: "Agenda" }
 
 const PAGE_SIZE = 10
 const VALID_TABS = ["assignments", "stats"] as const
@@ -55,7 +55,7 @@ function parseStatus(v?: string): AssignmentStatus | null {
     : null
 }
 function fmt(iso: string): string {
-  return new Date(iso).toLocaleString(undefined, {
+  return new Date(iso).toLocaleString("es-CO", {
     dateStyle: "medium",
     timeStyle: "short",
     timeZone: "America/Bogota",

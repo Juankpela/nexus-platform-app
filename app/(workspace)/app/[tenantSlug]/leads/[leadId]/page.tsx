@@ -19,7 +19,7 @@ import {
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 import { LeadDetailActions } from "./_components/lead-detail-actions"
 
-export const metadata: Metadata = { title: "Lead" }
+export const metadata: Metadata = { title: "Prospecto" }
 
 function Detail({ label, value }: { label: string; value: string | null }) {
   if (!value) return null

@@ -49,7 +49,7 @@ import {
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 import { cn } from "@/lib/utils"
 
-export const metadata: Metadata = { title: "Dispatch" }
+export const metadata: Metadata = { title: "Tablero de despacho" }
 
 const VALID_TABS = ["board", "stats"] as const
 type Tab = (typeof VALID_TABS)[number]
@@ -76,7 +76,7 @@ function fmtHours(min: number): string {
   return m === 0 ? `${h}h` : `${h}h ${m}m`
 }
 function fmtTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString(undefined, {
+  return new Date(iso).toLocaleTimeString("es-CO", {
     hour: "2-digit",
     minute: "2-digit",
     timeZone: "America/Bogota",

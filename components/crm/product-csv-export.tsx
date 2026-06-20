@@ -16,7 +16,7 @@ export function ProductCsvExport({ tenantSlug }: { tenantSlug: string }) {
     try {
       const result = await exportProductsCsvAction(tenantSlug)
       if (result.error || !result.csv) {
-        setError(result.error ?? "Export failed.")
+        setError(result.error ?? "No se pudo exportar.")
         return
       }
       const blob = new Blob([result.csv], { type: "text/csv;charset=utf-8;" })
@@ -41,7 +41,7 @@ export function ProductCsvExport({ tenantSlug }: { tenantSlug: string }) {
         ) : (
           <Download className="size-4" />
         )}
-        Export CSV
+        Exportar CSV
       </Button>
       {error ? (
         <span className="text-xs text-destructive">{error}</span>

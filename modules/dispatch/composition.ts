@@ -2,6 +2,10 @@ import "server-only"
 
 import { getDispatchBoard } from "@/modules/dispatch/application/use-cases/get-dispatch-board"
 import { getDispatchStats } from "@/modules/dispatch/application/use-cases/get-dispatch-stats"
+import type {
+  TechnicianIssueTypeOutcome,
+  TechnicianOutcome,
+} from "@/modules/dispatch/domain/technician-outcomes"
 import { SupabaseDispatchRepository } from "@/modules/dispatch/infrastructure/supabase-dispatch-repository"
 import type { UUID } from "@/types/shared"
 
@@ -68,4 +72,28 @@ export function getTenantDispatchStats(tenantId: UUID, date: string) {
     { dispatch: dispatchRepo() },
     { tenantId, dayStartIso: fromIso, dayEndIso: toIso },
   )
+}
+
+/**
+ * Récord de cumplimiento histórico por técnico (PR-B). Lectura directa del RPC
+ * que agrega work_order_executions — sin tablas nuevas. Devuelto como Map por
+ * technicianId para que el consumidor (motor / perfil) lo cruce en O(1).
+ */
+export async function getTenantTechnicianOutcomes(
+  tenantId: UUID,
+): Promise<Map<UUID, TechnicianOutcome>> {
+  const rows = await dispatchRepo().getTechnicianOutcomes(tenantId)
+  return new Map(rows.map((row) => [row.technicianId, row]))
+}
+
+/**
+ * Récord por técnico para UN tipo de daño — Map por technicianId. Lo consume la
+ * recomendación para explicar con experiencia real ("ha resuelto N 'No enfría'").
+ */
+export async function getIssueTypeOutcomes(
+  tenantId: UUID,
+  issueTypeId: UUID,
+): Promise<Map<UUID, TechnicianIssueTypeOutcome>> {
+  const rows = await dispatchRepo().getIssueTypeOutcomes(tenantId, issueTypeId)
+  return new Map(rows.map((row) => [row.technicianId, row]))
 }

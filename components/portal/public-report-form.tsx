@@ -6,6 +6,7 @@ import { useActionState, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import type { PublicReportCategory } from "@/modules/service/composition"
 import {
   submitReportAction,
   type PublicReportState,
@@ -13,17 +14,10 @@ import {
 
 const initial: PublicReportState = { ok: false, error: null }
 
-const CATEGORIES = [
-  "Eléctrico",
-  "Plomería / Hidráulico",
-  "Estructura / Civil",
-  "Aseo / Limpieza",
-  "Seguridad",
-  "Otro",
-]
-
 const labelCls = "text-sm font-medium text-foreground"
 const fieldCls = "mt-1.5"
+const selectCls =
+  "mt-1.5 h-9 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30"
 
 type GeoState = { status: "idle" | "loading" | "done" | "error"; message?: string }
 
@@ -59,13 +53,25 @@ function compressImage(file: File): Promise<string> {
   })
 }
 
-export function PublicReportForm({ tenantSlug }: { tenantSlug: string }) {
+export function PublicReportForm({
+  tenantSlug,
+  categories,
+}: {
+  tenantSlug: string
+  categories: PublicReportCategory[]
+}) {
   const [state, formAction, pending] = useActionState(submitReportAction, initial)
   // El campo de ubicación es controlado para poder autocompletarlo con el GPS.
   const [location, setLocation] = useState("")
   const [geo, setGeo] = useState<GeoState>({ status: "idle" })
   const [photo, setPhoto] = useState<string | null>(null)
   const [photoStatus, setPhotoStatus] = useState<"idle" | "loading" | "error">("idle")
+  // Paso 1 — categoría (skill). Controla el catálogo del Paso 2.
+  const [categoryId, setCategoryId] = useState("")
+
+  const selectedCat = categories.find((c) => c.id === categoryId)
+  const isOther = categoryId === "otro"
+  const issueTypeOptions = selectedCat?.issueTypes ?? []
 
   async function handlePhoto(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -90,7 +96,6 @@ export function PublicReportForm({ tenantSlug }: { tenantSlug: string }) {
       (pos) => {
         const { latitude, longitude } = pos.coords
         const link = `https://maps.google.com/?q=${latitude},${longitude}`
-        // Conserva lo que el usuario haya escrito y agrega el enlace de mapa.
         setLocation((prev) => (prev.trim() ? `${prev.trim()} — ${link}` : link))
         setGeo({ status: "done" })
       },
@@ -144,10 +149,55 @@ export function PublicReportForm({ tenantSlug }: { tenantSlug: string }) {
       />
 
       <div className="grid gap-4">
+        {/* Paso 1 — Categoría (desde las skills del tenant) */}
         <div>
-          <label htmlFor="description" className={labelCls}>¿Qué ocurrió?</label>
-          <Textarea id="description" name="description" required rows={3} className={fieldCls} placeholder="Describe la novedad o el daño" />
+          <label htmlFor="categoryId" className={labelCls}>¿Qué tipo de servicio necesitas?</label>
+          <select
+            id="categoryId"
+            name="categoryId"
+            required
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value)}
+            className={selectCls}
+          >
+            <option value="" disabled>Selecciona una categoría…</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+            <option value="otro">Otro</option>
+          </select>
         </div>
+
+        {/* Paso 2 — Tipo de daño (catálogo estructurado de la categoría elegida) */}
+        {selectedCat && issueTypeOptions.length > 0 ? (
+          <div>
+            <label htmlFor="issueTypeId" className={labelCls}>¿Qué está pasando?</label>
+            <select id="issueTypeId" name="issueTypeId" required className={selectCls} defaultValue="">
+              <option value="" disabled>Selecciona el tipo de daño…</option>
+              {issueTypeOptions.map((t) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+              <option value="otro">Otro / no estoy seguro</option>
+            </select>
+          </div>
+        ) : null}
+
+        {/* Paso 3 — Descripción (opcional, salvo "Otro") */}
+        <div>
+          <label htmlFor="description" className={labelCls}>
+            Descripción {isOther ? "" : <span className="text-muted-foreground">(opcional)</span>}
+          </label>
+          <Textarea
+            id="description"
+            name="description"
+            required={isOther}
+            rows={3}
+            className={fieldCls}
+            placeholder="Agrega contexto: ej. el quirófano está a 28° y el equipo no enfría"
+          />
+        </div>
+
+        {/* Ubicación */}
         <div>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <label htmlFor="location" className={labelCls}>¿Dónde ocurrió?</label>
@@ -179,24 +229,12 @@ export function PublicReportForm({ tenantSlug }: { tenantSlug: string }) {
             <p className="mt-1 text-xs text-muted-foreground">{geo.message}</p>
           ) : null}
         </div>
-        <div>
-          <label htmlFor="category" className={labelCls}>Categoría</label>
-          <select
-            id="category"
-            name="category"
-            defaultValue={CATEGORIES[0]}
-            className="mt-1.5 h-9 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30"
-          >
-            {CATEGORIES.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
-        </div>
+
+        {/* Foto */}
         <div>
           <span className={labelCls}>Foto (opcional)</span>
           {photo ? (
             <div className="mt-1.5 flex items-center gap-3">
-              {/* data: URL local; next/image no aplica. CSP permite img-src data:. */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={photo} alt="Evidencia" className="size-16 rounded-lg border object-cover" />
               <Button type="button" variant="ghost" size="sm" onClick={() => setPhoto(null)}>
@@ -225,6 +263,7 @@ export function PublicReportForm({ tenantSlug }: { tenantSlug: string }) {
           ) : null}
         </div>
 
+        {/* Contacto */}
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="reporterName" className={labelCls}>Nombre</label>

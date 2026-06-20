@@ -78,12 +78,25 @@ export type PlanAutoDispatchInput = {
   slaDueAt: string | null
   /** Catálogo de skills del tenant (nombre + vocabulario propio) para mapear → id. */
   availableSkills: { id: UUID; name: string; aliases?: string[] }[]
+  /**
+   * Skill AUTORITATIVA elegida por el reportante (reporte guiado). Si viene, el
+   * motor la usa directo para seleccionar técnico; el clasificador sigue corriendo
+   * SOLO para auditar discrepancias (no la reemplaza). Null = clasificar por texto.
+   */
+  forcedSkillId?: UUID | null
 }
 
 export type AutoDispatchPlan = {
   verdict: DispatchConfidenceResult["verdict"]
   confidence: DispatchConfidenceResult
+  /** Clasificación del texto (lo que el motor INFIRIÓ). */
   classification: ReportClassification
+  /** Skill EFECTIVA usada para seleccionar (forzada por categoría, o inferida). */
+  skillId: UUID | null
+  /** Nombre de la skill efectiva. */
+  skillLabel: string | null
+  /** Discrepancia categoría↔texto (solo si la categoría se forzó y el texto difiere). */
+  discrepancy: { reportedSkillId: UUID; inferredSkillId: UUID } | null
   chosen: DispatchCandidate | null
   discarded: DispatchCandidate[]
   /** Ventana UTC del slot elegido (solo si hay técnico+slot). */
@@ -100,6 +113,21 @@ export async function planAutoDispatch(
     text: input.description,
     availableSkills: input.availableSkills,
   })
+
+  // Skill efectiva: la categoría autoritativa manda; el clasificador solo informa.
+  const forced = input.forcedSkillId ?? null
+  const effectiveSkillId = forced ?? classification.skillId
+  const effectiveSkillLabel = forced
+    ? (input.availableSkills.find((s) => s.id === forced)?.name ?? classification.skillLabel)
+    : classification.skillLabel
+  const discrepancy =
+    forced != null && classification.skillId != null && classification.skillId !== forced
+      ? { reportedSkillId: forced, inferredSkillId: classification.skillId }
+      : null
+  // Con categoría AUTORITATIVA, la confianza no debe degradar la propuesta: la
+  // eligió un humano (precisión máxima). Sin categoría, vale la del texto.
+  const effectiveConfidence =
+    forced != null ? Math.max(classification.confidence, 0.9) : classification.confidence
 
   const now = localDateMinute(new Date(deps.nowMs).toISOString(), deps.timeZone)
   // Coordinación, no "ahora": el slot se busca desde un inicio coordinado
@@ -118,7 +146,7 @@ export async function planAutoDispatch(
 
   const { chosen, discarded } = start
     ? selectDispatch(snapshots, {
-        skillId: classification.skillId,
+        skillId: effectiveSkillId,
         minLevel: null,
         zoneId: null,
         durationMinutes: classification.estimatedDurationMinutes,
@@ -141,10 +169,10 @@ export async function planAutoDispatch(
     input.slaDueAt == null || (endsAt != null && endsAt <= input.slaDueAt)
 
   const confidence = evaluateDispatchConfidence({
-    classificationConfidence: classification.confidence,
+    classificationConfidence: effectiveConfidence,
     confidenceThreshold: deps.confidenceThreshold,
-    // Bloqueo duro: sin una skill REAL del tenant identificada no se asigna.
-    hasSkill: classification.skillId != null,
+    // Bloqueo duro: sin una skill REAL (forzada o inferida) no se asigna.
+    hasSkill: effectiveSkillId != null,
     hasEligibleTechnician: chosen != null,
     hasCapacity: chosen?.reasons.capacity ?? false,
     hasSlot: chosen?.slot != null,
@@ -156,6 +184,9 @@ export async function planAutoDispatch(
     verdict: confidence.verdict,
     confidence,
     classification,
+    skillId: effectiveSkillId,
+    skillLabel: effectiveSkillLabel,
+    discrepancy,
     chosen,
     discarded,
     startsAt,

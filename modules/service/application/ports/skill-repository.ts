@@ -11,6 +11,8 @@ export interface SkillRepository {
   createSkill(tenantId: UUID, input: SkillInput): Promise<Skill>
   /** Reemplaza el vocabulario (aliases) propio del tenant para una skill (Hito B). */
   setSkillAliases(tenantId: UUID, id: UUID, aliases: string[]): Promise<void>
+  /** Reemplaza el catálogo de tipos de daño (Paso 2 del reporte) de una skill. */
+  setSkillIncidentTypes(tenantId: UUID, id: UUID, incidentTypes: string[]): Promise<void>
   /** Soft-archive: hides from the catalog without breaking technician_skills refs. */
   archiveSkill(tenantId: UUID, id: UUID, archivedAt: string): Promise<void>
 

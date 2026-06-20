@@ -6,6 +6,10 @@ import type {
   DispatchRepository,
   RawTechnicianWorkload,
 } from "@/modules/dispatch/application/ports/dispatch-repository"
+import type {
+  TechnicianIssueTypeOutcome,
+  TechnicianOutcome,
+} from "@/modules/dispatch/domain/technician-outcomes"
 import {
   ACTIVE_ASSIGNMENT_STATUSES,
   type WorkOrderAssignment,
@@ -15,6 +19,12 @@ import type { UUID } from "@/types/shared"
 
 type WorkloadRpcRow =
   Database["public"]["Functions"]["dispatch_technician_workload"]["Returns"][number]
+
+type OutcomeRpcRow =
+  Database["public"]["Functions"]["technician_outcomes"]["Returns"][number]
+
+type IssueTypeOutcomeRpcRow =
+  Database["public"]["Functions"]["technician_issue_type_outcomes"]["Returns"][number]
 
 type AssignmentRow = Database["public"]["Tables"]["work_order_assignments"]["Row"]
 type AssignmentRowWithRefs = AssignmentRow & {
@@ -100,5 +110,58 @@ export class SupabaseDispatchRepository implements DispatchRepository {
       )
     }
     return (data as unknown as AssignmentRowWithRefs[]).map(toAssignment)
+  }
+
+  async getTechnicianOutcomes(tenantId: UUID): Promise<TechnicianOutcome[]> {
+    const client = await createServerSupabaseClient()
+    const { data, error } = await client.rpc("technician_outcomes", {
+      p_tenant_id: tenantId,
+    })
+
+    if (error) {
+      throw new ApplicationError(
+        "Unable to load technician outcomes.",
+        "DISPATCH_OUTCOMES_FAILED",
+        error,
+      )
+    }
+
+    return ((data ?? []) as OutcomeRpcRow[]).map((row) => ({
+      technicianId: row.technician_id,
+      completedCount: Number(row.completed_count),
+      unableCount: Number(row.unable_count),
+      resolvedCount: Number(row.resolved_count),
+      successRate: row.success_rate === null ? null : Number(row.success_rate),
+      avgWorkMinutes:
+        row.avg_work_minutes === null ? null : Number(row.avg_work_minutes),
+      lastCompletedAt: row.last_completed_at,
+    }))
+  }
+
+  async getIssueTypeOutcomes(
+    tenantId: UUID,
+    issueTypeId: UUID,
+  ): Promise<TechnicianIssueTypeOutcome[]> {
+    const client = await createServerSupabaseClient()
+    const { data, error } = await client.rpc("technician_issue_type_outcomes", {
+      p_tenant_id: tenantId,
+      p_issue_type_id: issueTypeId,
+    })
+
+    if (error) {
+      throw new ApplicationError(
+        "Unable to load issue type outcomes.",
+        "DISPATCH_ISSUE_OUTCOMES_FAILED",
+        error,
+      )
+    }
+
+    return ((data ?? []) as IssueTypeOutcomeRpcRow[]).map((row) => ({
+      technicianId: row.technician_id,
+      completedCount: Number(row.completed_count),
+      resolvedCount: Number(row.resolved_count),
+      successRate: row.success_rate === null ? null : Number(row.success_rate),
+      lastCompletedAt: row.last_completed_at,
+    }))
   }
 }

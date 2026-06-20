@@ -52,7 +52,7 @@ export function AddPriceBookEntryDialog({
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add product price</DialogTitle>
+          <DialogTitle>Agregar precio de producto</DialogTitle>
           <DialogDescription>
             Set a unit price for a product in this price book.
           </DialogDescription>
@@ -146,7 +146,7 @@ export function EditPriceBookEntryDialog({
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Edit price</DialogTitle>
+          <DialogTitle>Editar precio</DialogTitle>
           <DialogDescription>
             Update the unit price for{" "}
             <span className="font-medium">{entry.productName}</span>.
@@ -221,7 +221,7 @@ export function DeactivatePriceBookEntryButton({
         disabled={pending}
       >
         {pending ? <Loader2 className="animate-spin" /> : <X className="size-4" />}
-        <span className="sr-only">Remove from price book</span>
+        <span className="sr-only">Quitar de la lista de precios</span>
       </Button>
       {state.error ? (
         <span role="alert" className="text-xs text-destructive">

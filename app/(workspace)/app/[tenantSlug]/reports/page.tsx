@@ -8,7 +8,7 @@ import { requirePermission } from "@/modules/authorization/application/require-p
 import { FORECASTING_PERMISSIONS } from "@/modules/authorization/domain/permission"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 
-export const metadata: Metadata = { title: "Reports" }
+export const metadata: Metadata = { title: "Reportes" }
 
 export default async function ReportsPage({
   params,

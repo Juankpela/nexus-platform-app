@@ -13,7 +13,7 @@ import {
 } from "@/modules/inventory/domain/inventory-transaction"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 
-export const metadata: Metadata = { title: "Inventory" }
+export const metadata: Metadata = { title: "Inventario" }
 
 function fmt(iso: string): string {
   return new Date(iso).toLocaleString("es-CO", {
@@ -83,7 +83,7 @@ export default async function InventoryOverviewPage({
 
         <div className="rounded-xl border bg-card">
           <div className="flex items-center justify-between border-b px-4 py-3">
-            <h2 className="text-sm font-semibold">Recent movements</h2>
+            <h2 className="text-sm font-semibold">Movimientos recientes</h2>
             <Link
               href={`${base}/transactions`}
               className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
@@ -102,11 +102,11 @@ export default async function InventoryOverviewPage({
             <table className="w-full text-sm">
               <thead className="border-b bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
                 <tr>
-                  <th className="px-4 py-2.5 font-medium">Type</th>
+                  <th className="px-4 py-2.5 font-medium">Tipo</th>
                   <th className="px-4 py-2.5 font-medium">Material</th>
-                  <th className="px-4 py-2.5 text-right font-medium">Qty</th>
-                  <th className="px-4 py-2.5 font-medium">Reference</th>
-                  <th className="px-4 py-2.5 font-medium">When</th>
+                  <th className="px-4 py-2.5 text-right font-medium">Cant.</th>
+                  <th className="px-4 py-2.5 font-medium">Referencia</th>
+                  <th className="px-4 py-2.5 font-medium">Cuándo</th>
                 </tr>
               </thead>
               <tbody className="divide-y">

@@ -36,7 +36,7 @@ import {
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 import { cn } from "@/lib/utils"
 
-export const metadata: Metadata = { title: "Work Orders" }
+export const metadata: Metadata = { title: "Órdenes de trabajo" }
 
 const PAGE_SIZE = 10
 const KANBAN_PAGE_SIZE = 200
@@ -371,7 +371,7 @@ export default async function WorkOrdersPage({
                       </td>
                       <td className="px-4 py-4 text-muted-foreground">
                         {wo.scheduledStart
-                          ? new Date(wo.scheduledStart).toLocaleDateString(undefined, { timeZone: "America/Bogota" })
+                          ? new Date(wo.scheduledStart).toLocaleDateString("es-CO", { timeZone: "America/Bogota" })
                           : "—"}
                       </td>
                     </tr>

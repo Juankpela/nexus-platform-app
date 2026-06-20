@@ -38,13 +38,25 @@ export default async function InvoicePrintPage({
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     })
-  const longDate = (iso: string) =>
-    new Date(iso).toLocaleDateString("es-CO", {
+  const MESES_LARGOS = [
+    "enero", "febrero", "marzo", "abril", "mayo", "junio",
+    "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+  ]
+  const longDate = (iso: string) => {
+    // Fecha-solo "YYYY-MM-DD": formatear desde componentes para no retroceder un
+    // día por el corrimiento de medianoche UTC al renderizar en Bogotá.
+    const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso)
+    if (dateOnly) {
+      const [, y, m, d] = dateOnly
+      return `${Number(d)} de ${MESES_LARGOS[Number(m) - 1]} de ${y}`
+    }
+    return new Date(iso).toLocaleDateString("es-CO", {
       year: "numeric",
       month: "long",
       day: "numeric",
       timeZone: "America/Bogota",
     })
+  }
 
   return (
     <>

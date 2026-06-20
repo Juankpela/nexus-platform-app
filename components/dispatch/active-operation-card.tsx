@@ -1,11 +1,11 @@
 import type { ExecutionStatus } from "@/modules/field-execution/domain/execution"
+import type { LifecycleMilestone } from "@/modules/service/domain/service-lifecycle"
 
 /**
- * Tarjeta de "Operación activa" — Nexus está coordinando esto ahora. El ribbon
- * de estado se deriva EXCLUSIVAMENTE del executionStatus que ya provee
- * getFieldMonitorBoard (accepted/on_site/working). La confirmación al cliente se
- * auto-emite al aceptar (confirmCustomerOnAcceptance), por eso "Cliente
- * informado" es derivable sin consultas extra. Sin datos nuevos.
+ * Tarjeta de "Operación activa" — Nexus está coordinando esto ahora. El ribbon de
+ * hitos se deriva de la MISMA línea de vida canónica (`buildServiceLifecycle`) que
+ * usan el seguimiento público y el detalle de WO — sin estados simulados ni
+ * hardcode. Aquí se muestra en forma compacta (horizontal).
  */
 
 export type ActiveOperationView = {
@@ -17,31 +17,44 @@ export type ActiveOperationView = {
   executionStatus: ExecutionStatus
 }
 
-const MILESTONES = [
-  { label: "Técnico aceptó", pendingLabel: "Técnico aceptó" },
-  { label: "Cliente informado", pendingLabel: "Cliente informado" },
-  { label: "En camino", pendingLabel: "En camino" },
-  { label: "Trabajando", pendingLabel: "Trabajando" },
-  { label: "Evidencia recibida", pendingLabel: "Evidencia pendiente" },
-  { label: "Factura emitida", pendingLabel: "Factura pendiente" },
-  { label: "Pago recibido", pendingLabel: "Pago pendiente" },
-] as const
-
-// Índice del hito "en curso" según el estado de ejecución real.
-function currentIndex(status: ExecutionStatus): number {
-  switch (status) {
-    case "accepted":
-      return 2 // técnico aceptó + cliente informado hechos → "En camino" en curso
-    case "on_site":
-    case "working":
-      return 3 // → "Trabajando" en curso
-    default:
-      return 3
-  }
+// Etiquetas cortas para el ribbon compacto (la línea de vida completa vive en la WO).
+const SHORT_LABEL: Record<string, string> = {
+  reported: "Solicitud",
+  coordinated: "Coordinado",
+  accepted: "Aceptó",
+  en_route: "En camino",
+  on_site: "En sitio",
+  working: "Ejecutando",
+  completed: "Completado",
+  invoiced: "Factura",
+  paid: "Pago",
 }
 
-export function ActiveOperationCard({ op }: { op: ActiveOperationView }) {
-  const cur = currentIndex(op.executionStatus)
+function dotTone(state: LifecycleMilestone["state"], key: string): { dot: string; text: string } {
+  if (state === "done") return { dot: "bg-emerald-400", text: "text-emerald-400" }
+  if (state === "blocked") return { dot: "bg-amber-400", text: "text-amber-500 dark:text-amber-400" }
+  if (state === "current") {
+    const accent = key === "en_route"
+    return accent
+      ? { dot: "bg-orange-400", text: "text-orange-500 dark:text-orange-400" }
+      : { dot: "bg-blue-400", text: "text-blue-500 dark:text-blue-400" }
+  }
+  return { dot: "bg-muted-foreground/30", text: "text-muted-foreground/60" }
+}
+
+export function ActiveOperationCard({
+  op,
+  milestones,
+}: {
+  op: ActiveOperationView
+  milestones: LifecycleMilestone[]
+}) {
+  const liveLabel =
+    op.executionStatus === "working"
+      ? "Trabajando"
+      : op.executionStatus === "on_site"
+        ? "En sitio"
+        : "En camino"
 
   return (
     <div className="rounded-2xl border bg-card p-4">
@@ -54,38 +67,19 @@ export function ActiveOperationCard({ op }: { op: ActiveOperationView }) {
         </div>
         <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-blue-500/25 bg-blue-500/10 px-2.5 py-1 text-xs font-medium text-blue-400">
           <span className="size-1.5 rounded-full bg-blue-400" />
-          {op.executionStatus === "working"
-            ? "Trabajando"
-            : op.executionStatus === "on_site"
-              ? "En sitio"
-              : "En camino"}
+          {liveLabel}
           {op.workOrderNumber ? ` · ${op.workOrderNumber}` : ""}
         </span>
       </div>
 
-      {/* Ribbon de estado operacional */}
+      {/* Ribbon = línea de vida real (compacta) */}
       <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1.5">
-        {MILESTONES.map((m, i) => {
-          const done = i < cur
-          const current = i === cur
-          const dot = done
-            ? "bg-emerald-400"
-            : current
-              ? i === 2
-                ? "bg-orange-400"
-                : "bg-blue-400"
-              : "bg-muted-foreground/30"
-          const text = done
-            ? "text-emerald-400"
-            : current
-              ? i === 2
-                ? "text-orange-400"
-                : "text-blue-400"
-              : "text-muted-foreground/60"
+        {milestones.map((m) => {
+          const { dot, text } = dotTone(m.state, m.key)
           return (
-            <span key={m.label} className={`inline-flex items-center gap-1.5 text-xs ${text}`}>
+            <span key={m.key} className={`inline-flex items-center gap-1.5 text-xs ${text}`}>
               <span className={`size-1.5 rounded-full ${dot}`} />
-              {done ? m.label : current ? m.label : m.pendingLabel}
+              {SHORT_LABEL[m.key] ?? m.label}
             </span>
           )
         })}

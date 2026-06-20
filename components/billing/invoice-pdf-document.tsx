@@ -38,8 +38,20 @@ function makeMoney(currency: string) {
   return (n: number) => nf.format(n)
 }
 
+const MONTHS_ES_LONG = [
+  "enero", "febrero", "marzo", "abril", "mayo", "junio",
+  "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+]
+
 function fmtDate(iso: string | null): string {
   if (!iso) return "—"
+  // Fecha-solo "YYYY-MM-DD" (issue_date/payment_date): formatear desde componentes
+  // para evitar el corrimiento de medianoche UTC → día anterior en Bogotá.
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso)
+  if (dateOnly) {
+    const [, year, month, day] = dateOnly
+    return `${Number(day)} de ${MONTHS_ES_LONG[Number(month) - 1]} de ${year}`
+  }
   return new Date(iso).toLocaleDateString("es-CO", {
     year: "numeric",
     month: "long",
@@ -55,6 +67,9 @@ const s = StyleSheet.create({
   brand: { fontSize: 20, fontFamily: "Helvetica-Bold", color: BRAND },
   issuerLine: { fontSize: 9, color: MUTED, marginTop: 2 },
   metaBox: { alignItems: "flex-end" },
+  clientBox: { alignItems: "flex-end", maxWidth: 220 },
+  clientValue: { fontSize: 11, fontFamily: "Helvetica-Bold", textAlign: "right" },
+  docBand: { marginBottom: 22, borderTopWidth: 1, borderTopColor: LINE, borderBottomWidth: 1, borderBottomColor: LINE, paddingVertical: 8 },
   docTitle: { fontSize: 16, fontFamily: "Helvetica-Bold", letterSpacing: 1 },
   metaLine: { fontSize: 9, color: MUTED, marginTop: 2 },
   parties: { flexDirection: "row", gap: 28, marginBottom: 24 },
@@ -92,6 +107,7 @@ function InvoicePdf({ invoice, lines, tenantName, issuer }: InvoicePdfProps): Re
   return (
     <Document title={`Factura ${number}`}>
       <Page size="A4" style={s.page}>
+        {/* Encabezado corporativo: EMISOR (izquierda) ↔ CLIENTE (derecha). */}
         <View style={s.header}>
           <View style={s.issuerBox}>
             <Text style={s.brand}>{issuer.legalName ?? tenantName}</Text>
@@ -100,28 +116,24 @@ function InvoicePdf({ invoice, lines, tenantName, issuer }: InvoicePdfProps): Re
             {issuer.address ? <Text style={s.issuerLine}>{issuer.address}</Text> : null}
             {issuer.email ? <Text style={s.issuerLine}>{issuer.email}</Text> : null}
           </View>
-          <View style={s.metaBox}>
-            <Text style={s.docTitle}>FACTURA</Text>
-            <Text style={s.metaLine}>{number}</Text>
-            <Text style={s.metaLine}>Estado: {STATUS_ES[invoice.status]}</Text>
-            <Text style={s.metaLine}>Emisión: {fmtDate(invoice.issueDate)}</Text>
-            {invoice.dueDate ? <Text style={s.metaLine}>Vence: {fmtDate(invoice.dueDate)}</Text> : null}
-          </View>
-        </View>
-
-        <View style={s.parties}>
           {invoice.companyName ? (
-            <View>
-              <Text style={s.label}>Para</Text>
-              <Text style={s.value}>{invoice.companyName}</Text>
+            <View style={s.clientBox}>
+              <Text style={s.label}>Cliente</Text>
+              <Text style={s.clientValue}>{invoice.companyName}</Text>
               {invoice.contactName ? <Text style={s.subValue}>{invoice.contactName}</Text> : null}
             </View>
           ) : null}
+        </View>
+
+        {/* Banda del documento: tipo, número, estado, fechas, condiciones. */}
+        <View style={s.docBand}>
+          <Text style={s.docTitle}>FACTURA</Text>
+          <Text style={s.metaLine}>
+            {number} · {STATUS_ES[invoice.status]} · Emisión {fmtDate(invoice.issueDate)}
+            {invoice.dueDate ? ` · Vence ${fmtDate(invoice.dueDate)}` : ""}
+          </Text>
           {invoice.paymentTerms ? (
-            <View>
-              <Text style={s.label}>Condiciones</Text>
-              <Text style={s.value}>{invoice.paymentTerms}</Text>
-            </View>
+            <Text style={s.metaLine}>Condiciones: {invoice.paymentTerms}</Text>
           ) : null}
         </View>
 

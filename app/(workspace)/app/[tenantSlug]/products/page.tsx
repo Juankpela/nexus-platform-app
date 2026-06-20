@@ -28,7 +28,7 @@ import {
 } from "@/modules/crm/domain/product"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 
-export const metadata: Metadata = { title: "Products" }
+export const metadata: Metadata = { title: "Productos" }
 
 const PAGE_SIZE = 20
 

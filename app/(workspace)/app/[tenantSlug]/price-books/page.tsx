@@ -18,7 +18,7 @@ import {
 import { listTenantPriceBooks } from "@/modules/crm/composition"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 
-export const metadata: Metadata = { title: "Price Books" }
+export const metadata: Metadata = { title: "Listas de precios" }
 
 const PAGE_SIZE = 20
 
@@ -66,7 +66,7 @@ export default async function PriceBooksPage({
               type="search"
               name="search"
               defaultValue={search ?? ""}
-              placeholder="Search price books..."
+              placeholder="Buscar listas de precios..."
             />
           </form>
           {canWrite ? (
@@ -111,9 +111,9 @@ export default async function PriceBooksPage({
             <table className="w-full text-sm">
               <thead className="border-b bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Name</th>
+                  <th className="px-4 py-3 font-medium">Nombre</th>
                   <th className="px-4 py-3 font-medium">Description</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium">Estado</th>
                   {canWrite ? (
                     <th className="px-4 py-3 text-right font-medium">
                       Actions

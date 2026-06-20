@@ -10,6 +10,8 @@ import {
   type RescheduleMode,
 } from "@/modules/scheduling/application/use-cases/plan-reschedule"
 import { SupabaseAuditRepository } from "@/modules/audit/infrastructure/supabase-audit-repository"
+import { getIssueTypeOutcomes } from "@/modules/dispatch/composition"
+import type { TechnicianIssueTypeOutcome } from "@/modules/dispatch/domain/technician-outcomes"
 import { SERVICE_PERMISSIONS } from "@/modules/authorization/domain/permission"
 import type { CommunicationChannel } from "@/modules/notifications/domain/communication-channel"
 import { EmailChannel } from "@/modules/notifications/infrastructure/email-channel"
@@ -368,6 +370,8 @@ export async function runAutoDispatchForCase(input: {
       description: serviceCase.description ?? serviceCase.subject,
       slaDueAt: serviceCase.slaDueAt,
       availableSkills: skills.map((s) => ({ id: s.id, name: s.name, aliases: s.aliases })),
+      // Categoría autoritativa del reporte guiado (si existe).
+      forcedSkillId: serviceCase.reportedSkillId,
     },
   )
 
@@ -434,7 +438,7 @@ export async function runAutoDispatchForCase(input: {
           recipientUserId,
           type: "work_order_assigned",
           title: `Nueva orden de trabajo · ${workOrder.workOrderNumber}`,
-          body: `${serviceCase.subject} · ${plan.classification.skillLabel ?? "Servicio"} · ${when} · prioridad ${plan.classification.priority}`,
+          body: `${serviceCase.subject} · ${plan.skillLabel ?? "Servicio"} · ${when} · prioridad ${plan.classification.priority}`,
           link: `work-orders/${workOrder.id}`,
         },
       ])
@@ -456,6 +460,10 @@ export async function runAutoDispatchForCase(input: {
       verdict: plan.verdict,
       confidence: plan.confidence,
       classification: plan.classification,
+      // Categoría autoritativa elegida vs. lo que infirió el texto (auditoría de
+      // discrepancia, ADR-033 / reporte guiado). null = no hubo discrepancia.
+      reportedSkillId: serviceCase.reportedSkillId,
+      skillDiscrepancy: plan.discrepancy,
       workOrderId,
       assignmentId,
       chosen: plan.chosen
@@ -495,6 +503,9 @@ const CONFIRMATION_FAILED_EVENT = "customer.confirmation.failed"
 const ENROUTE_SENT_EVENT = "customer.enroute.sent"
 const ENROUTE_SKIPPED_EVENT = "customer.enroute.skipped"
 const ENROUTE_FAILED_EVENT = "customer.enroute.failed"
+const WORKDONE_SENT_EVENT = "customer.work_completed.sent"
+const WORKDONE_SKIPPED_EVENT = "customer.work_completed.skipped"
+const WORKDONE_FAILED_EVENT = "customer.work_completed.failed"
 
 type CustomerCommContext = {
   customerEmail: string | null
@@ -849,6 +860,125 @@ export async function notifyCustomerEnRoute(input: {
   return { sent: true }
 }
 
+/**
+ * Cierre del lazo al cliente: cuando el técnico COMPLETA el trabajo, avisa UNA
+ * sola vez (idempotente por evento). Mismo patrón y contrato que el aviso de
+ * salida; no modifica estados. Reutiliza `resolveCustomerCommContext` y el canal.
+ * WhatsApp/SMS se enchufan vía `CommunicationChannel` sin tocar esta lógica.
+ */
+export async function notifyCustomerWorkCompleted(input: {
+  tenantId: UUID
+  requestId: UUID
+  assignmentId: UUID
+  workOrderId: UUID
+  triggeredByUserId: UUID
+  channel?: CommunicationChannel
+}): Promise<{ sent: boolean; skipped?: string }> {
+  const channel = input.channel ?? new EmailChannel()
+  const admin = createAdminSupabaseClient()
+  const audit = new SupabaseAuditRepository(() => admin)
+
+  const prior = await audit.listBySubject(input.tenantId, input.assignmentId, 50)
+  if (prior.some((e) => e.eventType === WORKDONE_SENT_EVENT)) {
+    return { sent: false, skipped: "already_sent" }
+  }
+
+  const ctx = await resolveCustomerCommContext(
+    admin,
+    input.tenantId,
+    input.workOrderId,
+    input.assignmentId,
+  )
+
+  if (!ctx.customerEmail) {
+    await audit.append({
+      eventType: WORKDONE_SKIPPED_EVENT,
+      actorType: "system",
+      actorId: null,
+      tenantId: input.tenantId,
+      subjectType: "work_order_assignment",
+      subjectId: input.assignmentId,
+      action: "customer.work_completed.skipped",
+      metadata: { reason: "no_email", workOrderId: input.workOrderId },
+      requestId: input.requestId,
+      source: "field",
+    })
+    return { sent: false, skipped: "no_email" }
+  }
+
+  const nowIso = new Date().toISOString()
+  const deliverability = channel.kind === "email" ? emailConfigStatus() : "production"
+  try {
+    const trackUrl = trackingUrl(ctx.trackingToken)
+    await channel.send({
+      to: ctx.customerEmail,
+      subject: "Tu visita fue completada",
+      body: [
+        `Hola,`,
+        ``,
+        `El trabajo de tu solicitud fue completado.`,
+        ``,
+        `Orden: ${ctx.woNumber}`,
+        `Asunto: ${ctx.caseSubject}`,
+        `Técnico: ${ctx.techName}`,
+        ``,
+        `Gracias por confiar en nosotros.`,
+        ...(trackUrl ? ["", `Consulta el detalle de tu visita:`, trackUrl] : []),
+        ``,
+        `Gracias,`,
+        `${ctx.company}`,
+      ].join("\n"),
+    })
+  } catch (error) {
+    await audit.append({
+      eventType: WORKDONE_FAILED_EVENT,
+      actorType: "system",
+      actorId: null,
+      tenantId: input.tenantId,
+      subjectType: "work_order_assignment",
+      subjectId: input.assignmentId,
+      action: "customer.work_completed.failed",
+      metadata: {
+        displayActor: "Nexus Field Execution",
+        channel: channel.kind,
+        to: ctx.customerEmail,
+        workOrderId: input.workOrderId,
+        deliverability,
+        triggeredByUserId: input.triggeredByUserId,
+        error: error instanceof Error ? error.message : String(error),
+      },
+      requestId: input.requestId,
+      source: "field",
+    })
+    throw error
+  }
+
+  await audit.append({
+    eventType: WORKDONE_SENT_EVENT,
+    actorType: "system",
+    actorId: null,
+    tenantId: input.tenantId,
+    subjectType: "work_order_assignment",
+    subjectId: input.assignmentId,
+    action: "customer.work_completed.sent",
+    metadata: {
+      displayActor: "Nexus Field Execution",
+      channel: channel.kind,
+      to: ctx.customerEmail,
+      workOrderId: input.workOrderId,
+      workOrderNumber: ctx.woNumber,
+      technician: ctx.techName,
+      triggeredByUserId: input.triggeredByUserId,
+      deliverability,
+      sentAt: nowIso,
+    },
+    requestId: input.requestId,
+    source: "field",
+  })
+
+  return { sent: true }
+}
+
 export type AssistedDispatchProposal = {
   caseId: UUID
   caseNumber: string
@@ -860,6 +990,8 @@ export type AssistedDispatchProposal = {
   chosenReasons: EligibilityReasons
   startsAt: string
   endsAt: string
+  /** Horario formateado en el SERVIDOR (evita mismatch de hidratación en la tarjeta). */
+  scheduleLabel: string
   priority: string
   discarded: { technicianName: string; reasons: EligibilityReasons }[]
   /** Justificación ejecutiva (por qué este técnico y por qué no los otros). */
@@ -944,6 +1076,8 @@ export async function listDispatchInbox(tenantId: UUID): Promise<DispatchInbox> 
 
   const proposals: AssistedDispatchProposal[] = []
   const exceptions: DispatchException[] = []
+  // Cache de historial por tipo de daño (una consulta por issue type, no por caso).
+  const outcomesByIssueType = new Map<UUID, Map<UUID, TechnicianIssueTypeOutcome>>()
   for (const c of webCases) {
     // Excluir casos que YA tienen una WO (no re-despachar).
     const existing = await listWorkOrdersForCase(tenantId, c.id)
@@ -955,6 +1089,8 @@ export async function listDispatchInbox(tenantId: UUID): Promise<DispatchInbox> 
       description: c.description ?? c.subject,
       slaDueAt: c.slaDueAt,
       availableSkills,
+      // Categoría autoritativa del reporte guiado (preview = confirmación).
+      forcedSkillId: c.reportedSkillId,
     })
 
     if (plan.verdict === "PROCEED" && plan.chosen && plan.startsAt && plan.endsAt) {
@@ -966,8 +1102,36 @@ export async function listDispatchInbox(tenantId: UUID): Promise<DispatchInbox> 
         hour: "2-digit",
         minute: "2-digit",
       })
+      // Etiqueta corta para la tarjeta (formateada en servidor → sin hidratación).
+      const scheduleLabel = new Date(plan.startsAt).toLocaleString("es-CO", {
+        timeZone: TENANT_TIMEZONE,
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+      // Experiencia REAL del técnico elegido en el tipo de daño del caso. Solo si
+      // el reporte trae issue_type_id estructurado (Pilares 2 y 3).
+      let experience = null
+      if (c.issueTypeId && c.incidentType) {
+        let outcomes = outcomesByIssueType.get(c.issueTypeId)
+        if (!outcomes) {
+          outcomes = await getIssueTypeOutcomes(tenantId, c.issueTypeId)
+          outcomesByIssueType.set(c.issueTypeId, outcomes)
+        }
+        const row = outcomes.get(plan.chosen.technicianId)
+        if (row && row.completedCount > 0) {
+          experience = {
+            issueTypeLabel: c.incidentType,
+            completedCount: row.completedCount,
+            resolvedCount: row.resolvedCount,
+            successRate: row.successRate,
+          }
+        }
+      }
       const explanation = buildDispatchExplanation({
-        skillLabel: plan.classification.skillLabel,
+        skillLabel: plan.skillLabel,
         whenText: `el ${whenText}`,
         slaOk: !plan.confidence.blockers.includes("sla_risk"),
         chosen: toExplainCandidate(plan.chosen),
@@ -976,18 +1140,20 @@ export async function listDispatchInbox(tenantId: UUID): Promise<DispatchInbox> 
         discarded: plan.discarded
           .filter((d) => d.skillRank > 0)
           .map(toExplainCandidate),
+        experience,
       })
       proposals.push({
         caseId: c.id,
         caseNumber: c.caseNumber,
         subject: c.subject,
-        skillLabel: plan.classification.skillLabel,
+        skillLabel: plan.skillLabel,
         confidenceScore: plan.confidence.score,
         technicianId: plan.chosen.technicianId,
         technicianName: plan.chosen.technicianName,
         chosenReasons: plan.chosen.reasons,
         startsAt: plan.startsAt,
         endsAt: plan.endsAt,
+        scheduleLabel,
         priority: plan.classification.priority,
         discarded: plan.discarded.map((d) => ({ technicianName: d.technicianName, reasons: d.reasons })),
         explanation,
@@ -1003,7 +1169,7 @@ export async function listDispatchInbox(tenantId: UUID): Promise<DispatchInbox> 
       subject: c.subject,
       priority: plan.classification.priority,
       verdict: plan.verdict === "HOLD" ? "HOLD" : "ESCALATE",
-      skillLabel: plan.classification.skillLabel,
+      skillLabel: plan.skillLabel,
       confidenceScore: plan.confidence.score,
       blockers,
       reasons: blockers.map((b) => DISPATCH_BLOCKER_LABELS[b] ?? b),

@@ -80,7 +80,7 @@ export default async function QuotePrintPage({
             {quote.expirationDate && (
               <p>
                 Expires:{" "}
-                {new Date(quote.expirationDate).toLocaleDateString("en-US", {
+                {new Date(quote.expirationDate).toLocaleDateString("es-CO", {
                   year: "numeric",
                   month: "long",
                   day: "numeric",
@@ -90,7 +90,7 @@ export default async function QuotePrintPage({
             )}
             <p>
               Date:{" "}
-              {new Date(quote.createdAt).toLocaleDateString("en-US", {
+              {new Date(quote.createdAt).toLocaleDateString("es-CO", {
                 year: "numeric",
                 month: "long",
                 day: "numeric",
@@ -125,8 +125,8 @@ export default async function QuotePrintPage({
         <table>
           <thead>
             <tr>
-              <th style={{ width: "40%" }}>Product</th>
-              <th className="right" style={{ width: "10%" }}>Qty</th>
+              <th style={{ width: "40%" }}>Producto</th>
+              <th className="right" style={{ width: "10%" }}>Cant.</th>
               <th className="right" style={{ width: "18%" }}>Unit Price</th>
               <th className="right" style={{ width: "15%" }}>Discount</th>
               <th className="right" style={{ width: "17%" }}>Total</th>

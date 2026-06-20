@@ -1,3 +1,7 @@
+import type {
+  TechnicianIssueTypeOutcome,
+  TechnicianOutcome,
+} from "@/modules/dispatch/domain/technician-outcomes"
 import type { WorkOrderAssignment } from "@/modules/scheduling/domain/work-order-assignment"
 import type { TechnicianStatus } from "@/modules/service/domain/technician"
 import type { UUID } from "@/types/shared"
@@ -24,4 +28,11 @@ export interface DispatchRepository {
     fromIso: string,
     toIso: string,
   ): Promise<WorkOrderAssignment[]>
+  /** Per-technician historical outcome record (SQL RPC over executions). */
+  getTechnicianOutcomes(tenantId: UUID): Promise<TechnicianOutcome[]>
+  /** Per-technician outcome record for ONE issue type (experience by problem). */
+  getIssueTypeOutcomes(
+    tenantId: UUID,
+    issueTypeId: UUID,
+  ): Promise<TechnicianIssueTypeOutcome[]>
 }

@@ -32,7 +32,7 @@ import { technicianFullName } from "@/modules/service/domain/technician"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 import { cn } from "@/lib/utils"
 
-export const metadata: Metadata = { title: "Calendar" }
+export const metadata: Metadata = { title: "Calendario" }
 
 const VALID_TABS = ["day", "week", "technician"] as const
 type Tab = (typeof VALID_TABS)[number]
@@ -51,7 +51,7 @@ function todayUtc(): string {
   return new Date().toISOString().slice(0, 10)
 }
 function fmtTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString(undefined, {
+  return new Date(iso).toLocaleTimeString("es-CO", {
     hour: "2-digit",
     minute: "2-digit",
     timeZone: "America/Bogota",

@@ -38,10 +38,10 @@ export default async function SelectTenantPage() {
       </header>
       <section className="mx-auto max-w-2xl px-5 py-16">
         <h1 className="text-2xl font-semibold tracking-tight">
-          Choose a workspace
+          Elige un espacio de trabajo
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Select the tenant you want to open.
+          Selecciona la organización que quieres abrir.
         </p>
         {platformAdmin ? (
           <Link
@@ -78,16 +78,16 @@ export default async function SelectTenantPage() {
           ))}
           {tenants.length === 0 ? (
             <div className="rounded-xl border border-dashed bg-card p-8 text-center">
-              <p className="text-sm font-medium">No workspace access</p>
+              <p className="text-sm font-medium">Sin acceso a espacios de trabajo</p>
               <p className="mt-2 text-sm text-muted-foreground">
-                Ask a tenant administrator to add your account.
+                Pídele a un administrador que agregue tu cuenta.
               </p>
             </div>
           ) : null}
         </div>
         <form action={logoutAction} className="mt-8">
           <Button type="submit" variant="ghost">
-            Sign out
+            Cerrar sesión
           </Button>
         </form>
       </section>

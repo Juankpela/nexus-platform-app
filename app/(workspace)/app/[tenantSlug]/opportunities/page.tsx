@@ -25,7 +25,7 @@ import {
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 import { cn } from "@/lib/utils"
 
-export const metadata: Metadata = { title: "Opportunities" }
+export const metadata: Metadata = { title: "Oportunidades" }
 
 const PAGE_SIZE = 10
 const KANBAN_PAGE_SIZE = 200 // fetch all for kanban

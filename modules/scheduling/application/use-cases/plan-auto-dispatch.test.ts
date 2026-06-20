@@ -125,6 +125,56 @@ describe("planAutoDispatch", () => {
     })
   })
 
+  const ELEC = "99999999-9999-9999-9999-999999999999"
+
+  it("usa la skill AUTORITATIVA (forcedSkillId) y audita discrepancia con el texto", async () => {
+    // El texto sugiere Electricidad, pero la categoría elegida es HVAC → manda HVAC.
+    const plan = await planAutoDispatch(
+      {
+        ...deps,
+        classifier: classifier({ skillId: ELEC, skillLabel: "Electricidad" }),
+        candidates: reader([tech()]),
+      },
+      {
+        ...input,
+        availableSkills: [
+          { id: HVAC, name: "HVAC" },
+          { id: ELEC, name: "Electricidad" },
+        ],
+        forcedSkillId: HVAC,
+      },
+    )
+    expect(plan.skillId).toBe(HVAC)
+    expect(plan.skillLabel).toBe("HVAC")
+    expect(plan.discrepancy).toEqual({ reportedSkillId: HVAC, inferredSkillId: ELEC })
+    expect(plan.verdict).toBe("PROCEED") // el técnico HVAC sí es elegible
+  })
+
+  it("categoría autoritativa PROCEDE aunque el texto no mencione la skill (sin HOLD)", async () => {
+    // Caso real: "el quirófano no enfría" → el clasificador no detecta HVAC
+    // (confianza 0), pero la categoría HVAC la eligió un humano → debe PROCEDER.
+    const plan = await planAutoDispatch(
+      {
+        ...deps,
+        classifier: classifier({ skillId: null, skillLabel: null, confidence: 0 }),
+        candidates: reader([tech()]),
+      },
+      { ...input, availableSkills: [{ id: HVAC, name: "HVAC" }], forcedSkillId: HVAC },
+    )
+    expect(plan.verdict).toBe("PROCEED")
+    expect(plan.confidence.blockers).not.toContain("low_classification_confidence")
+    expect(plan.skillId).toBe(HVAC)
+  })
+
+  it("sin discrepancia cuando categoría y texto coinciden", async () => {
+    const plan = await planAutoDispatch(
+      { ...deps, classifier: classifier(), candidates: reader([tech()]) },
+      { ...input, availableSkills: [{ id: HVAC, name: "HVAC" }], forcedSkillId: HVAC },
+    )
+    expect(plan.skillId).toBe(HVAC)
+    expect(plan.discrepancy).toBeNull()
+  })
+
   it("ESCALATE si el slot rompe el SLA", async () => {
     const plan = await planAutoDispatch(
       { ...deps, classifier: classifier(), candidates: reader([tech()]) },

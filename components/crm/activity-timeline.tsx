@@ -30,7 +30,7 @@ const typeIcons: Record<ActivityType, LucideIcon> = {
 }
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleString(undefined, {
+  return new Date(iso).toLocaleString("es-CO", {
     dateStyle: "medium",
     timeStyle: "short",
     timeZone: "America/Bogota",
@@ -76,7 +76,7 @@ export function ActivityTimeline({
               defaultValue={filters.type ?? ""}
               className={selectClass}
             >
-              <option value="">All types</option>
+              <option value="">Todos los tipos</option>
               {ACTIVITY_TYPES.map((type) => (
                 <option key={type} value={type}>
                   {ACTIVITY_TYPE_LABELS[type]}
@@ -88,12 +88,12 @@ export function ActivityTimeline({
               defaultValue={filters.status ?? ""}
               className={selectClass}
             >
-              <option value="">All status</option>
-              <option value="open">Open</option>
-              <option value="completed">Completed</option>
+              <option value="">Todos los estados</option>
+              <option value="open">Abiertas</option>
+              <option value="completed">Completadas</option>
             </select>
             <Button type="submit" variant="outline" size="sm">
-              Filter
+              Filtrar
             </Button>
           </form>
           {canWrite ? (

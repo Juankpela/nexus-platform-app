@@ -73,8 +73,25 @@ function scheduleDetail(technicianName: string | null, scheduledStart: string | 
   return parts.length > 0 ? parts.join(" · ") : null
 }
 
-/** Fecha humana es-CO (zona Bogotá), corta. Pura: usa un Date a partir del ISO. */
+const MONTHS_ES = [
+  "ene", "feb", "mar", "abr", "may", "jun",
+  "jul", "ago", "sep", "oct", "nov", "dic",
+]
+
+/**
+ * Fecha humana es-CO (zona Bogotá), corta. Pura: usa un Date a partir del ISO.
+ *
+ * Caso especial: una fecha-solo "YYYY-MM-DD" (factura/pago) NO lleva hora ni zona.
+ * Si la pasáramos por `new Date(...)` se interpreta como medianoche UTC y al
+ * renderizar en Bogotá (UTC-5) retrocede al día anterior. Por eso la formateamos
+ * directamente desde sus componentes, sin construir un Date con zona.
+ */
 export function formatWhen(iso: string): string {
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso)
+  if (dateOnly) {
+    const [, , month, day] = dateOnly
+    return `${Number(day)} ${MONTHS_ES[Number(month) - 1]}`
+  }
   return new Date(iso).toLocaleString("es-CO", {
     timeZone: "America/Bogota",
     weekday: "short",

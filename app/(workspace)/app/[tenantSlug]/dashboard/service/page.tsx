@@ -19,7 +19,7 @@ import {
 } from "@/modules/service/domain/case"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 
-export const metadata: Metadata = { title: "Service Dashboard" }
+export const metadata: Metadata = { title: "Panel de servicio" }
 
 export default async function ServiceDashboardPage({
   params,

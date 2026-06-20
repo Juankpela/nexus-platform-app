@@ -97,7 +97,7 @@ export default async function MaterialDetailPage({
         {canReadStock ? (
           <div className="rounded-xl border bg-card">
             <div className="border-b px-4 py-3">
-              <h2 className="text-sm font-semibold">Transaction history</h2>
+              <h2 className="text-sm font-semibold">Historial de movimientos</h2>
             </div>
             {history.items.length === 0 ? (
               <div className="p-6">
@@ -107,10 +107,10 @@ export default async function MaterialDetailPage({
               <table className="w-full text-sm">
                 <thead className="border-b bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
                   <tr>
-                    <th className="px-4 py-2.5 font-medium">Type</th>
-                    <th className="px-4 py-2.5 text-right font-medium">Qty</th>
-                    <th className="px-4 py-2.5 font-medium">Reference</th>
-                    <th className="px-4 py-2.5 font-medium">When</th>
+                    <th className="px-4 py-2.5 font-medium">Tipo</th>
+                    <th className="px-4 py-2.5 text-right font-medium">Cant.</th>
+                    <th className="px-4 py-2.5 font-medium">Referencia</th>
+                    <th className="px-4 py-2.5 font-medium">Cuándo</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">

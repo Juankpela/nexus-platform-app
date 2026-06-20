@@ -16,7 +16,7 @@ import {
 } from "@/modules/inventory/domain/inventory-transaction"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 
-export const metadata: Metadata = { title: "Inventory movements" }
+export const metadata: Metadata = { title: "Movimientos de inventario" }
 
 const PAGE_SIZE = 25
 
@@ -61,12 +61,12 @@ export default async function TransactionHistoryPage({
             defaultValue={type ?? ""}
             className="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           >
-            <option value="">All types</option>
+            <option value="">Todos los tipos</option>
             {TRANSACTION_TYPES.map((t) => (
               <option key={t} value={t}>{TRANSACTION_TYPE_LABELS[t]}</option>
             ))}
           </select>
-          <Button type="submit" variant="outline" size="sm">Filter</Button>
+          <Button type="submit" variant="outline" size="sm">Filtrar</Button>
         </form>
 
         {result.items.length === 0 ? (
@@ -79,12 +79,12 @@ export default async function TransactionHistoryPage({
             <table className="w-full text-sm">
               <thead className="border-b bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Type</th>
+                  <th className="px-4 py-3 font-medium">Tipo</th>
                   <th className="px-4 py-3 font-medium">Material</th>
-                  <th className="px-4 py-3 text-right font-medium">Qty</th>
-                  <th className="px-4 py-3 font-medium">Reference</th>
+                  <th className="px-4 py-3 text-right font-medium">Cant.</th>
+                  <th className="px-4 py-3 font-medium">Referencia</th>
                   <th className="px-4 py-3 font-medium">User</th>
-                  <th className="px-4 py-3 font-medium">When</th>
+                  <th className="px-4 py-3 font-medium">Cuándo</th>
                 </tr>
               </thead>
               <tbody className="divide-y">

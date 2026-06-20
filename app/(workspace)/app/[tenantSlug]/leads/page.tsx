@@ -26,7 +26,7 @@ import {
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 import { LeadCreateButton } from "./_components/lead-create-button"
 
-export const metadata: Metadata = { title: "Leads" }
+export const metadata: Metadata = { title: "Prospectos" }
 
 const PAGE_SIZE = 20
 

@@ -25,7 +25,7 @@ import {
 } from "@/modules/service/domain/work-order"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 
-export const metadata: Metadata = { title: "Field Service Dashboard" }
+export const metadata: Metadata = { title: "Panel de servicio de campo" }
 
 function todayUtc(): string {
   return new Date().toISOString().slice(0, 10)

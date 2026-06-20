@@ -59,6 +59,9 @@ describe("buildDispatchExplanation (caso HVAC real)", () => {
     })
     expect(exp.selected.name).toBe("Daniel Peláez")
     expect(exp.selected.level).toBe("Senior")
+    expect(exp.selected.summary).toBe(
+      "Daniel Peláez fue seleccionado por su disponibilidad, su nivel técnico y el cumplimiento del SLA.",
+    )
     expect(exp.selected.motives).toEqual([
       "Tiene la especialidad de HVAC",
       "Nivel Senior en HVAC",
@@ -71,6 +74,43 @@ describe("buildDispatchExplanation (caso HVAC real)", () => {
       level: "Junior",
       reason: "Existe una alternativa con mayor nivel técnico.",
     })
+  })
+
+  it("experiencia en el tipo de daño: muestra representativa cita el % real", () => {
+    const exp = buildDispatchExplanation({
+      skillLabel: "HVAC",
+      whenText: "hoy",
+      slaOk: true,
+      chosen: cand({ name: "Daniel Peláez", level: "senior" }),
+      discarded: [],
+      experience: {
+        issueTypeLabel: "No enfría",
+        completedCount: 48,
+        resolvedCount: 50,
+        successRate: 0.97,
+      },
+    })
+    expect(exp.selected.motives).toContain(
+      'Ha completado 48 trabajos de "No enfría" con 97% de éxito',
+    )
+  })
+
+  it("experiencia con muestra pequeña: cita los trabajos pero NO el porcentaje", () => {
+    const exp = buildDispatchExplanation({
+      skillLabel: "HVAC",
+      whenText: "hoy",
+      slaOk: true,
+      chosen: cand({ name: "Daniel Peláez", level: "senior" }),
+      discarded: [],
+      experience: {
+        issueTypeLabel: "No enfría",
+        completedCount: 1,
+        resolvedCount: 1,
+        successRate: 1,
+      },
+    })
+    expect(exp.selected.motives).toContain('Ha completado 1 trabajo de "No enfría"')
+    expect(exp.selected.motives.some((m) => m.includes("%"))).toBe(false)
   })
 
   it("descarte por horario y por carga tienen razones de negocio distintas", () => {

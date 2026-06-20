@@ -38,6 +38,8 @@ export type Skill = {
   name: string
   /** Vocabulario propio del tenant para reconocer la skill en texto libre (Hito B). */
   aliases: string[]
+  /** Tipos de daño frecuentes (Paso 2 del reporte público guiado). */
+  incidentTypes: string[]
   archivedAt: string | null
   createdAt: string
   updatedAt: string

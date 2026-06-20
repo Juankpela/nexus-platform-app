@@ -5,7 +5,7 @@ import { LoginForm } from "@/components/auth/login-form"
 import { NexusLogo } from "@/components/layout/nexus-logo"
 import { getCachedCurrentUser } from "@/modules/identity/composition"
 
-export const metadata: Metadata = { title: "Sign in" }
+export const metadata: Metadata = { title: "Iniciar sesión" }
 
 export default async function LoginPage({
   searchParams,
@@ -23,7 +23,7 @@ export default async function LoginPage({
         <NexusLogo variant="full" theme="light" className="h-14" />
       </div>
       <div className="mb-8">
-        <p className="text-sm font-medium text-muted-foreground">Welcome back</p>
+        <p className="text-sm font-medium text-muted-foreground">Bienvenido de nuevo</p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight">
           Sign in to Nexus
         </h1>

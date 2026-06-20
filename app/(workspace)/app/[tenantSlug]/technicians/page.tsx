@@ -30,7 +30,7 @@ import {
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 import { cn } from "@/lib/utils"
 
-export const metadata: Metadata = { title: "Technicians" }
+export const metadata: Metadata = { title: "Equipo técnico" }
 
 const PAGE_SIZE = 10
 const VALID_TABS = ["list", "stats"] as const

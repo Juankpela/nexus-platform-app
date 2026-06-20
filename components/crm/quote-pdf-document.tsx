@@ -40,6 +40,9 @@ const s = StyleSheet.create({
   issuerLine: { fontSize: 9, color: MUTED, marginTop: 2 },
   issuerBox: { maxWidth: 260 },
   metaBox: { alignItems: "flex-end" },
+  clientBox: { alignItems: "flex-end", maxWidth: 220 },
+  clientValue: { fontSize: 11, fontFamily: "Helvetica-Bold", textAlign: "right" },
+  docBand: { marginBottom: 22, borderTopWidth: 1, borderTopColor: LINE, borderBottomWidth: 1, borderBottomColor: LINE, paddingVertical: 8 },
   docTitle: { fontSize: 16, fontFamily: "Helvetica-Bold", letterSpacing: 1 },
   metaLine: { fontSize: 9, color: MUTED, marginTop: 2 },
   parties: { flexDirection: "row", gap: 28, marginBottom: 24 },
@@ -75,6 +78,7 @@ function QuotePdf({ quote, lines, tenantName, issuer }: QuotePdfProps): ReactEle
   return (
     <Document title={`Cotización ${quote.quoteNumber}`}>
       <Page size="A4" style={s.page}>
+        {/* Encabezado corporativo: EMISOR (izquierda) ↔ CLIENTE (derecha). */}
         <View style={s.header}>
           <View style={s.issuerBox}>
             <Text style={s.brand}>{issuer.legalName ?? tenantName}</Text>
@@ -83,30 +87,24 @@ function QuotePdf({ quote, lines, tenantName, issuer }: QuotePdfProps): ReactEle
             {issuer.address ? <Text style={s.issuerLine}>{issuer.address}</Text> : null}
             {issuer.email ? <Text style={s.issuerLine}>{issuer.email}</Text> : null}
           </View>
-          <View style={s.metaBox}>
-            <Text style={s.docTitle}>COTIZACIÓN</Text>
-            <Text style={s.metaLine}>{quote.quoteNumber} · v{quote.version}</Text>
-            <Text style={s.metaLine}>Estado: {QUOTE_STATUS_LABELS[quote.status]}</Text>
-            <Text style={s.metaLine}>Fecha: {fmtDate(quote.createdAt)}</Text>
-            {quote.expirationDate ? (
-              <Text style={s.metaLine}>Vence: {fmtDate(quote.expirationDate)}</Text>
-            ) : null}
-          </View>
-        </View>
-
-        <View style={s.parties}>
           {quote.companyName ? (
-            <View>
-              <Text style={s.label}>Para</Text>
-              <Text style={s.value}>{quote.companyName}</Text>
+            <View style={s.clientBox}>
+              <Text style={s.label}>Cliente</Text>
+              <Text style={s.clientValue}>{quote.companyName}</Text>
               {quote.contactName ? <Text style={s.subValue}>{quote.contactName}</Text> : null}
             </View>
           ) : null}
+        </View>
+
+        {/* Banda del documento: tipo, número, estado, fechas. */}
+        <View style={s.docBand}>
+          <Text style={s.docTitle}>COTIZACIÓN</Text>
+          <Text style={s.metaLine}>
+            {quote.quoteNumber} · v{quote.version} · {QUOTE_STATUS_LABELS[quote.status]} · {fmtDate(quote.createdAt)}
+            {quote.expirationDate ? ` · Vence ${fmtDate(quote.expirationDate)}` : ""}
+          </Text>
           {quote.opportunityName ? (
-            <View>
-              <Text style={s.label}>Oportunidad</Text>
-              <Text style={s.value}>{quote.opportunityName}</Text>
-            </View>
+            <Text style={s.metaLine}>Oportunidad: {quote.opportunityName}</Text>
           ) : null}
         </View>
 

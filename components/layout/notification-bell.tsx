@@ -15,7 +15,7 @@ import {
 const initialState: NotificationActionState = { ok: false }
 
 function fmt(iso: string): string {
-  return new Date(iso).toLocaleString(undefined, {
+  return new Date(iso).toLocaleString("es-CO", {
     day: "2-digit",
     month: "2-digit",
     hour: "2-digit",

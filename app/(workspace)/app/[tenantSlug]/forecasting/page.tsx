@@ -24,7 +24,7 @@ import { getRequestContext } from "@/modules/request-context/application/get-req
 import { cn } from "@/lib/utils"
 import { createSnapshotAction } from "./actions"
 
-export const metadata: Metadata = { title: "Forecasting" }
+export const metadata: Metadata = { title: "Pronóstico" }
 
 const VALID_TABS = ["overview", "pipeline", "snapshots"] as const
 type Tab = (typeof VALID_TABS)[number]

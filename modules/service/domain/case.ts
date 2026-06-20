@@ -90,6 +90,12 @@ export type Case = {
   assetName: string | null
   ownerId: UUID | null
   workOrderId: UUID | null
+  /** Skill (categoría) elegida en el reporte público — autoritativa para coordinar. */
+  reportedSkillId: UUID | null
+  /** Tipo de daño (etiqueta legible legacy). La fuente estructurada es issueTypeId. */
+  incidentType: string | null
+  /** Tipo de daño estructurado (FK a service_issue_types). Fuente de verdad. */
+  issueTypeId: UUID | null
   slaDueAt: string | null
   resolvedAt: string | null
   closedAt: string | null

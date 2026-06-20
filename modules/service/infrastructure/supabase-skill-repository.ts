@@ -26,6 +26,7 @@ function toSkill(row: SkillRow): Skill {
     // `aliases` se añadió en la migración Hito B; los tipos generados pueden no
     // incluirla aún → acceso defensivo.
     aliases: (row as { aliases?: string[] | null }).aliases ?? [],
+    incidentTypes: (row as { incident_types?: string[] | null }).incident_types ?? [],
     archivedAt: row.archived_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -81,6 +82,28 @@ export class SupabaseSkillRepository implements SkillRepository {
 
     if (error) {
       throw new ApplicationError("Unable to set skill aliases.", "SKILL_ALIASES_FAILED", error)
+    }
+  }
+
+  /** Reemplaza el catálogo de tipos de daño (Paso 2) de una skill del tenant. */
+  async setSkillIncidentTypes(
+    tenantId: UUID,
+    id: UUID,
+    incidentTypes: string[],
+  ): Promise<void> {
+    const client = await createServerSupabaseClient()
+    const { error } = await client
+      .from("skills")
+      .update({ incident_types: cleanAliases(incidentTypes) } as never)
+      .eq("tenant_id", tenantId)
+      .eq("id", id)
+
+    if (error) {
+      throw new ApplicationError(
+        "Unable to set skill incident types.",
+        "SKILL_INCIDENT_TYPES_FAILED",
+        error,
+      )
     }
   }
 

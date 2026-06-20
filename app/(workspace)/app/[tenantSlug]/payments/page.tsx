@@ -4,6 +4,7 @@ import Link from "next/link"
 import { Pagination } from "@/components/crm/pagination"
 import { EmptyState } from "@/components/layout/empty-state"
 import { Button } from "@/components/ui/button"
+import { formatDateNumeric } from "@/lib/format/datetime"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
 import { BILLING_PERMISSIONS } from "@/modules/authorization/domain/permission"
 import { listTenantPayments } from "@/modules/billing/composition"
@@ -17,7 +18,7 @@ import {
 } from "@/modules/billing/domain/payment"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 
-export const metadata: Metadata = { title: "Payments" }
+export const metadata: Metadata = { title: "Pagos" }
 
 const PAGE_SIZE = 20
 
@@ -59,7 +60,7 @@ export default async function PaymentsPage({
           defaultValue={sp.status ?? "_all"}
           className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
         >
-          <option value="_all">All statuses</option>
+          <option value="_all">Todos los estados</option>
           {PAYMENT_STATUSES.map((s) => (
             <option key={s} value={s}>
               {PAYMENT_STATUS_LABELS[s]}
@@ -71,7 +72,7 @@ export default async function PaymentsPage({
         </Button>
         {sp.status && sp.status !== "_all" && (
           <Button asChild size="sm" variant="ghost">
-            <Link href={`/app/${tenantSlug}/payments`}>Clear</Link>
+            <Link href={`/app/${tenantSlug}/payments`}>Limpiar</Link>
           </Button>
         )}
       </form>
@@ -90,7 +91,7 @@ export default async function PaymentsPage({
                   <th className="px-4 py-3 font-medium">Payment #</th>
                   <th className="px-4 py-3 font-medium">Company</th>
                   <th className="px-4 py-3 font-medium">Method</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium">Estado</th>
                   <th className="px-4 py-3 font-medium text-right">Amount</th>
                   <th className="px-4 py-3 font-medium">Date</th>
                 </tr>
@@ -118,7 +119,7 @@ export default async function PaymentsPage({
                       })}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {new Date(p.paymentDate).toLocaleDateString(undefined, { timeZone: "America/Bogota" })}
+                      {formatDateNumeric(p.paymentDate)}
                     </td>
                   </tr>
                 ))}

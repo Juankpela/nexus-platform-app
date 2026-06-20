@@ -28,7 +28,7 @@ import {
 } from "@/modules/crm/domain/product"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 
-export const metadata: Metadata = { title: "Price Book" }
+export const metadata: Metadata = { title: "Lista de precios" }
 
 function Detail({ label, value }: { label: string; value: string | null }) {
   if (!value) return null
@@ -93,7 +93,7 @@ export default async function PriceBookDetailPage({
               <PriceBookFormDialog
                 tenantSlug={tenantSlug}
                 priceBook={priceBook}
-                trigger={<Button variant="outline">Edit price book</Button>}
+                trigger={<Button variant="outline">Editar lista de precios</Button>}
               />
               <PriceBookActiveToggle
                 tenantSlug={tenantSlug}
@@ -118,11 +118,11 @@ export default async function PriceBookDetailPage({
           <dl className="mt-4 grid gap-4 sm:grid-cols-2">
             <Detail
               label="Created"
-              value={new Date(priceBook.createdAt).toLocaleDateString(undefined, { timeZone: "America/Bogota" })}
+              value={new Date(priceBook.createdAt).toLocaleDateString("es-CO", { timeZone: "America/Bogota" })}
             />
             <Detail
               label="Last Updated"
-              value={new Date(priceBook.updatedAt).toLocaleDateString(undefined, { timeZone: "America/Bogota" })}
+              value={new Date(priceBook.updatedAt).toLocaleDateString("es-CO", { timeZone: "America/Bogota" })}
             />
           </dl>
           {priceBook.description ? (
@@ -173,10 +173,10 @@ export default async function PriceBookDetailPage({
               <table className="w-full text-sm">
                 <thead className="border-b bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
                   <tr>
-                    <th className="px-4 py-3 font-medium">Product</th>
+                    <th className="px-4 py-3 font-medium">Producto</th>
                     <th className="px-4 py-3 font-medium">Type / Family</th>
                     <th className="px-4 py-3 font-medium">Unit Price</th>
-                    <th className="px-4 py-3 font-medium">Status</th>
+                    <th className="px-4 py-3 font-medium">Estado</th>
                     {canWrite ? (
                       <th className="px-4 py-3 text-right font-medium">
                         Actions
@@ -207,7 +207,7 @@ export default async function PriceBookDetailPage({
                         </p>
                       </td>
                       <td className="px-4 py-4 font-mono text-sm">
-                        {entry.unitPrice.toLocaleString(undefined, {
+                        {entry.unitPrice.toLocaleString("es-CO", {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}

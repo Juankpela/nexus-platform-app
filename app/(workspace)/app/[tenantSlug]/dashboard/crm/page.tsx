@@ -10,7 +10,7 @@ import { getTenantDashboardStats } from "@/modules/crm/composition"
 import { getTenantRevenueMetrics } from "@/modules/forecasting/composition"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 
-export const metadata: Metadata = { title: "CRM Dashboard" }
+export const metadata: Metadata = { title: "Panel CRM" }
 
 const STAGE_LABELS: Record<string, string> = {
   new: "Nuevas",

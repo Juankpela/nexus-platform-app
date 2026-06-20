@@ -78,6 +78,9 @@ import { archiveSkill, type ArchiveSkillInput } from "@/modules/service/applicat
 import { assignTechnicianSkill, type AssignTechnicianSkillInput } from "@/modules/service/application/use-cases/assign-technician-skill"
 import { createSkill, type CreateSkillInput } from "@/modules/service/application/use-cases/create-skill"
 import { setSkillAliases, type SetSkillAliasesInput } from "@/modules/service/application/use-cases/set-skill-aliases"
+import { setSkillIncidentTypes, type SetSkillIncidentTypesInput } from "@/modules/service/application/use-cases/set-skill-incident-types"
+import { createIssueType, type CreateIssueTypeInput } from "@/modules/service/application/use-cases/create-issue-type"
+import { updateIssueType, type UpdateIssueTypeInput } from "@/modules/service/application/use-cases/update-issue-type"
 import { removeTechnicianSkill, type RemoveTechnicianSkillInput } from "@/modules/service/application/use-cases/remove-technician-skill"
 import {
   addAvailabilityException,
@@ -98,6 +101,7 @@ import { removeTechnicianZone, type RemoveTechnicianZoneInput } from "@/modules/
 import { SupabaseAssetRepository } from "@/modules/service/infrastructure/supabase-asset-repository"
 import { SupabaseCaseRepository } from "@/modules/service/infrastructure/supabase-case-repository"
 import { SupabaseSkillRepository } from "@/modules/service/infrastructure/supabase-skill-repository"
+import { SupabaseIssueTypeRepository } from "@/modules/service/infrastructure/supabase-issue-type-repository"
 import { SupabaseTechnicianRepository } from "@/modules/service/infrastructure/supabase-technician-repository"
 import { SupabaseAvailabilityRepository } from "@/modules/service/infrastructure/supabase-availability-repository"
 import { SupabaseZoneRepository } from "@/modules/service/infrastructure/supabase-zone-repository"
@@ -129,6 +133,10 @@ function technicianRepo() {
 
 function skillRepo() {
   return new SupabaseSkillRepository()
+}
+
+function issueTypeRepo() {
+  return new SupabaseIssueTypeRepository()
 }
 
 function zoneRepo() {
@@ -336,6 +344,27 @@ export function setSkillAliasesRecord(input: SetSkillAliasesInput) {
   return setSkillAliases({ skills: skillRepo(), audit: audit() }, input)
 }
 
+export function setSkillIncidentTypesRecord(input: SetSkillIncidentTypesInput) {
+  return setSkillIncidentTypes({ skills: skillRepo(), audit: audit() }, input)
+}
+
+// --- Issue Types (catálogo operacional estructurado) -----------------------
+export function listTenantIssueTypes(tenantId: UUID) {
+  return issueTypeRepo().listByTenant(tenantId)
+}
+
+export function listActiveIssueTypesForSkill(tenantId: UUID, skillId: UUID) {
+  return issueTypeRepo().listActiveBySkill(tenantId, skillId)
+}
+
+export function createIssueTypeRecord(input: CreateIssueTypeInput) {
+  return createIssueType({ issueTypes: issueTypeRepo(), audit: audit() }, input)
+}
+
+export function updateIssueTypeRecord(input: UpdateIssueTypeInput) {
+  return updateIssueType({ issueTypes: issueTypeRepo(), audit: audit() }, input)
+}
+
 export function archiveSkillRecord(input: ArchiveSkillInput) {
   return archiveSkill({ skills: skillRepo(), audit: audit() }, input)
 }
@@ -409,8 +438,10 @@ export function setTechnicianCapacityRecord(input: SetCapacityInput) {
 // ── Public work intake (anonymous report → Case) ─────────────────────────────
 export {
   getPublicReportTarget,
+  getPublicReportContext,
   submitPublicReport,
   type PublicReportInput,
+  type PublicReportCategory,
 } from "@/modules/service/infrastructure/supabase-public-intake-repository"
 
 // ── Línea de vida (seguimiento público + detalle de WO) ──────────────────────

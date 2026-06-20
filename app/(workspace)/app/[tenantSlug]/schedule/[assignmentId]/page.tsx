@@ -21,7 +21,7 @@ import { listTenantTechnicians } from "@/modules/service/composition"
 import { technicianFullName } from "@/modules/service/domain/technician"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 
-export const metadata: Metadata = { title: "Assignment" }
+export const metadata: Metadata = { title: "Asignación" }
 
 const statusStyles: Record<AssignmentStatus, string> = {
   scheduled: "bg-sky-500/10 text-sky-600 dark:text-sky-400",
@@ -72,7 +72,7 @@ export default async function AssignmentDetailPage({
     label: technicianFullName(t),
   }))
 
-  const fmt = (iso: string) => new Date(iso).toLocaleString(undefined, { timeZone: "America/Bogota" })
+  const fmt = (iso: string) => new Date(iso).toLocaleString("es-CO", { timeZone: "America/Bogota" })
 
   return (
     <>

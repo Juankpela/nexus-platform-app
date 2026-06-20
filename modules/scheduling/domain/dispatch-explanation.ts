@@ -60,6 +60,24 @@ export type ExplainCandidate = {
   skillRank: number
 }
 
+/**
+ * Experiencia REAL del técnico en el tipo de daño del caso (historial agregado,
+ * no un score). Alimenta el motivo "ha completado N trabajos de 'X', Y% de éxito".
+ */
+/** Mínimo de trabajos resueltos para citar la tasa de éxito como representativa. */
+const EXPERIENCE_SAMPLE_THRESHOLD = 5
+
+export type IssueTypeExperience = {
+  /** Etiqueta del tipo de daño (ej. "No enfría"). */
+  issueTypeLabel: string
+  /** Trabajos completados de este tipo. */
+  completedCount: number
+  /** Tasa de éxito (0..1) sobre trabajos resueltos de este tipo, o null. */
+  successRate: number | null
+  /** Trabajos resueltos (para juzgar si la muestra es representativa). */
+  resolvedCount: number
+}
+
 export type DispatchExplanationInput = {
   skillLabel: string | null
   /** Horario legible ya formateado (ej. "hoy, 3:30 p.m."). */
@@ -68,6 +86,8 @@ export type DispatchExplanationInput = {
   slaOk: boolean
   chosen: ExplainCandidate
   discarded: ExplainCandidate[]
+  /** Experiencia del técnico elegido en el tipo de daño (opcional). */
+  experience?: IssueTypeExperience | null
 }
 
 export type DispatchExplanation = {
@@ -75,6 +95,8 @@ export type DispatchExplanation = {
     name: string
     skillLabel: string
     level: string | null
+    /** Resumen de UNA línea, visible sin expandir (decisión, no reglas). */
+    summary: string
     /** Motivos en lenguaje de negocio (viñetas). */
     motives: string[]
   }
@@ -89,6 +111,12 @@ export type DispatchExplanation = {
 
 function levelLabel(level: SkillLevel | null): string | null {
   return level ? SKILL_LEVEL_LABELS[level] : null
+}
+
+/** Une una lista en español natural: "a, b y c". */
+function joinEs(parts: string[]): string {
+  if (parts.length <= 1) return parts[0] ?? ""
+  return `${parts.slice(0, -1).join(", ")} y ${parts[parts.length - 1]}`
 }
 
 /** Motivo de descarte de UN técnico, comparado contra el seleccionado. */
@@ -125,15 +153,38 @@ export function buildDispatchExplanation(
   if (r.skill) motives.push(`Tiene la especialidad de ${skill}`)
   const lvl = levelLabel(input.chosen.level)
   if (lvl) motives.push(`Nivel ${lvl} en ${skill}`)
+  // Experiencia REAL en el tipo de daño (Pilares 2 y 3): historial, no score.
+  const exp = input.experience
+  const hasExperience = !!exp && exp.completedCount > 0
+  if (exp && hasExperience) {
+    const jobs = exp.completedCount === 1 ? "trabajo" : "trabajos"
+    const reliable = exp.resolvedCount >= EXPERIENCE_SAMPLE_THRESHOLD
+    const rate =
+      exp.successRate !== null && reliable
+        ? ` con ${Math.round(exp.successRate * 100)}% de éxito`
+        : ""
+    motives.push(
+      `Ha completado ${exp.completedCount} ${jobs} de "${exp.issueTypeLabel}"${rate}`,
+    )
+  }
   if (r.availability) motives.push(`Está disponible ${input.whenText}`)
   if (input.slaOk) motives.push("Atiende dentro del tiempo comprometido con el cliente")
   if (r.capacity) motives.push("Tiene cupo en su agenda hoy")
+
+  // Resumen de una línea: criterios de NEGOCIO, no reglas. Visible sin expandir.
+  const criteria: string[] = []
+  if (r.availability) criteria.push("su disponibilidad")
+  if (lvl) criteria.push("su nivel técnico")
+  if (input.slaOk) criteria.push("el cumplimiento del SLA")
+  if (criteria.length === 0 && r.capacity) criteria.push("su cupo en agenda")
+  const summary = `${input.chosen.name} fue seleccionado por ${joinEs(criteria)}.`
 
   return {
     selected: {
       name: input.chosen.name,
       skillLabel: skill,
       level: lvl,
+      summary,
       motives,
     },
     discarded: input.discarded.map((d) => ({

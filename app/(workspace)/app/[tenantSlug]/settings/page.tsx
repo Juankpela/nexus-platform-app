@@ -10,7 +10,7 @@ import { requirePermission } from "@/modules/authorization/application/require-p
 import { getTenantBusinessProfile } from "@/modules/tenancy/composition"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 
-export const metadata: Metadata = { title: "Settings" }
+export const metadata: Metadata = { title: "Configuración" }
 
 export default async function SettingsPage({
   params,

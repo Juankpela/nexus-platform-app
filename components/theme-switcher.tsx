@@ -14,7 +14,7 @@ export function ThemeSwitcher() {
       type="button"
       variant="ghost"
       size="icon"
-      aria-label="Toggle color theme"
+      aria-label="Cambiar tema"
       onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
     >
       <Sun className="hidden dark:block" />

@@ -10,7 +10,7 @@ import { listMyExportJobs } from "@/modules/integrations/composition"
 import { EXPORT_JOB_STATUS_LABELS } from "@/modules/integrations/domain/export-job"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 
-export const metadata: Metadata = { title: "Exports" }
+export const metadata: Metadata = { title: "Exportaciones" }
 
 const PAGE_SIZE = 20
 
@@ -63,7 +63,7 @@ export default async function ExportsPage({
                 <tr>
                   <th className="px-4 py-3 font-medium">Object</th>
                   <th className="px-4 py-3 font-medium">Format</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium">Estado</th>
                   <th className="px-4 py-3 text-right font-medium">Rows</th>
                   <th className="px-4 py-3 font-medium">Requested</th>
                   <th className="px-4 py-3 text-right font-medium">Action</th>

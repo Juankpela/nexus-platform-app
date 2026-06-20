@@ -33,7 +33,7 @@ import { getRequestContext } from "@/modules/request-context/application/get-req
 import { listCachedTenantMembers } from "@/modules/tenancy/composition"
 import { cn } from "@/lib/utils"
 
-export const metadata: Metadata = { title: "Cases" }
+export const metadata: Metadata = { title: "Solicitudes" }
 
 const PAGE_SIZE = 10
 const KANBAN_PAGE_SIZE = 200

@@ -18,6 +18,7 @@ import {
   reversePaymentAction,
 } from "@/modules/billing/presentation/payment-actions"
 import { formatCOP } from "@/lib/format/money"
+import { formatDateNumeric } from "@/lib/format/datetime"
 
 const INITIAL = { ok: false, error: null as string | null }
 
@@ -88,7 +89,7 @@ export function InvoicePaymentsSection({
               <div className="flex items-center gap-3">
                 <span className="font-medium">{p.paymentNumber}</span>
                 <span className="text-muted-foreground">
-                  {new Date(p.paymentDate).toLocaleDateString(undefined, { timeZone: "America/Bogota" })}
+                  {formatDateNumeric(p.paymentDate)}
                 </span>
                 <span
                   className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${PAYMENT_STATUS_COLORS[p.status]}`}

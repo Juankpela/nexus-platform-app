@@ -430,9 +430,12 @@ export type Database = {
           created_by: string | null
           description: string | null
           id: string
+          incident_type: string | null
+          issue_type_id: string | null
           origin: Database["public"]["Enums"]["case_origin"]
           owner_id: string | null
           priority: Database["public"]["Enums"]["case_priority"]
+          reported_skill_id: string | null
           resolved_at: string | null
           sla_due_at: string | null
           status: Database["public"]["Enums"]["case_status"]
@@ -452,9 +455,12 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           id?: string
+          incident_type?: string | null
+          issue_type_id?: string | null
           origin?: Database["public"]["Enums"]["case_origin"]
           owner_id?: string | null
           priority?: Database["public"]["Enums"]["case_priority"]
+          reported_skill_id?: string | null
           resolved_at?: string | null
           sla_due_at?: string | null
           status?: Database["public"]["Enums"]["case_status"]
@@ -474,9 +480,12 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           id?: string
+          incident_type?: string | null
+          issue_type_id?: string | null
           origin?: Database["public"]["Enums"]["case_origin"]
           owner_id?: string | null
           priority?: Database["public"]["Enums"]["case_priority"]
+          reported_skill_id?: string | null
           resolved_at?: string | null
           sla_due_at?: string | null
           status?: Database["public"]["Enums"]["case_status"]
@@ -510,6 +519,64 @@ export type Database = {
           },
           {
             foreignKeyName: "cases_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cases_issue_type_id_fkey"
+            columns: ["issue_type_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "service_issue_types"
+            referencedColumns: ["id", "tenant_id"]
+          },
+        ]
+      }
+      service_issue_types: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          name: string
+          skill_id: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          name: string
+          skill_id: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          name?: string
+          skill_id?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_issue_types_skill_id_tenant_id_fkey"
+            columns: ["skill_id", "tenant_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id", "tenant_id"]
+          },
+          {
+            foreignKeyName: "service_issue_types_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -2206,6 +2273,7 @@ export type Database = {
           archived_at: string | null
           created_at: string
           id: string
+          incident_types: string[]
           name: string
           tenant_id: string
           updated_at: string
@@ -2214,6 +2282,7 @@ export type Database = {
           archived_at?: string | null
           created_at?: string
           id?: string
+          incident_types?: string[]
           name: string
           tenant_id: string
           updated_at?: string
@@ -2222,6 +2291,7 @@ export type Database = {
           archived_at?: string | null
           created_at?: string
           id?: string
+          incident_types?: string[]
           name?: string
           tenant_id?: string
           updated_at?: string
@@ -2987,6 +3057,28 @@ export type Database = {
           scheduled_minutes: number
           status: Database["public"]["Enums"]["technician_status"]
           technician_id: string
+        }[]
+      }
+      technician_outcomes: {
+        Args: { p_tenant_id: string }
+        Returns: {
+          technician_id: string
+          completed_count: number
+          unable_count: number
+          resolved_count: number
+          success_rate: number | null
+          avg_work_minutes: number | null
+          last_completed_at: string | null
+        }[]
+      }
+      technician_issue_type_outcomes: {
+        Args: { p_tenant_id: string; p_issue_type_id: string }
+        Returns: {
+          technician_id: string
+          completed_count: number
+          resolved_count: number
+          success_rate: number | null
+          last_completed_at: string | null
         }[]
       }
       grant_platform_admin: { Args: { p_user_id: string }; Returns: undefined }

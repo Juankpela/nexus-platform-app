@@ -28,7 +28,12 @@ export async function submitReportAction(
   const slug = field(formData, "tenantSlug")
   const description = field(formData, "description")
   const location = field(formData, "location")
-  const category = field(formData, "category")
+  // Paso 1 — categoría: id de skill, o "otro". Paso 2 — tipo de daño (id de
+  // service_issue_types, entidad estructurada). El valor "otro" no es un id.
+  const categoryId = field(formData, "categoryId")
+  const issueTypeRaw = field(formData, "issueTypeId")
+  const issueTypeId = issueTypeRaw && issueTypeRaw !== "otro" ? issueTypeRaw : null
+  const reportedSkillId = categoryId && categoryId !== "otro" ? categoryId : null
   const reporterName = field(formData, "reporterName")
   const reporterPhone = field(formData, "reporterPhone")
   const reporterEmailRaw = field(formData, "reporterEmail")
@@ -38,7 +43,11 @@ export async function submitReportAction(
   const photoDataUrl = field(formData, "photo")
 
   if (!slug) return { ok: false, error: "Enlace inválido." }
-  if (!description) return { ok: false, error: "Cuéntanos qué ocurrió." }
+  if (!categoryId) return { ok: false, error: "Elige una categoría." }
+  // La descripción es opcional cuando hay categoría; obligatoria en "Otro".
+  if (!reportedSkillId && !description) {
+    return { ok: false, error: "Cuéntanos qué ocurrió." }
+  }
   if (!location) return { ok: false, error: "Indícanos dónde ocurrió." }
   if (!reporterName) return { ok: false, error: "Déjanos tu nombre." }
   // El correo es obligatorio: es el canal por el que confirmamos la visita y
@@ -50,7 +59,8 @@ export async function submitReportAction(
     const result = await submitPublicReport(slug, {
       description,
       location,
-      category: category || "Otro",
+      reportedSkillId,
+      issueTypeId,
       reporterName,
       reporterPhone: reporterPhone || null,
       reporterEmail,

@@ -77,7 +77,7 @@ export default async function ProductDetailPage({
               <ProductFormDialog
                 tenantSlug={tenantSlug}
                 product={product}
-                trigger={<Button variant="outline">Edit product</Button>}
+                trigger={<Button variant="outline">Editar producto</Button>}
               />
               <ProductActiveToggle
                 tenantSlug={tenantSlug}
@@ -112,11 +112,11 @@ export default async function ProductDetailPage({
             <Detail label="Unit of Measure" value={product.unitOfMeasure} />
             <Detail
               label="Created"
-              value={new Date(product.createdAt).toLocaleDateString(undefined, { timeZone: "America/Bogota" })}
+              value={new Date(product.createdAt).toLocaleDateString("es-CO", { timeZone: "America/Bogota" })}
             />
             <Detail
               label="Last Updated"
-              value={new Date(product.updatedAt).toLocaleDateString(undefined, { timeZone: "America/Bogota" })}
+              value={new Date(product.updatedAt).toLocaleDateString("es-CO", { timeZone: "America/Bogota" })}
             />
           </dl>
           {product.description ? (
@@ -152,7 +152,7 @@ export default async function ProductDetailPage({
                   <tr>
                     <th className="px-4 py-3 font-medium">Price Book</th>
                     <th className="px-4 py-3 font-medium">Unit Price</th>
-                    <th className="px-4 py-3 font-medium">Status</th>
+                    <th className="px-4 py-3 font-medium">Estado</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -167,7 +167,7 @@ export default async function ProductDetailPage({
                         </Link>
                       </td>
                       <td className="px-4 py-4 font-mono text-sm">
-                        {a.unitPrice.toLocaleString(undefined, {
+                        {a.unitPrice.toLocaleString("es-CO", {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}
@@ -206,7 +206,7 @@ export default async function ProductDetailPage({
                 <thead className="border-b bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
                   <tr>
                     <th className="px-4 py-3 font-medium">Event</th>
-                    <th className="px-4 py-3 font-medium">When</th>
+                    <th className="px-4 py-3 font-medium">Cuándo</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -221,7 +221,7 @@ export default async function ProductDetailPage({
                         ) : null}
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
-                        {new Date(ev.occurredAt).toLocaleString(undefined, { timeZone: "America/Bogota" })}
+                        {new Date(ev.occurredAt).toLocaleString("es-CO", { timeZone: "America/Bogota" })}
                       </td>
                     </tr>
                   ))}

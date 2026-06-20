@@ -50,7 +50,7 @@ import { technicianFullName } from "@/modules/service/domain/technician"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 import { WorkOrderBillingControls } from "./_components/work-order-billing-controls"
 
-export const metadata: Metadata = { title: "Work Order" }
+export const metadata: Metadata = { title: "Orden de trabajo" }
 
 function parseActivityFilters(sp: {
   type?: string
@@ -65,7 +65,7 @@ function parseActivityFilters(sp: {
 }
 
 function fmt(iso: string | null): string | null {
-  return iso ? new Date(iso).toLocaleString(undefined, { timeZone: "America/Bogota" }) : null
+  return iso ? new Date(iso).toLocaleString("es-CO", { timeZone: "America/Bogota" }) : null
 }
 
 function Detail({
@@ -422,7 +422,7 @@ export default async function WorkOrderDetailPage({
                     <tr key={ev.id} className="align-top">
                       <td className="px-4 py-3 font-medium">{ev.action}</td>
                       <td className="px-4 py-3 text-muted-foreground">
-                        {new Date(ev.occurredAt).toLocaleString(undefined, { timeZone: "America/Bogota" })}
+                        {new Date(ev.occurredAt).toLocaleString("es-CO", { timeZone: "America/Bogota" })}
                       </td>
                     </tr>
                   ))}
