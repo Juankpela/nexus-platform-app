@@ -207,6 +207,7 @@ export async function submitPublicReport(
     origin: "web",
     reporter_email: input.reporterEmail ?? null,
     reporter_phone: input.reporterPhone ?? null,
+    reporter_name: input.reporterName,
     reported_skill_id: reportedSkillId,
     issue_type_id: issueTypeId,
     incident_type: incident,

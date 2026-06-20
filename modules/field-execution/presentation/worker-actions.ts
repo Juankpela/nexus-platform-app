@@ -11,6 +11,7 @@ import {
   notifyCustomerWorkCompleted,
 } from "@/modules/scheduling/composition"
 import { createAdminSupabaseClient } from "@/lib/supabase/admin"
+import { generateExpressInvoiceFromWorkOrder } from "@/modules/billing/infrastructure/express-invoice-from-work-order"
 import {
   SERVICE_PERMISSIONS,
   hasPermission,
@@ -188,6 +189,22 @@ async function transition(
         billable: extras.billable,
         approvedByUserId: context.userId,
       })
+      // Facturable → genera la factura borrador automática (cliente exprés desde
+      // el reportante si la solicitud no tenía cliente). Best-effort: un fallo de
+      // facturación NO revierte el cierre del trabajo.
+      if (extras.billable) {
+        try {
+          await generateExpressInvoiceFromWorkOrder({
+            tenantId: context.tenantId,
+            workOrderId: assignment.workOrderId,
+            actorUserId: context.userId,
+            requestId: context.requestId,
+          })
+        } catch {
+          // La orden quedó completada y marcada facturable; la factura se puede
+          // generar luego desde el detalle de la WO.
+        }
+      }
     }
 
     // Cierre del lazo: al COMPLETAR, avisa al cliente (idempotente, best-effort).
