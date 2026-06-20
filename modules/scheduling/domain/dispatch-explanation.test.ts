@@ -1,10 +1,27 @@
 import { describe, expect, it } from "vitest"
 
-import { failedReasons, passedReasons, primaryFailure } from "./dispatch-explanation"
+import {
+  buildDispatchExplanation,
+  failedReasons,
+  passedReasons,
+  primaryFailure,
+  type ExplainCandidate,
+} from "./dispatch-explanation"
 import type { EligibilityReasons } from "./eligibility"
 
 const ALL_OK: EligibilityReasons = {
   status: true, skill: true, zone: true, availability: true, capacity: true, noOverlap: true,
+}
+
+function cand(over: Partial<ExplainCandidate>): ExplainCandidate {
+  return {
+    name: over.name ?? "X",
+    level: over.level ?? "senior",
+    reasons: over.reasons ?? ALL_OK,
+    slotKey: over.slotKey ?? 100,
+    dayAssignmentCount: over.dayAssignmentCount ?? 0,
+    skillRank: over.skillRank ?? 3,
+  }
 }
 
 describe("dispatch-explanation", () => {
@@ -24,5 +41,55 @@ describe("dispatch-explanation", () => {
     const r = { ...ALL_OK, capacity: false }
     expect(failedReasons(r)).toEqual(["Capacidad disponible"])
     expect(passedReasons(r)).not.toContain("Capacidad disponible")
+  })
+})
+
+describe("buildDispatchExplanation (caso HVAC real)", () => {
+  it("seleccionado senior + descartes ejecutables por nivel/disponibilidad", () => {
+    const exp = buildDispatchExplanation({
+      skillLabel: "HVAC",
+      whenText: "el viernes 19 a las 3:30 p.m.",
+      slaOk: true,
+      chosen: cand({ name: "Daniel Peláez", level: "senior", skillRank: 3, slotKey: 100 }),
+      discarded: [
+        // Juniors disponibles al mismo horario → pierden por nivel.
+        cand({ name: "Javier Ortiz", level: "junior", skillRank: 1, slotKey: 100 }),
+        cand({ name: "Mauricio Ríos", level: "junior", skillRank: 1, slotKey: 100 }),
+      ],
+    })
+    expect(exp.selected.name).toBe("Daniel Peláez")
+    expect(exp.selected.level).toBe("Senior")
+    expect(exp.selected.motives).toEqual([
+      "Tiene la especialidad de HVAC",
+      "Nivel Senior en HVAC",
+      "Está disponible el viernes 19 a las 3:30 p.m.",
+      "Atiende dentro del tiempo comprometido con el cliente",
+      "Tiene cupo en su agenda hoy",
+    ])
+    expect(exp.discarded[0]).toMatchObject({
+      name: "Javier Ortiz",
+      level: "Junior",
+      reason: "Existe una alternativa con mayor nivel técnico.",
+    })
+  })
+
+  it("descarte por horario y por carga tienen razones de negocio distintas", () => {
+    const chosen = cand({ name: "Ana", slotKey: 100, dayAssignmentCount: 0 })
+    const exp = buildDispatchExplanation({
+      skillLabel: "HVAC",
+      whenText: "hoy",
+      slaOk: true,
+      chosen,
+      discarded: [
+        cand({ name: "Tarde", slotKey: 200 }), // slot posterior
+        cand({ name: "Lleno", reasons: { ...ALL_OK, availability: false }, slotKey: null }),
+        cand({ name: "Cargado", slotKey: 100, dayAssignmentCount: 4 }),
+      ],
+    })
+    expect(exp.discarded.map((d) => d.reason)).toEqual([
+      "Ana puede atender antes.",
+      "No tiene un horario libre para esta visita.",
+      "Tiene más trabajos hoy; se prefirió equilibrar la carga.",
+    ])
   })
 })

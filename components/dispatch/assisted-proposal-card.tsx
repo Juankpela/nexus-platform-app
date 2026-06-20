@@ -4,19 +4,18 @@ import { Check, ChevronDown, Clock, Loader2 } from "lucide-react"
 import { useState, useTransition } from "react"
 
 import { autoDispatchCaseAction } from "@/modules/scheduling/presentation/auto-dispatch-actions"
-import type { EligibilityReasons } from "@/modules/scheduling/domain/eligibility"
+import type { DispatchExplanation } from "@/modules/scheduling/domain/dispatch-explanation"
 
 export type ProposalView = {
   caseId: string
   caseNumber: string
   subject: string
   skillLabel: string | null
-  confidenceScore: number
   technicianName: string
-  chosenReasons: EligibilityReasons
   startsAt: string
   priority: string
-  discarded: { technicianName: string; reasons: EligibilityReasons }[]
+  /** Justificación ejecutiva (por qué este técnico y por qué no los otros). */
+  explanation: DispatchExplanation
 }
 
 function initials(name: string): string {
@@ -65,13 +64,7 @@ export function AssistedProposalCard({
   })
 
   const skill = proposal.skillLabel ?? "Servicio"
-  const reasoning =
-    `Nexus recomienda a ${proposal.technicianName} porque es el técnico de ` +
-    `${skill} disponible más adecuado para atender, puede llegar dentro del ` +
-    `tiempo comprometido con el cliente y tiene cupo en su agenda.` +
-    (proposal.discarded.length > 0
-      ? ` Se evaluaron otras ${proposal.discarded.length} alternativas.`
-      : "")
+  const { selected, discarded } = proposal.explanation
 
   if (done) {
     return (
@@ -157,11 +150,42 @@ export function AssistedProposalCard({
       </button>
 
       {open ? (
-        <div className="mt-2 rounded-xl border border-blue-500/15 bg-blue-500/[0.06] p-3">
-          <p className="mb-1 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-blue-400">
-            Nexus
-          </p>
-          <p className="text-sm leading-relaxed text-muted-foreground">{reasoning}</p>
+        <div className="mt-2 space-y-3 rounded-xl border border-blue-500/15 bg-blue-500/[0.06] p-3">
+          {/* Por qué el seleccionado */}
+          <div>
+            <p className="mb-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-blue-400">
+              Por qué {selected.name}
+            </p>
+            <ul className="space-y-1">
+              {selected.motives.map((m) => (
+                <li key={m} className="flex gap-2 text-sm text-muted-foreground">
+                  <span className="mt-0.5 text-emerald-500 dark:text-emerald-400">✓</span>
+                  <span>{m}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Por qué no los otros */}
+          {discarded.length > 0 ? (
+            <div className="border-t border-white/5 pt-2.5">
+              <p className="mb-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                Otros técnicos evaluados
+              </p>
+              <ul className="space-y-1.5">
+                {discarded.map((d) => (
+                  <li key={d.name} className="text-sm">
+                    <span className="font-medium text-foreground">{d.name}</span>
+                    <span className="text-muted-foreground">
+                      {" · "}
+                      {d.skillLabel}
+                      {d.level ? ` ${d.level}` : ""} — {d.reason}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
         </div>
       ) : null}
 

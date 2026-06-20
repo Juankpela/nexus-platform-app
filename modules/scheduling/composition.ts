@@ -63,6 +63,13 @@ import {
   listWorkOrdersForCase,
 } from "@/modules/service/composition"
 import type { EligibilityReasons } from "@/modules/scheduling/domain/eligibility"
+import {
+  buildDispatchExplanation,
+  type DispatchExplanation,
+  type ExplainCandidate,
+} from "@/modules/scheduling/domain/dispatch-explanation"
+import type { DispatchCandidate } from "@/modules/scheduling/domain/dispatch-selection"
+import { SKILL_LEVELS } from "@/modules/service/domain/skill"
 import { planAutoDispatch } from "@/modules/scheduling/application/use-cases/plan-auto-dispatch"
 import { KeywordReportClassifier } from "@/modules/scheduling/infrastructure/keyword-report-classifier"
 import { SupabaseDispatchCandidateReader } from "@/modules/scheduling/infrastructure/supabase-dispatch-candidate-reader"
@@ -855,6 +862,28 @@ export type AssistedDispatchProposal = {
   endsAt: string
   priority: string
   discarded: { technicianName: string; reasons: EligibilityReasons }[]
+  /** Justificación ejecutiva (por qué este técnico y por qué no los otros). */
+  explanation: DispatchExplanation
+}
+
+/** Clave comparable del slot local (menor = más temprano; null = sin horario). */
+function candidateSlotKey(slot: DispatchCandidate["slot"]): number | null {
+  if (!slot) return null
+  const [y, m, d] = slot.date.split("-").map(Number)
+  const ordinal = Math.floor(Date.UTC(y, m - 1, d) / 86_400_000)
+  return ordinal * 1440 + slot.startMinute
+}
+
+/** Mapea un candidato del motor a la forma que consume la explicabilidad. */
+function toExplainCandidate(c: DispatchCandidate): ExplainCandidate {
+  return {
+    name: c.technicianName,
+    level: c.skillRank > 0 ? (SKILL_LEVELS[c.skillRank - 1] ?? null) : null,
+    reasons: c.reasons,
+    slotKey: candidateSlotKey(c.slot),
+    dayAssignmentCount: c.dayAssignmentCount,
+    skillRank: c.skillRank,
+  }
 }
 
 /**
@@ -929,6 +958,25 @@ export async function listDispatchInbox(tenantId: UUID): Promise<DispatchInbox> 
     })
 
     if (plan.verdict === "PROCEED" && plan.chosen && plan.startsAt && plan.endsAt) {
+      const whenText = new Date(plan.startsAt).toLocaleString("es-CO", {
+        timeZone: TENANT_TIMEZONE,
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+      const explanation = buildDispatchExplanation({
+        skillLabel: plan.classification.skillLabel,
+        whenText: `el ${whenText}`,
+        slaOk: !plan.confidence.blockers.includes("sla_risk"),
+        chosen: toExplainCandidate(plan.chosen),
+        // Solo explicamos a los técnicos que SÍ tienen la especialidad requerida
+        // (alternativas reales), no a toda la nómina del tenant.
+        discarded: plan.discarded
+          .filter((d) => d.skillRank > 0)
+          .map(toExplainCandidate),
+      })
       proposals.push({
         caseId: c.id,
         caseNumber: c.caseNumber,
@@ -942,6 +990,7 @@ export async function listDispatchInbox(tenantId: UUID): Promise<DispatchInbox> 
         endsAt: plan.endsAt,
         priority: plan.classification.priority,
         discarded: plan.discarded.map((d) => ({ technicianName: d.technicianName, reasons: d.reasons })),
+        explanation,
       })
       continue
     }
