@@ -1003,9 +1003,24 @@ export type AssistedDispatchProposal = {
   /** Horario formateado en el SERVIDOR (evita mismatch de hidratación en la tarjeta). */
   scheduleLabel: string
   priority: string
+  /** Contexto del caso para la tarjeta héroe (reusa campos del caso). */
+  companyName: string | null
+  origin: string | null
+  /** Cuenta regresiva de SLA ya formateada en servidor (ej. "SLA vence 4h 12m"). */
+  slaLabel: string | null
   discarded: { technicianName: string; reasons: EligibilityReasons }[]
   /** Justificación ejecutiva (por qué este técnico y por qué no los otros). */
   explanation: DispatchExplanation
+}
+
+/** Cuenta regresiva de SLA legible (servidor): "SLA vence 4h 12m" / "SLA vencido". */
+function formatSlaCountdown(slaDueAt: string | null, nowMs: number): string | null {
+  if (!slaDueAt) return null
+  const diff = new Date(slaDueAt).getTime() - nowMs
+  if (diff <= 0) return "SLA vencido"
+  const h = Math.floor(diff / 3_600_000)
+  const m = Math.floor((diff % 3_600_000) / 60_000)
+  return h > 0 ? `SLA vence ${h}h ${m}m` : `SLA vence ${m}m`
 }
 
 /** Clave comparable del slot local (menor = más temprano; null = sin horario). */
@@ -1165,6 +1180,9 @@ export async function listDispatchInbox(tenantId: UUID): Promise<DispatchInbox> 
         endsAt: plan.endsAt,
         scheduleLabel,
         priority: plan.classification.priority,
+        companyName: c.companyName,
+        origin: c.origin,
+        slaLabel: formatSlaCountdown(c.slaDueAt, deps.nowMs),
         discarded: plan.discarded.map((d) => ({ technicianName: d.technicianName, reasons: d.reasons })),
         explanation,
       })

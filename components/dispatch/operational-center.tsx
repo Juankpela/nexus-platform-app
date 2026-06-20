@@ -5,7 +5,6 @@ import { ActiveOperationCard } from "@/components/dispatch/active-operation-card
 import { AssistedProposalCard } from "@/components/dispatch/assisted-proposal-card"
 import { CompletedOperationCard } from "@/components/dispatch/completed-operation-card"
 import { DispatchExceptionCard } from "@/components/dispatch/dispatch-exception-card"
-import { MissionSection } from "@/components/dashboard/mission/mission-section"
 import {
   BILLING_PERMISSIONS,
   SERVICE_PERMISSIONS,
@@ -248,27 +247,91 @@ export async function OperationalCenter({
         </section>
       </div>
 
-      {/* ── N2 · Operación en marcha (full-width, línea de vida viva) ── */}
-      <MissionSection
-        title={`Operación en marcha${activeOps.length ? ` · ${activeOps.length}` : ""}`}
-        description="Nexus está coordinando estas operaciones en este momento."
-      >
-        {activeOps.length === 0 ? (
-          <p className="rounded-2xl border bg-card p-5 text-sm text-muted-foreground">
-            No hay operaciones en ejecución ahora.
-          </p>
-        ) : (
-          <div className="space-y-3">
-            {activeOps.map((a, i) => (
-              <ActiveOperationCard
-                key={a.op.workOrderNumber ?? `op-${i}`}
-                op={a.op}
-                milestones={a.milestones}
-              />
-            ))}
-          </div>
-        )}
+      {/* ── N2 · PILAR OPERACIONAL · LO QUE OCURRE AHORA ── */}
+      <section aria-label="Operación en marcha">
+        <div className="mb-3 flex items-center gap-2">
+          <span className="rounded bg-nexus-blue/10 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-nexus-blue">
+            N2
+          </span>
+          <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+            Pilar operacional · lo que ocurre ahora
+          </span>
+        </div>
 
+        <div className="overflow-hidden rounded-2xl border bg-card">
+          {/* Barra de pestañas + estado en vivo */}
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b p-3">
+            <div className="inline-flex gap-1 rounded-lg border bg-muted/30 p-1">
+              <span className="inline-flex items-center gap-1.5 rounded-md bg-card px-3 py-1.5 text-sm font-medium text-foreground shadow-sm">
+                <span className="size-1.5 rounded-full bg-emerald-500" /> Operaciones activas
+              </span>
+              <Link
+                href={`/app/${tenantSlug}/field-monitor`}
+                className="rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
+                Fuerza de campo
+              </Link>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                <span className="size-1.5 animate-pulse rounded-full bg-emerald-500" />
+                En vivo
+              </span>
+              <Link
+                href={`/app/${tenantSlug}/work-orders`}
+                className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+              >
+                Ver Trabajo <ArrowRight className="size-3.5" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Sub-encabezado + leyenda */}
+          <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-3">
+            <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+              Stream de órdenes en ejecución
+            </span>
+            <span className="flex items-center gap-3 text-[10px] text-muted-foreground">
+              <span className="inline-flex items-center gap-1">
+                <span className="size-1.5 rounded-full bg-emerald-400" /> completado
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="size-1.5 rounded-full bg-nexus-blue" /> hito actual
+              </span>
+            </span>
+          </div>
+
+          {/* Encabezados de columna */}
+          <div className="hidden grid-cols-[minmax(160px,1.1fr)_5fr_minmax(130px,1fr)] gap-4 px-4 py-2 font-mono text-[10px] uppercase tracking-wider text-muted-foreground lg:grid">
+            <span>Cliente / Técnico</span>
+            <span>Línea de vida operacional · 9 hitos</span>
+            <span className="text-right">Momento actual</span>
+          </div>
+
+          {/* Filas */}
+          {activeOps.length === 0 ? (
+            <p className="border-t px-4 py-6 text-sm text-muted-foreground">
+              No hay operaciones en ejecución ahora.
+            </p>
+          ) : (
+            <div className="divide-y border-t">
+              {activeOps.map((a, i) => (
+                <ActiveOperationCard
+                  key={a.op.workOrderNumber ?? `op-${i}`}
+                  op={a.op}
+                  milestones={a.milestones}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Línea técnica */}
+          <p className="border-t px-4 py-2.5 font-mono text-[10px] text-muted-foreground/70">
+            orden.linea_de_vida (9 hitos, actual resaltado) · ejecución_campo.estado_actual (tiempo real)
+          </p>
+        </div>
+
+        {/* Completadas: secundario, plegado */}
         {canWorkOrders && completedOps.length > 0 ? (
           <details className="mt-3 rounded-2xl border bg-card p-4">
             <summary className="cursor-pointer text-sm font-medium text-muted-foreground">
@@ -281,7 +344,7 @@ export async function OperationalCenter({
             </div>
           </details>
         ) : null}
-      </MissionSection>
+      </section>
 
       {/* Negocio: enlace tenue al pie (el dinero ya vive pequeño en el pulso). */}
       {canInvoices ? (
