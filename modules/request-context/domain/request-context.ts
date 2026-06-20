@@ -8,5 +8,7 @@ export type RequestContext = {
   membershipId: UUID
   effectivePermissions: readonly string[]
   enabledFeatures: readonly string[]
+  /** Claves de los roles del usuario en el tenant (gating por rol en UI). */
+  roleKeys: readonly string[]
   tenant: Tenant
 }

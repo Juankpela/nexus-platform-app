@@ -24,6 +24,7 @@ export const getRequestContext = cache(
       membershipId: access.membershipId,
       effectivePermissions: Object.freeze([...access.effectivePermissions]),
       enabledFeatures: Object.freeze([...access.enabledFeatures]),
+      roleKeys: Object.freeze([...access.roleKeys]),
       tenant: Object.freeze({
         id: access.id,
         slug: access.slug,

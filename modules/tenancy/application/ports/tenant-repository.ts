@@ -7,6 +7,8 @@ import type { UUID } from "@/types/shared"
 export type ResolvedTenantAccess = TenantSummary & {
   effectivePermissions: string[]
   enabledFeatures: string[]
+  /** Claves de los roles del usuario en el tenant (p. ej. tenant_admin, supervisor). */
+  roleKeys: string[]
 }
 
 export interface TenantRepository {

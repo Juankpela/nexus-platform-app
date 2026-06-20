@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 
+import { InvoiceKanban } from "@/components/billing/invoice-kanban"
 import { Pagination } from "@/components/crm/pagination"
 import { EmptyState } from "@/components/layout/empty-state"
 import { PageHeader } from "@/components/layout/page-header"
@@ -48,6 +49,24 @@ export default async function InvoicesPage({
     pageSize: PAGE_SIZE,
   })
 
+  // El Kanban por estado es solo para los perfiles de gestión (admin/supervisor).
+  const isOversight =
+    context.roleKeys.includes("tenant_admin") ||
+    context.roleKeys.includes("supervisor")
+  // Para el tablero necesitamos TODAS las facturas (no paginadas), agrupadas por
+  // estado. El resto de roles sigue viendo la tabla paginada.
+  const kanbanItems = isOversight
+    ? (
+        await listTenantInvoices(context.tenantId, {
+          search,
+          status: null,
+          companyId: null,
+          page: 1,
+          pageSize: 500,
+        })
+      ).items
+    : []
+
   const todayISO = new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" })
   const isOverdue = (inv: (typeof items)[number]) =>
     (inv.status === "issued" || inv.status === "partially_paid") &&
@@ -70,18 +89,20 @@ export default async function InvoicesPage({
           defaultValue={sp.search ?? ""}
           className="h-9 w-52"
         />
-        <select
-          name="status"
-          defaultValue={sp.status ?? "_all"}
-          className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
-        >
-          <option value="_all">Todos los estados</option>
-          {INVOICE_STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {INVOICE_STATUS_LABELS[s]}
-            </option>
-          ))}
-        </select>
+        {!isOversight ? (
+          <select
+            name="status"
+            defaultValue={sp.status ?? "_all"}
+            className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
+          >
+            <option value="_all">Todos los estados</option>
+            {INVOICE_STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {INVOICE_STATUS_LABELS[s]}
+              </option>
+            ))}
+          </select>
+        ) : null}
         <Button type="submit" size="sm" variant="secondary">
           Filtrar
         </Button>
@@ -92,8 +113,23 @@ export default async function InvoicesPage({
         )}
       </form>
 
-      {/* Table */}
-      {items.length === 0 ? (
+      {/* Vista de gestión (admin/supervisor): Kanban por estado. */}
+      {isOversight ? (
+        kanbanItems.length === 0 ? (
+          <EmptyState
+            title="Aún no tienes facturas"
+            description="Las facturas se generan desde órdenes de trabajo completadas y facturables, o desde una cotización aceptada."
+            actions={
+              <Button asChild variant="outline">
+                <Link href={`/app/${tenantSlug}/quotes`}>Ir a cotizaciones</Link>
+              </Button>
+            }
+          />
+        ) : (
+          <InvoiceKanban tenantSlug={tenantSlug} invoices={kanbanItems} />
+        )
+      ) : /* Tabla (otros roles con acceso a facturas) */
+      items.length === 0 ? (
         <EmptyState
           title="Aún no tienes facturas"
           description="Las facturas se generan desde órdenes de trabajo completadas y facturables, o desde una cotización aceptada."

@@ -30,6 +30,21 @@ export class SupabaseTenantRepository implements TenantRepository {
     const access = data[0]
     if (!access) return null
 
+    // Claves de rol del usuario en el tenant (para gating por rol en UI). El RPC
+    // solo devuelve permisos; leemos los roles de ESTA membresía con admin (ya
+    // validada por el RPC). No expone roles de otros usuarios.
+    let roleKeys: string[] = []
+    if (access.membership_id) {
+      const admin = createAdminSupabaseClient()
+      const { data: roleRows } = await admin
+        .from("membership_roles")
+        .select("roles(key)")
+        .eq("membership_id", access.membership_id)
+      roleKeys = ((roleRows ?? []) as { roles: { key: string } | null }[])
+        .map((r) => r.roles?.key)
+        .filter((k): k is string => !!k)
+    }
+
     return {
       id: access.tenant_id,
       slug: access.resolved_tenant_slug,
@@ -37,6 +52,7 @@ export class SupabaseTenantRepository implements TenantRepository {
       membershipId: access.membership_id,
       effectivePermissions: access.effective_permissions,
       enabledFeatures: access.enabled_features,
+      roleKeys,
     }
   }
 
