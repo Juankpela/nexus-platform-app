@@ -1,4 +1,3 @@
-import { AlertTriangle } from "lucide-react"
 
 import { ActiveOperationCard } from "@/components/dispatch/active-operation-card"
 import { AssistedProposalCard } from "@/components/dispatch/assisted-proposal-card"
@@ -6,7 +5,6 @@ import { CompletedOperationCard } from "@/components/dispatch/completed-operatio
 import { DispatchExceptionCard } from "@/components/dispatch/dispatch-exception-card"
 import { MissionAllClear } from "@/components/dashboard/mission/mission-alert-card"
 import { MissionSection } from "@/components/dashboard/mission/mission-section"
-import { emailConfigStatus } from "@/lib/email/send-email"
 import {
   BILLING_PERMISSIONS,
   SERVICE_PERMISSIONS,
@@ -68,7 +66,6 @@ export async function OperationalCenter({
       : Promise.resolve(null),
   ])
 
-  const email = emailConfigStatus()
   const { proposals, exceptions } = inbox
 
   // Operaciones activas: técnicos con un job en ejecución. La mini línea de vida
@@ -109,17 +106,6 @@ export async function OperationalCenter({
 
   return (
     <div className="space-y-7">
-      {email !== "production" ? (
-        <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
-          <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-          <span>
-            {email === "sandbox"
-              ? "Email en modo de prueba (remitente @resend.dev): las confirmaciones solo llegan a la cuenta dueña, no a los clientes reales. Verifica un dominio propio en Resend para producción."
-              : "El email no está configurado: no se enviarán confirmaciones ni avisos al cliente. Configura RESEND_API_KEY y EMAIL_FROM."}
-          </span>
-        </div>
-      ) : null}
-
       {/* 1 — Requiere tu atención */}
       <MissionSection
         title={`Requiere tu atención${exceptions.length ? ` · ${exceptions.length}` : ""}`}
