@@ -2,6 +2,7 @@ import { ArrowRight, CalendarDays } from "lucide-react"
 import type { Metadata } from "next"
 import Link from "next/link"
 
+import { QuickAcceptButton } from "@/components/worker/quick-accept-button"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
 import { SERVICE_PERMISSIONS } from "@/modules/authorization/domain/permission"
 import {
@@ -86,6 +87,12 @@ export default async function WorkerHomePage({
             </div>
             <ArrowRight className="size-4 text-muted-foreground" />
           </Link>
+          {/* Aceptar de un tap, sin entrar al detalle (acción dominante). */}
+          {next.executionStatus === "pending" ? (
+            <div className="mt-2">
+              <QuickAcceptButton tenantSlug={tenantSlug} assignmentId={next.assignmentId} />
+            </div>
+          ) : null}
         </div>
       ) : (
         <p className="rounded-xl border border-dashed bg-card p-6 text-center text-sm text-muted-foreground">

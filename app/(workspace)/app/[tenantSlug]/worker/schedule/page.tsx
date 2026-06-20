@@ -2,6 +2,7 @@ import { ChevronRight } from "lucide-react"
 import type { Metadata } from "next"
 import Link from "next/link"
 
+import { QuickAcceptButton } from "@/components/worker/quick-accept-button"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
 import { SERVICE_PERMISSIONS } from "@/modules/authorization/domain/permission"
 import {
@@ -66,11 +67,11 @@ export default async function WorkerSchedulePage({
       ) : (
         <ul className="space-y-2">
           {assignments.map((a) => (
-            <li key={a.assignmentId}>
-              <Link
-                href={`${base}/${a.assignmentId}`}
-                className="flex items-center gap-3 rounded-xl border bg-card p-4 hover:border-primary/40"
-              >
+            <li
+              key={a.assignmentId}
+              className="flex items-center gap-2 rounded-xl border bg-card p-4 hover:border-primary/40"
+            >
+              <Link href={`${base}/${a.assignmentId}`} className="flex min-w-0 flex-1 items-center gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
                     <span className="truncate text-sm font-semibold">
@@ -89,8 +90,17 @@ export default async function WorkerSchedulePage({
                     {a.companyName ?? "—"} · {fmt(a.scheduledStart)}
                   </p>
                 </div>
-                <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
               </Link>
+              {/* Aceptar directo desde la agenda si está pendiente. */}
+              {a.executionStatus === "pending" ? (
+                <QuickAcceptButton
+                  tenantSlug={tenantSlug}
+                  assignmentId={a.assignmentId}
+                  variant="compact"
+                />
+              ) : (
+                <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+              )}
             </li>
           ))}
         </ul>
