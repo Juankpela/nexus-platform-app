@@ -72,14 +72,29 @@ export function ActiveOperationCard({
         </span>
       </div>
 
-      {/* Ribbon = línea de vida real (compacta) */}
-      <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1.5">
-        {milestones.map((m) => {
+      {/* Ribbon = línea de vida real (compacta). El hito ACTUAL late "en vivo"
+          para que se sienta una operación avanzando, no una lista de estados. */}
+      <div className="mt-3 flex flex-wrap items-center gap-x-1 gap-y-1.5">
+        {milestones.map((m, i) => {
           const { dot, text } = dotTone(m.state, m.key)
+          const live = m.state === "current"
           return (
-            <span key={m.key} className={`inline-flex items-center gap-1.5 text-xs ${text}`}>
-              <span className={`size-1.5 rounded-full ${dot}`} />
-              {SHORT_LABEL[m.key] ?? m.label}
+            <span key={m.key} className="inline-flex items-center">
+              {i > 0 ? (
+                <span
+                  className={`mr-1 h-px w-3 ${
+                    m.state === "done" || milestones[i - 1]?.state === "done"
+                      ? "bg-emerald-400/40"
+                      : "bg-border"
+                  }`}
+                />
+              ) : null}
+              <span className={`inline-flex items-center gap-1.5 text-xs ${text} ${live ? "font-semibold" : ""}`}>
+                <span
+                  className={`size-1.5 rounded-full ${dot} ${live ? "animate-pulse ring-2 ring-current/30" : ""}`}
+                />
+                {SHORT_LABEL[m.key] ?? m.label}
+              </span>
             </span>
           )
         })}

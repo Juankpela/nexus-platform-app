@@ -27,13 +27,6 @@ export default async function MissionControlPage({
 
   const name = (user?.email?.split("@")[0] ?? "").replace(/[._-]/g, " ")
   const greeting = greetingFor(new Date().getUTCHours())
-  const today = new Date().toLocaleDateString("es-CO", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    timeZone: "America/Bogota",
-  })
 
   return (
     <div className="space-y-7 px-5 py-6 sm:px-8">
@@ -42,20 +35,21 @@ export default async function MissionControlPage({
           {greeting}
           {name ? `, ${name}` : ""}
         </h1>
-        <p className="mt-1 text-sm capitalize text-muted-foreground">
-          {today} · {context.tenant.name} · ¿Qué está coordinando Nexus ahora mismo?
+        <p className="mt-1 text-sm text-muted-foreground">
+          ¿Qué necesita tu atención ahora?
         </p>
       </header>
-
-      {reportUrl ? (
-        <StartReceivingCard url={reportUrl} tenantName={context.tenant.name} />
-      ) : null}
 
       <OperationalCenter
         tenantSlug={tenantSlug}
         tenantId={context.tenantId}
         permissions={context.effectivePermissions}
       />
+
+      {/* Herramienta de activación (no es "atención"): al pie. */}
+      {reportUrl ? (
+        <StartReceivingCard url={reportUrl} tenantName={context.tenant.name} />
+      ) : null}
     </div>
   )
 }
