@@ -344,6 +344,13 @@ export async function runAutoDispatchForCase(input: {
   tenantId: UUID
   requestId: UUID
   caseId: UUID
+  /**
+   * Override del supervisor: ejecuta la coordinación que el motor encontró aunque
+   * el veredicto NO sea PROCEED (p. ej. escaló por `sla_risk` porque el único hueco
+   * cae fuera del SLA). El técnico elegido SÍ es elegible (pasó los filtros duros);
+   * el humano decide aceptar la visita fuera de SLA con plena consciencia.
+   */
+  force?: boolean
 }): Promise<AutoDispatchResult> {
   const [serviceCase, skills] = await Promise.all([
     getCaseRecord(input.tenantId, input.caseId),
@@ -378,7 +385,9 @@ export async function runAutoDispatchForCase(input: {
   let workOrderId: UUID | null = null
   let assignmentId: UUID | null = null
 
-  if (plan.verdict === "PROCEED" && plan.chosen && plan.startsAt && plan.endsAt) {
+  // Se ejecuta la coordinación si el motor la aprobó (PROCEED) o si el supervisor
+  // forzó la opción encontrada (force) — en ambos casos hay técnico elegible + slot.
+  if (plan.chosen && plan.startsAt && plan.endsAt && (plan.verdict === "PROCEED" || input.force)) {
     const workOrder = await createWorkOrderRecord({
       actorId: input.actorId,
       tenantId: input.tenantId,
@@ -458,6 +467,7 @@ export async function runAutoDispatchForCase(input: {
     metadata: {
       displayActor: "Nexus Autonomous Dispatch",
       verdict: plan.verdict,
+      forced: !!input.force,
       confidence: plan.confidence,
       classification: plan.classification,
       // Categoría autoritativa elegida vs. lo que infirió el texto (auditoría de

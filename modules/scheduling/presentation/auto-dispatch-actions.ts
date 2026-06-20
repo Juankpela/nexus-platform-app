@@ -24,6 +24,8 @@ export type AutoDispatchActionState = {
 export async function autoDispatchCaseAction(
   tenantSlug: string,
   caseId: string,
+  /** Override del supervisor: agendar la opción encontrada aunque escale por SLA. */
+  force = false,
 ): Promise<AutoDispatchActionState> {
   const parsed = idSchema.safeParse(caseId)
   if (!parsed.success) return { error: "Caso inválido.", result: null }
@@ -39,6 +41,7 @@ export async function autoDispatchCaseAction(
       tenantId: context.tenantId,
       requestId: context.requestId,
       caseId: parsed.data,
+      force,
     })
 
     revalidatePath(`/app/${tenantSlug}/cases/${caseId}`)
