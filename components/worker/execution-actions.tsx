@@ -158,6 +158,55 @@ function ActionForm({
   )
 }
 
+/**
+ * Decisión de facturación que toma el técnico al cerrar. "Sí" deja la orden lista
+ * para facturar; "No" la finaliza como cierre administrativo. Se envía en el campo
+ * `billable` ("true"/"false") del mismo formulario de cierre.
+ */
+function BillableChoice() {
+  const [billable, setBillable] = useState(true)
+  return (
+    <fieldset className="rounded-lg border p-3">
+      <legend className="px-1 text-sm font-medium text-foreground">
+        ¿Este servicio es facturable?
+      </legend>
+      <div className="mt-1 grid grid-cols-2 gap-2">
+        {[
+          { value: true, label: "Sí, facturar" },
+          { value: false, label: "No facturar" },
+        ].map((opt) => {
+          const active = billable === opt.value
+          return (
+            <label
+              key={String(opt.value)}
+              className={`flex cursor-pointer items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                active
+                  ? "border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                  : "border-input text-muted-foreground hover:bg-muted/40"
+              }`}
+            >
+              <input
+                type="radio"
+                name="billable"
+                value={String(opt.value)}
+                checked={active}
+                onChange={() => setBillable(opt.value)}
+                className="sr-only"
+              />
+              {opt.label}
+            </label>
+          )
+        })}
+      </div>
+      <p className="mt-2 text-xs text-muted-foreground">
+        {billable
+          ? "La orden quedará lista para facturar."
+          : "La orden se finaliza sin factura y queda en los registros como completada."}
+      </p>
+    </fieldset>
+  )
+}
+
 export function ExecutionActions({
   tenantSlug,
   assignmentId,
@@ -219,13 +268,17 @@ export function ExecutionActions({
       ) : null}
 
       {status === "working" ? (
-        <ActionForm {...common} action={completeWorkAction} label="Completar trabajo" icon={CheckCircle2}>
+        <ActionForm {...common} action={completeWorkAction} label="Finalizar orden" icon={CheckCircle2}>
           <Textarea
             name="resolution_notes"
             placeholder="Resumen del trabajo realizado (opcional)"
             rows={3}
           />
-          <EvidencePhoto />
+          <div>
+            <p className="mb-1 text-sm font-medium text-foreground">Evidencia del trabajo</p>
+            <EvidencePhoto />
+          </div>
+          <BillableChoice />
         </ActionForm>
       ) : null}
 

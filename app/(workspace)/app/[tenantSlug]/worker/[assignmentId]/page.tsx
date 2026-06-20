@@ -4,12 +4,14 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 
 import { ExecutionActions } from "@/components/worker/execution-actions"
+import { LifecycleTimeline } from "@/components/service/lifecycle-timeline"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
 import { SERVICE_PERMISSIONS } from "@/modules/authorization/domain/permission"
 import {
   getMyAssignment,
   resolveCurrentTechnician,
 } from "@/modules/field-execution/composition"
+import { getWorkOrderLifecycle } from "@/modules/service/composition"
 import { EXECUTION_STATUS_LABELS } from "@/modules/field-execution/domain/execution"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 
@@ -44,6 +46,10 @@ export default async function WorkerAssignmentDetailPage({
     assignmentId,
   )
   if (!assignment) notFound()
+
+  // Línea de vida de la solicitud (misma que ve el cliente y el admin), para que
+  // el técnico tenga el contexto completo de la operación en su móvil.
+  const lifecycle = await getWorkOrderLifecycle(context.tenantId, assignment.workOrderId)
 
   const base = `/app/${tenantSlug}/worker`
 
@@ -91,6 +97,16 @@ export default async function WorkerAssignmentDetailPage({
         assignmentId={assignment.assignmentId}
         status={assignment.executionStatus}
       />
+
+      {/* Línea de vida de la solicitud */}
+      {lifecycle ? (
+        <div className="rounded-xl border bg-card p-4">
+          <h2 className="mb-3 text-sm font-semibold text-foreground">
+            Línea de vida de la solicitud
+          </h2>
+          <LifecycleTimeline milestones={lifecycle} />
+        </div>
+      ) : null}
     </div>
   )
 }

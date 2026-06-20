@@ -6,7 +6,10 @@ import {
   type AdvanceExecutionInput,
 } from "@/modules/field-execution/application/use-cases/advance-execution"
 import { SupabaseExecutionRepository } from "@/modules/field-execution/infrastructure/supabase-execution-repository"
-import { projectExecutionToWorkOrder } from "@/modules/field-execution/infrastructure/supabase-execution-projection"
+import {
+  projectExecutionToWorkOrder,
+  setWorkOrderBilling,
+} from "@/modules/field-execution/infrastructure/supabase-execution-projection"
 import type { ExecutionStatus } from "@/modules/field-execution/domain/execution"
 import type { UUID } from "@/types/shared"
 
@@ -63,4 +66,14 @@ export function projectExecution(input: {
   unableReason?: string | null
 }) {
   return projectExecutionToWorkOrder({ ...input, now: new Date().toISOString() })
+}
+
+/** Decisión facturable/no del técnico al cerrar (marca la WO; no crea factura). */
+export function markWorkOrderBilling(input: {
+  tenantId: UUID
+  workOrderId: UUID
+  billable: boolean
+  approvedByUserId: UUID
+}) {
+  return setWorkOrderBilling({ ...input, now: new Date().toISOString() })
 }

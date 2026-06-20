@@ -18,6 +18,7 @@ import {
 import {
   advanceExecutionRecord,
   getMyAssignment,
+  markWorkOrderBilling,
   projectExecution,
   resolveCurrentTechnician,
 } from "@/modules/field-execution/composition"
@@ -91,6 +92,8 @@ async function transition(
     unableReason?: string | null
     nonCompletionReason?: NonCompletionReason | null
     photoDataUrl?: string | null
+    /** Decisión facturable/no al completar (solo aplica a target "completed"). */
+    billable?: boolean
   },
 ): Promise<WorkerActionState> {
   const tenantSlug = field(formData, "tenantSlug")
@@ -173,6 +176,18 @@ async function transition(
         // Best-effort: la aceptación ya ocurrió; la confirmación se reintenta
         // en una futura aceptación idempotente o vía reproceso.
       }
+    }
+
+    // Decisión de facturación que tomó el técnico al cerrar: marca la WO como
+    // facturable + aprobada (queda "lista para facturar" para el coordinador) o
+    // como cierre administrativo (no facturable). No crea la factura.
+    if (target === "completed" && extras?.billable !== undefined) {
+      await markWorkOrderBilling({
+        tenantId: context.tenantId,
+        workOrderId: assignment.workOrderId,
+        billable: extras.billable,
+        approvedByUserId: context.userId,
+      })
     }
 
     // Cierre del lazo: al COMPLETAR, avisa al cliente (idempotente, best-effort).
@@ -290,6 +305,8 @@ export async function completeWorkAction(
   return transition(formData, "completed", {
     resolutionNotes: field(formData, "resolution_notes"),
     photoDataUrl: field(formData, "photo"),
+    // "true" = facturable; "false" = cierre no facturable; ausente = no decide.
+    billable: field(formData, "billable") === "true",
   })
 }
 

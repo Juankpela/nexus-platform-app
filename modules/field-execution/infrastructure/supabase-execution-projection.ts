@@ -88,3 +88,31 @@ export async function projectExecutionToWorkOrder(input: {
     .eq("tenant_id", input.tenantId)
     .eq("id", input.workOrderId)
 }
+
+/**
+ * Decisión de facturación que toma el técnico al cerrar (señal operacional, no
+ * crea la factura). Marca la WO como facturable + aprobada para facturación (de
+ * modo que aparezca "lista para facturar" al coordinador), o como NO facturable
+ * (cierre administrativo). Corre con admin: el técnico carece de work_orders.write
+ * por diseño (mínimo privilegio), igual que la proyección de ejecución.
+ */
+export async function setWorkOrderBilling(input: {
+  tenantId: UUID
+  workOrderId: UUID
+  billable: boolean
+  /** Usuario (técnico) que tomó la decisión, para la traza de aprobación. */
+  approvedByUserId: UUID
+  now: string
+}): Promise<void> {
+  const admin = createAdminSupabaseClient()
+  const patch: Database["public"]["Tables"]["work_orders"]["Update"] = {
+    billable: input.billable,
+    billing_approved_at: input.billable ? input.now : null,
+    billing_approved_by: input.billable ? input.approvedByUserId : null,
+  }
+  await admin
+    .from("work_orders")
+    .update(patch)
+    .eq("tenant_id", input.tenantId)
+    .eq("id", input.workOrderId)
+}
