@@ -150,6 +150,19 @@ async function resolveLifecycleInput(
     (woRow.scheduled_start as string | null) ??
     null
 
+  // Respaldo por ESTADO de la WO: una orden puede completarse por fuera de la
+  // ejecución de campo (cierre manual, WO desde cotización, datos de carga). Si la
+  // WO está "completada" pero no hay sello de ejecución, marcamos el hito de
+  // completado con el cierre real de la WO; la monotonía de buildServiceLifecycle
+  // marca como cumplidos los hitos previos (aceptó/en camino/en sitio/trabajando).
+  const woStatus = woRow.status as string | null
+  const execCompletedAt = (exec?.completed_at as string | null) ?? null
+  const completedAt =
+    execCompletedAt ??
+    (woStatus === "completed"
+      ? ((woRow.actual_end as string | null) ?? (woRow.updated_at as string | null) ?? null)
+      : null)
+
   return {
     technicianName,
     input: {
@@ -162,7 +175,7 @@ async function resolveLifecycleInput(
       enRouteAt,
       arrivedAt: (exec?.arrived_at as string | null) ?? null,
       startedAt: (exec?.started_at as string | null) ?? null,
-      completedAt: (exec?.completed_at as string | null) ?? null,
+      completedAt,
       unableAt: (exec?.unable_to_complete_at as string | null) ?? null,
       unableReason: (exec?.unable_reason as string | null) ?? null,
       invoiceIssuedAt,
@@ -189,7 +202,7 @@ export async function getPublicTracking(
     const tenantId = caseRow.tenant_id as string
     const { data: wo } = await admin
       .from("work_orders")
-      .select("id, status, scheduled_start, created_at")
+      .select("id, status, scheduled_start, created_at, actual_end, updated_at")
       .eq("tenant_id", tenantId)
       .eq("case_id", caseRow.id as string)
       .order("created_at", { ascending: false })
@@ -231,7 +244,7 @@ export async function getWorkOrderLifecycle(
   try {
     const { data: wo } = await admin
       .from("work_orders")
-      .select("id, status, scheduled_start, created_at, case_id")
+      .select("id, status, scheduled_start, created_at, case_id, actual_end, updated_at")
       .eq("tenant_id", tenantId)
       .eq("id", workOrderId)
       .maybeSingle()
