@@ -53,6 +53,8 @@ function toCase(row: CaseRowWithRefs): Case {
     reportedSkillId: row.reported_skill_id,
     incidentType: row.incident_type,
     issueTypeId: row.issue_type_id,
+    reporterPhone: row.reporter_phone,
+    trackingToken: row.tracking_token,
     slaDueAt: row.sla_due_at,
     resolvedAt: row.resolved_at,
     closedAt: row.closed_at,

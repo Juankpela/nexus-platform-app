@@ -96,6 +96,10 @@ export type Case = {
   incidentType: string | null
   /** Tipo de daño estructurado (FK a service_issue_types). Fuente de verdad. */
   issueTypeId: UUID | null
+  /** WhatsApp/teléfono del reportante (reporte público), para avisar al cliente. */
+  reporterPhone: string | null
+  /** Token público de seguimiento (/seguimiento/[token]). */
+  trackingToken: string | null
   slaDueAt: string | null
   resolvedAt: string | null
   closedAt: string | null

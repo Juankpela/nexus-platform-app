@@ -32,6 +32,7 @@ import {
 } from "@/modules/crm/domain/activity"
 import type { CompanyOption } from "@/modules/crm/domain/company"
 import {
+  getCaseRecord,
   getWorkOrderLifecycle,
   getWorkOrderRecord,
   listAssetOptions,
@@ -40,6 +41,16 @@ import {
   listTenantTechnicians,
   listTenantZones,
 } from "@/modules/service/composition"
+import { WhatsAppNotifyPanel } from "@/components/service/whatsapp-notify-panel"
+import {
+  buildWhatsAppUrl,
+  completedMessage,
+  confirmationMessage,
+  enRouteMessage,
+  type WhatsAppMessageContext,
+} from "@/modules/notifications/domain/whatsapp-link"
+import { env } from "@/lib/config/env"
+import { formatDateTime } from "@/lib/format/datetime"
 import { getActiveAssignmentsByWorkOrder } from "@/modules/scheduling/composition"
 import {
   WORK_ORDER_PRIORITY_LABELS,
@@ -168,6 +179,12 @@ export default async function WorkOrderDetailPage({
       getWorkOrderLifecycle(context.tenantId, workOrder.id),
     ])
 
+  // Caso asociado: para el teléfono del cliente y el token de seguimiento (aviso
+  // por WhatsApp). Solo si la WO tiene caso de origen.
+  const linkedCase = workOrder.caseId
+    ? await getCaseRecord(context.tenantId, workOrder.caseId)
+    : null
+
   // ADR-031: technician + assignment derive from the scheduling aggregate.
   const technicianOptions = techPage.items.map((t) => ({
     id: t.id,
@@ -188,6 +205,40 @@ export default async function WorkOrderDetailPage({
     id: c.id,
     label: `${c.caseNumber} · ${c.subject}`,
   }))
+
+  // Aviso al cliente por WhatsApp (Nivel 1): mensajes pre-escritos al teléfono del
+  // reportante. La acción primaria depende del estado de la WO.
+  const customerPhone = linkedCase?.reporterPhone ?? null
+  const trackingUrl = linkedCase?.trackingToken
+    ? `${env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? ""}/seguimiento/${linkedCase.trackingToken}`
+    : null
+  const waContext: WhatsAppMessageContext = {
+    technicianName: activeAssignment?.technicianName ?? null,
+    caseSubject: linkedCase?.subject ?? workOrder.subject,
+    workOrderNumber: workOrder.workOrderNumber,
+    whenText: activeAssignment?.scheduledStart
+      ? formatDateTime(activeAssignment.scheduledStart)
+      : null,
+    trackingUrl,
+  }
+  const isCompleted = workOrder.status === "completed"
+  const whatsappActions = [
+    {
+      label: "Confirmar visita",
+      url: buildWhatsAppUrl(customerPhone, confirmationMessage(waContext)),
+      primary: false,
+    },
+    {
+      label: "Voy en camino",
+      url: buildWhatsAppUrl(customerPhone, enRouteMessage(waContext)),
+      primary: !isCompleted,
+    },
+    {
+      label: "Trabajo completado",
+      url: buildWhatsAppUrl(customerPhone, completedMessage(waContext)),
+      primary: isCompleted,
+    },
+  ]
 
   return (
     <>
@@ -284,6 +335,14 @@ export default async function WorkOrderDetailPage({
             {workOrder.workOrderNumber}
           </span>
         </div>
+
+        {/* Aviso al cliente por WhatsApp (Nivel 1) — solo si hay caso de origen. */}
+        {linkedCase ? (
+          <WhatsAppNotifyPanel
+            phonePresent={!!customerPhone}
+            actions={whatsappActions}
+          />
+        ) : null}
 
         <div className="rounded-xl border bg-card p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">

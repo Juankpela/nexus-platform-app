@@ -436,6 +436,7 @@ export type Database = {
           owner_id: string | null
           priority: Database["public"]["Enums"]["case_priority"]
           reported_skill_id: string | null
+          reporter_phone: string | null
           resolved_at: string | null
           sla_due_at: string | null
           status: Database["public"]["Enums"]["case_status"]
@@ -461,6 +462,7 @@ export type Database = {
           owner_id?: string | null
           priority?: Database["public"]["Enums"]["case_priority"]
           reported_skill_id?: string | null
+          reporter_phone?: string | null
           resolved_at?: string | null
           sla_due_at?: string | null
           status?: Database["public"]["Enums"]["case_status"]
@@ -486,6 +488,7 @@ export type Database = {
           owner_id?: string | null
           priority?: Database["public"]["Enums"]["case_priority"]
           reported_skill_id?: string | null
+          reporter_phone?: string | null
           resolved_at?: string | null
           sla_due_at?: string | null
           status?: Database["public"]["Enums"]["case_status"]
