@@ -6,14 +6,25 @@ import { notFound } from "next/navigation"
 import { ExecutionActions } from "@/components/worker/execution-actions"
 import { WorkerOperationalHeader } from "@/components/worker/operational-header"
 import { LifecycleTimeline } from "@/components/service/lifecycle-timeline"
+import { WhatsAppNotifyPanel } from "@/components/service/whatsapp-notify-panel"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
 import { SERVICE_PERMISSIONS } from "@/modules/authorization/domain/permission"
 import {
   getMyAssignment,
   resolveCurrentTechnician,
 } from "@/modules/field-execution/composition"
-import { getWorkOrderLifecycle } from "@/modules/service/composition"
+import { getTechnicianRecord, getWorkOrderLifecycle } from "@/modules/service/composition"
 import { EXECUTION_STATUS_LABELS } from "@/modules/field-execution/domain/execution"
+import { technicianFullName } from "@/modules/service/domain/technician"
+import { formatWhen } from "@/modules/service/domain/service-lifecycle"
+import {
+  buildWhatsAppUrl,
+  completedMessage,
+  confirmationMessage,
+  enRouteMessage,
+  type WhatsAppMessageContext,
+} from "@/modules/notifications/domain/whatsapp-link"
+import { env } from "@/lib/config/env"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 
 export const metadata: Metadata = { title: "Asignación" }
@@ -51,6 +62,41 @@ export default async function WorkerAssignmentDetailPage({
   // Línea de vida de la solicitud (misma que ve el cliente y el admin), para que
   // el técnico tenga el contexto completo de la operación en su móvil.
   const lifecycle = await getWorkOrderLifecycle(context.tenantId, assignment.workOrderId)
+
+  // Aviso al cliente por WhatsApp (Nivel 1, R2): el técnico envía desde su propio
+  // WhatsApp el mensaje pre-escrito → el cliente SÍ lo recibe (no depende del
+  // email en sandbox). Reutiliza WhatsAppNotifyPanel + helpers wa.me (WA2/WA3).
+  const techRecord = await getTechnicianRecord(context.tenantId, technician.id)
+  const appUrl = env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? ""
+  const trackingUrl = assignment.trackingToken
+    ? `${appUrl}/seguimiento/${assignment.trackingToken}`
+    : null
+  const waContext: WhatsAppMessageContext = {
+    technicianName: techRecord ? technicianFullName(techRecord) : null,
+    caseSubject: assignment.workOrderSubject ?? "su solicitud",
+    workOrderNumber: assignment.workOrderNumber,
+    whenText: formatWhen(assignment.scheduledStart),
+    trackingUrl,
+  }
+  const customerPhone = assignment.reporterPhone
+  const isDone = assignment.executionStatus === "completed"
+  const whatsappActions = [
+    {
+      label: "Confirmar visita",
+      url: buildWhatsAppUrl(customerPhone, confirmationMessage(waContext)),
+      primary: false,
+    },
+    {
+      label: "Voy en camino",
+      url: buildWhatsAppUrl(customerPhone, enRouteMessage(waContext)),
+      primary: !isDone,
+    },
+    {
+      label: "Trabajo completado",
+      url: buildWhatsAppUrl(customerPhone, completedMessage(waContext)),
+      primary: isDone,
+    },
+  ]
 
   const base = `/app/${tenantSlug}/worker`
 
@@ -96,6 +142,10 @@ export default async function WorkerAssignmentDetailPage({
         assignmentId={assignment.assignmentId}
         status={assignment.executionStatus}
       />
+
+      {/* Avisar al cliente por WhatsApp — canal confiable (sale del WhatsApp del
+          técnico, no del email en sandbox). */}
+      <WhatsAppNotifyPanel phonePresent={!!customerPhone} actions={whatsappActions} />
 
       {/* Línea de vida de la solicitud */}
       {lifecycle ? (

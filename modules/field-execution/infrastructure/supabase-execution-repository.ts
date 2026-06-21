@@ -36,6 +36,8 @@ type WorkerAssignmentRow = {
     cases: {
       sla_due_at: string | null
       incident_type: string | null
+      reporter_phone: string | null
+      tracking_token: string | null
       service_issue_types: { name: string } | null
     } | null
   } | null
@@ -52,7 +54,7 @@ type WorkerAssignmentRow = {
 const ASSIGNMENT_SELECT =
   "id, scheduled_start, scheduled_end, work_order_id, " +
   "work_orders(work_order_number, subject, priority, companies(name), assets(name, asset_number), " +
-  "cases(sla_due_at, incident_type, service_issue_types(name))), " +
+  "cases(sla_due_at, incident_type, reporter_phone, tracking_token, service_issue_types(name))), " +
   "work_order_executions(id, status, resolution_notes, unable_reason)"
 
 function toExecution(row: ExecutionRow): Execution {
@@ -95,6 +97,8 @@ function toWorkerAssignment(row: WorkerAssignmentRow): WorkerAssignment {
     // Tipo de daño: estructurado (issue type) primero; etiqueta legacy si no hay.
     issueTypeLabel: caseRow?.service_issue_types?.name ?? caseRow?.incident_type ?? null,
     slaDueAt: caseRow?.sla_due_at ?? null,
+    reporterPhone: caseRow?.reporter_phone ?? null,
+    trackingToken: caseRow?.tracking_token ?? null,
   }
 }
 

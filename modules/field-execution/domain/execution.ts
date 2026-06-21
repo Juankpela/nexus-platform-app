@@ -91,6 +91,10 @@ export type WorkerAssignment = {
   issueTypeLabel: string | null
   /** Vencimiento de SLA tomado del caso de origen (ISO) — null si no aplica. */
   slaDueAt: string | null
+  /** Teléfono del cliente reportante (para avisar por WhatsApp). */
+  reporterPhone: string | null
+  /** Token público de seguimiento del caso (para el enlace que recibe el cliente). */
+  trackingToken: string | null
 }
 
 /** The effective execution status for a possibly-missing execution row. */
