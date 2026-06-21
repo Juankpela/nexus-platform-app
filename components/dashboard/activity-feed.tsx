@@ -42,7 +42,7 @@ export function ActivityFeed({
               return (
                 <li
                   key={item.id}
-                  className="flex items-start gap-3 rounded-xl px-2 py-2.5 transition-colors hover:bg-muted/50"
+                  className="flex items-start gap-3 rounded-xl px-2 py-2.5"
                 >
                   <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
                     {Icon ? <Icon className="size-4" /> : null}

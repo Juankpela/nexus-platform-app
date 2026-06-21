@@ -98,7 +98,7 @@ export default async function PaymentsPage({
               </thead>
               <tbody className="divide-y">
                 {items.map((p) => (
-                  <tr key={p.id} className="align-top hover:bg-muted/20">
+                  <tr key={p.id} className="align-top">
                     <td className="px-4 py-3 font-medium">{p.paymentNumber}</td>
                     <td className="px-4 py-3">{p.companyName ?? "—"}</td>
                     <td className="px-4 py-3 text-muted-foreground">

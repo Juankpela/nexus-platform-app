@@ -11,9 +11,8 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core"
-import { GripVertical } from "lucide-react"
 import Link from "next/link"
-import { startTransition, useOptimistic, useState } from "react"
+import { startTransition, useEffect, useOptimistic, useRef, useState } from "react"
 
 import { SlaBadge } from "@/components/service/sla-badge"
 import { cn } from "@/lib/utils"
@@ -143,46 +142,42 @@ function DraggableCard({
   })
   const isActive = activeId === c.id
 
+  // La tarjeta entera es arrastrable Y clickeable: el `distance: 8` del sensor
+  // separa un clic (abre el caso) de un arrastre (mueve de columna). Marcamos que
+  // hubo arrastre para NO navegar en el clic sintético que dispara el navegador
+  // al soltar. (Mismo patrón que el Kanban de Work Orders.)
+  const draggedRef = useRef(false)
+  useEffect(() => {
+    if (isDragging) draggedRef.current = true
+  }, [isDragging])
+
+  const dragProps = terminal ? {} : { ...listeners, ...attributes }
+
   return (
     <div
       ref={setNodeRef}
       className={cn(
-        "group relative",
+        "relative",
         !terminal && "cursor-grab active:cursor-grabbing",
         terminal && "cursor-default",
       )}
       style={{ touchAction: "none" }}
     >
-      {!terminal && (
-        <span
-          {...listeners}
-          {...attributes}
-          className="absolute -left-1 top-1/2 z-10 hidden -translate-y-1/2 cursor-grab text-muted-foreground/40 hover:text-muted-foreground group-hover:flex"
-          aria-label="Arrastrar"
-        >
-          <GripVertical className="size-3.5" />
-        </span>
-      )}
-
       <Link
         href={`${basePath}/${c.id}`}
-        tabIndex={isDragging ? -1 : 0}
-        className="block transition-all hover:-translate-y-0.5 hover:border-primary/40"
+        {...dragProps}
         draggable={false}
-        onPointerDown={terminal ? undefined : (e) => e.stopPropagation()}
+        tabIndex={isDragging ? -1 : 0}
+        onClick={(e) => {
+          if (draggedRef.current) {
+            e.preventDefault()
+            draggedRef.current = false
+          }
+        }}
+        className="block transition-all hover:-translate-y-0.5 hover:border-primary/40"
       >
         <CardBody c={c} dimmed={isActive} />
       </Link>
-
-      {!terminal && (
-        <div
-          {...listeners}
-          {...attributes}
-          className="absolute inset-0 cursor-grab active:cursor-grabbing"
-          aria-hidden
-          style={{ touchAction: "none" }}
-        />
-      )}
     </div>
   )
 }
