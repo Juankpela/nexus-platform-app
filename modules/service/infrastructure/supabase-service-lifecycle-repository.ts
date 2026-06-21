@@ -25,6 +25,8 @@ type Admin = ReturnType<typeof createAdminSupabaseClient>
 type Row = Record<string, unknown> | null
 
 export type PublicTrackingView = {
+  /** Para suscribir la página pública al canal de actualización en vivo (broadcast). */
+  tenantId: string
   tenantName: string
   caseNumber: string
   subject: string
@@ -223,6 +225,7 @@ export async function getPublicTracking(
       .maybeSingle()
 
     return {
+      tenantId,
       tenantName: (tenant as { name?: string } | null)?.name ?? "Nexus",
       caseNumber: (caseRow.case_number as string).replace(/^CASE/i, "REP"),
       subject: (caseRow.subject as string | null) ?? "Tu solicitud",

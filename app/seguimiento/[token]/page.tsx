@@ -2,6 +2,7 @@ import { CalendarClock, UserCheck } from "lucide-react"
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
+import { FieldMonitorLive } from "@/components/field-monitor/field-monitor-live"
 import { LifecycleTimeline } from "@/components/service/lifecycle-timeline"
 import { getPublicTracking } from "@/modules/service/composition"
 import { formatWhen } from "@/modules/service/domain/service-lifecycle"
@@ -17,6 +18,10 @@ export default async function TrackingPage({
   const { token } = await params
   const view = await getPublicTracking(token)
   if (!view) notFound()
+
+  // Marca de tiempo del render (la página es force-dynamic: se genera en cada
+  // visita). El indicador en vivo refresca por broadcast + red de 30s.
+  const generatedAt = new Date().toISOString()
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-10">
@@ -72,7 +77,17 @@ export default async function TrackingPage({
 
         {/* Línea de vida */}
         <div className="mt-6">
-          <p className="mb-3 text-sm font-semibold text-foreground">Estado de tu solicitud</p>
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <p className="text-sm font-semibold text-foreground">Estado de tu solicitud</p>
+            {/* Reutiliza el indicador del Monitor de Campo: broadcast + red de 30s. */}
+            <FieldMonitorLive
+              tenantId={view.tenantId}
+              generatedAt={generatedAt}
+              connectedLabel="Actualización en vivo"
+              connectingLabel="Actualización automática"
+              showClock={false}
+            />
+          </div>
           <LifecycleTimeline milestones={view.milestones} />
         </div>
       </div>

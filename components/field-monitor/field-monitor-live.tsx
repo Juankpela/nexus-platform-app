@@ -12,9 +12,16 @@ import { cn } from "@/lib/utils"
 export function FieldMonitorLive({
   tenantId,
   generatedAt,
+  connectedLabel = "En vivo",
+  connectingLabel = "Conectando…",
+  showClock = true,
 }: {
   tenantId: string
   generatedAt: string
+  /** Etiquetas configurables para reusar el indicador en la página del cliente. */
+  connectedLabel?: string
+  connectingLabel?: string
+  showClock?: boolean
 }) {
   const router = useRouter()
   const [connected, setConnected] = useState(false)
@@ -47,15 +54,17 @@ export function FieldMonitorLive({
           connected ? "animate-pulse bg-emerald-500" : "bg-muted-foreground/40",
         )}
       />
-      {connected ? "En vivo" : "Conectando…"}
-      <span className="ml-1 tabular-nums opacity-60">
-        {new Date(generatedAt).toLocaleTimeString("es-CO", {
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-          timeZone: "America/Bogota",
-        })}
-      </span>
+      {connected ? connectedLabel : connectingLabel}
+      {showClock ? (
+        <span className="ml-1 tabular-nums opacity-60">
+          {new Date(generatedAt).toLocaleTimeString("es-CO", {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            timeZone: "America/Bogota",
+          })}
+        </span>
+      ) : null}
     </span>
   )
 }
