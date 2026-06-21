@@ -110,7 +110,8 @@ export function ActiveOperationCard({
               : "text-muted-foreground/60"
           return (
             <div key={m.key} className="flex min-w-0 flex-1 flex-col items-center">
-              <div className="flex w-full items-center">
+              {/* Altura fija: el punto "actual" (más grande) no debe bajar la línea. */}
+              <div className="flex h-4 w-full items-center">
                 <span className={`flex-1 ${i === 0 ? "opacity-0" : segTone(milestones[i - 1], m)}`} />
                 <span className={`shrink-0 rounded-full ${dot}`} />
                 <span
