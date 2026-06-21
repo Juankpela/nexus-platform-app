@@ -211,10 +211,17 @@ export function ExecutionActions({
   tenantSlug,
   assignmentId,
   status,
+  etaSelector = null,
 }: {
   tenantSlug: string
   assignmentId: string
   status: ExecutionStatus
+  /**
+   * SEAM de ETA (FASE 2/3): selector 15/30/45/60 que se monta dentro del
+   * formulario de "Voy en camino". Hoy nadie lo pasa → la estructura está lista
+   * pero invisible. NO depende de la base de datos aún.
+   */
+  etaSelector?: React.ReactNode
 }) {
   const common = { tenantSlug, assignmentId }
   const [showUnable, setShowUnable] = useState(false)
@@ -244,14 +251,17 @@ export function ExecutionActions({
       {status === "accepted" ? (
         <>
           {/* Dominante: salir hacia el cliente (avisa al cliente; acción lateral
-              que NO cambia el estado de ejecución). */}
+              que NO cambia el estado de ejecución). El selector de ETA (FASE 3)
+              se monta aquí dentro cuando exista. */}
           <ActionForm
             {...common}
             action={notifyEnRouteAction}
             label="Voy en camino"
             icon={Send}
             successLabel="✓ Cliente avisado"
-          />
+          >
+            {etaSelector}
+          </ActionForm>
           {/* Subordinada: ya llegué (para cuando esté en el sitio). */}
           <ActionForm
             {...common}

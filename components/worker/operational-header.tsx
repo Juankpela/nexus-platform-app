@@ -1,4 +1,4 @@
-import { Building2, Clock, TriangleAlert, Wrench } from "lucide-react"
+import { Building2, Clock, Navigation, TriangleAlert, Wrench } from "lucide-react"
 
 /**
  * Cabecera operacional del trabajo (Worker Mobile V2): el contexto que el técnico
@@ -45,6 +45,7 @@ export function WorkerOperationalHeader({
   issueTypeLabel,
   priority,
   slaDueAt,
+  enRoute = null,
 }: {
   workOrderNumber: string | null
   companyName: string | null
@@ -52,6 +53,12 @@ export function WorkerOperationalHeader({
   issueTypeLabel: string | null
   priority: string | null
   slaDueAt: string | null
+  /**
+   * SEAM de ETA (FASE 3): cuando el técnico va en camino, esta línea muestra el
+   * ETA y la llegada estimada con el mismo estilo del SLA. Hoy nadie lo pasa →
+   * la estructura está lista pero invisible. NO depende de la base de datos aún.
+   */
+  enRoute?: { etaLabel: string; arrivalLabel?: string | null } | null
 }) {
   const sla = slaView(slaDueAt)
   const priorityTone = priority ? PRIORITY_TONE[priority] ?? "bg-muted text-muted-foreground" : null
@@ -88,6 +95,14 @@ export function WorkerOperationalHeader({
               <Clock className="size-4 shrink-0" />
             )}
             {sla.label}
+          </p>
+        ) : null}
+        {/* SEAM ETA (FASE 3): estado "En camino" + ETA + llegada estimada. */}
+        {enRoute ? (
+          <p className="flex items-center gap-2 font-medium text-nexus-blue">
+            <Navigation className="size-4 shrink-0" />
+            En camino · {enRoute.etaLabel}
+            {enRoute.arrivalLabel ? ` · llega ${enRoute.arrivalLabel}` : ""}
           </p>
         ) : null}
       </div>
