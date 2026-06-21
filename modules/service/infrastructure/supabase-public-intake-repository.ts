@@ -198,12 +198,15 @@ export async function submitPublicReport(
     .filter(Boolean)
     .join("\n")
 
+  // Prioridad y SLA en lockstep: un solo origen de prioridad → el vencimiento
+  // siempre respeta la regla de sla.ts (no pueden divergir).
+  const priority = "medium"
   const { error: insErr } = await admin.from("cases").insert({
     tenant_id: target.tenantId,
     case_number: caseNumber as string,
     subject,
     description,
-    priority: "medium",
+    priority,
     origin: "web",
     reporter_email: input.reporterEmail ?? null,
     reporter_phone: input.reporterPhone ?? null,
@@ -212,7 +215,7 @@ export async function submitPublicReport(
     issue_type_id: issueTypeId,
     incident_type: incident,
     tracking_token: trackingToken,
-    sla_due_at: computeSlaDueAt(new Date().toISOString(), "medium"),
+    sla_due_at: computeSlaDueAt(new Date().toISOString(), priority),
   } as never)
   if (insErr) throw new Error("No se pudo registrar el reporte.")
 
