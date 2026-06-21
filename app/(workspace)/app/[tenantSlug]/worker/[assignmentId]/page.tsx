@@ -1,9 +1,10 @@
-import { ArrowLeft, Building2, Cpu, MapPin } from "lucide-react"
+import { ArrowLeft, Cpu, MapPin } from "lucide-react"
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 
 import { ExecutionActions } from "@/components/worker/execution-actions"
+import { WorkerOperationalHeader } from "@/components/worker/operational-header"
 import { LifecycleTimeline } from "@/components/service/lifecycle-timeline"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
 import { SERVICE_PERMISSIONS } from "@/modules/authorization/domain/permission"
@@ -63,23 +64,21 @@ export default async function WorkerAssignmentDetailPage({
         Mi agenda
       </Link>
 
-      <div>
-        <div className="flex items-center justify-between gap-2">
-          <h1 className="text-lg font-semibold tracking-tight">
-            {assignment.workOrderNumber}
-          </h1>
-          <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
-            {EXECUTION_STATUS_LABELS[assignment.executionStatus]}
-          </span>
-        </div>
-        <p className="mt-0.5 text-sm text-muted-foreground">
-          {assignment.workOrderSubject}
-        </p>
-      </div>
+      {/* Cabecera operacional — contexto del trabajo, siempre visible. */}
+      <WorkerOperationalHeader
+        workOrderNumber={assignment.workOrderNumber}
+        companyName={assignment.companyName}
+        subject={assignment.workOrderSubject}
+        issueTypeLabel={assignment.issueTypeLabel}
+        priority={assignment.priority}
+        slaDueAt={assignment.slaDueAt}
+      />
 
       <div className="space-y-2 rounded-xl border bg-card p-4 text-sm">
         <p className="flex items-center gap-2 text-muted-foreground">
-          <Building2 className="size-4" /> {assignment.companyName ?? "—"}
+          <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-foreground">
+            {EXECUTION_STATUS_LABELS[assignment.executionStatus]}
+          </span>
         </p>
         {assignment.assetName ? (
           <p className="flex items-center gap-2 text-muted-foreground">

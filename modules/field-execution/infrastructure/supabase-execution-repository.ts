@@ -30,8 +30,14 @@ type WorkerAssignmentRow = {
   work_orders: {
     work_order_number: string
     subject: string
+    priority: string | null
     companies: { name: string } | null
     assets: { name: string; asset_number: string } | null
+    cases: {
+      sla_due_at: string | null
+      incident_type: string | null
+      service_issue_types: { name: string } | null
+    } | null
   } | null
   work_order_executions:
     | {
@@ -45,7 +51,8 @@ type WorkerAssignmentRow = {
 
 const ASSIGNMENT_SELECT =
   "id, scheduled_start, scheduled_end, work_order_id, " +
-  "work_orders(work_order_number, subject, companies(name), assets(name, asset_number)), " +
+  "work_orders(work_order_number, subject, priority, companies(name), assets(name, asset_number), " +
+  "cases(sla_due_at, incident_type, service_issue_types(name))), " +
   "work_order_executions(id, status, resolution_notes, unable_reason)"
 
 function toExecution(row: ExecutionRow): Execution {
@@ -71,6 +78,7 @@ function toExecution(row: ExecutionRow): Execution {
 function toWorkerAssignment(row: WorkerAssignmentRow): WorkerAssignment {
   const wo = row.work_orders
   const exec = row.work_order_executions?.[0] ?? null
+  const caseRow = wo?.cases ?? null
   return {
     assignmentId: row.id,
     scheduledStart: row.scheduled_start,
@@ -83,6 +91,10 @@ function toWorkerAssignment(row: WorkerAssignmentRow): WorkerAssignment {
     executionId: exec?.id ?? null,
     executionStatus: exec?.status ?? "pending",
     notes: exec?.resolution_notes ?? exec?.unable_reason ?? null,
+    priority: wo?.priority ?? null,
+    // Tipo de daño: estructurado (issue type) primero; etiqueta legacy si no hay.
+    issueTypeLabel: caseRow?.service_issue_types?.name ?? caseRow?.incident_type ?? null,
+    slaDueAt: caseRow?.sla_due_at ?? null,
   }
 }
 

@@ -85,6 +85,12 @@ export type WorkerAssignment = {
   executionStatus: ExecutionStatus
   /** Technician's closing comment: resolution notes or unable-to-complete reason. */
   notes: string | null
+  /** Cabecera operacional (contexto del trabajo, no mutable por el técnico). */
+  priority: string | null
+  /** Tipo de daño estructurado (issue type) o etiqueta legacy del caso. */
+  issueTypeLabel: string | null
+  /** Vencimiento de SLA tomado del caso de origen (ISO) — null si no aplica. */
+  slaDueAt: string | null
 }
 
 /** The effective execution status for a possibly-missing execution row. */
