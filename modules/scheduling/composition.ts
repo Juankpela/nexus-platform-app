@@ -758,6 +758,18 @@ export async function notifyCustomerEnRoute(input: {
   workOrderId: UUID
   triggeredByUserId: UUID
   channel?: CommunicationChannel
+  /**
+   * Ubicación PUNTUAL del técnico al salir (lectura única, no tracking). Opcional:
+   * si viene, se persiste en la auditoría como origen del ETA (Fase 3) y semilla de
+   * métricas (Fase 8: ETA Accuracy, tiempo de desplazamiento). Si falta, el aviso
+   * se envía igual sin ETA.
+   */
+  technicianLocation?: {
+    lat: number
+    lng: number
+    accuracy: number | null
+    capturedAt: string | null
+  } | null
 }): Promise<{ sent: boolean; skipped?: string }> {
   const channel = input.channel ?? new EmailChannel()
   const admin = createAdminSupabaseClient()
@@ -862,6 +874,9 @@ export async function notifyCustomerEnRoute(input: {
       triggeredByUserId: input.triggeredByUserId,
       deliverability,
       sentAt: nowIso,
+      ...(input.technicianLocation
+        ? { technicianLocation: input.technicianLocation }
+        : {}),
     },
     requestId: input.requestId,
     source: "field",

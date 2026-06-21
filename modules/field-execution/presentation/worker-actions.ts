@@ -34,12 +34,35 @@ export type WorkerActionState = { error: string | null; ok: boolean }
 
 const idSchema = z.uuid()
 const reasonSchema = z.enum(NON_COMPLETION_REASONS)
+const coordSchema = z.object({
+  lat: z.number().min(-90).max(90),
+  lng: z.number().min(-180).max(180),
+})
 
 function field(formData: FormData, name: string): string | null {
   const value = formData.get(name)
   if (typeof value !== "string") return null
   const t = value.trim()
   return t.length > 0 ? t : null
+}
+
+/**
+ * Ubicación PUNTUAL del técnico capturada en el cliente al pulsar "Voy en camino".
+ * Opcional por diseño: si falta o es inválida, devolvemos null y el aviso se envía
+ * igual sin ETA. NEXUS coordina, no rastrea — esta es una lectura única, no tracking.
+ */
+function readTechnicianLocation(formData: FormData):
+  | { lat: number; lng: number; accuracy: number | null; capturedAt: string | null }
+  | null {
+  const latRaw = field(formData, "tech_lat")
+  const lngRaw = field(formData, "tech_lng")
+  if (!latRaw || !lngRaw) return null
+  const parsed = coordSchema.safeParse({ lat: Number(latRaw), lng: Number(lngRaw) })
+  if (!parsed.success) return null
+  const accuracyRaw = field(formData, "tech_accuracy")
+  const accuracy =
+    accuracyRaw && Number.isFinite(Number(accuracyRaw)) ? Number(accuracyRaw) : null
+  return { lat: parsed.data.lat, lng: parsed.data.lng, accuracy, capturedAt: field(formData, "captured_at") }
 }
 
 /**
@@ -299,6 +322,7 @@ export async function notifyEnRouteAction(
       assignmentId: assignment.assignmentId,
       workOrderId: assignment.workOrderId,
       triggeredByUserId: context.userId,
+      technicianLocation: readTechnicianLocation(formData),
     })
   } catch (error) {
     return { error: describe(error), ok: false }

@@ -27,6 +27,13 @@ export type PublicReportInput = {
   reporterEmail?: string | null
   /** Foto comprimida en el cliente, como data URL `data:image/jpeg;base64,...`. */
   photoDataUrl?: string | null
+  /** Coordenadas del sitio del servicio (best-effort). Null si no se resolvieron. */
+  serviceLat?: number | null
+  serviceLng?: number | null
+  /** Dirección legible: referencia humana (GPS) o normalizada por Google (geocoded). */
+  serviceAddress?: string | null
+  /** Procedencia de las coordenadas: gps | geocoded | manual. Null si no hay ubicación. */
+  locationSource?: "gps" | "geocoded" | "manual" | null
 }
 
 const REPORTS_BUCKET = "reports"
@@ -189,9 +196,14 @@ export async function submitPublicReport(
   ).slice(0, 200)
   // El tipo de daño va ESTRUCTURADO en `incident_type` (no incrustado en el texto).
   // `description` queda solo con el texto libre del usuario y el contexto.
+  const whereLine = input.serviceAddress
+    ? `Dónde: ${input.serviceAddress}`
+    : input.serviceLat != null
+      ? "Dónde: ubicación compartida por GPS"
+      : null
   const description = [
     input.description || null,
-    `Dónde: ${input.location}`,
+    whereLine,
     `Reportado por: ${input.reporterName}${input.reporterPhone ? ` — WhatsApp ${input.reporterPhone}` : ""}`,
     ...(photoUrl ? [`Foto: ${photoUrl}`] : []),
   ]
@@ -216,6 +228,12 @@ export async function submitPublicReport(
     incident_type: incident,
     tracking_token: trackingToken,
     sla_due_at: computeSlaDueAt(new Date().toISOString(), priority),
+    // Destino del ETA (best-effort): coords + dirección + procedencia. Pueden ir
+    // en NULL si no se resolvió ubicación — el caso se crea igual.
+    service_lat: input.serviceLat ?? null,
+    service_lng: input.serviceLng ?? null,
+    service_address: input.serviceAddress ?? null,
+    location_source: input.locationSource ?? null,
   } as never)
   if (insErr) throw new Error("No se pudo registrar el reporte.")
 

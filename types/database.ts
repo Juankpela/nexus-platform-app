@@ -432,12 +432,16 @@ export type Database = {
           id: string
           incident_type: string | null
           issue_type_id: string | null
+          location_source: string | null
           origin: Database["public"]["Enums"]["case_origin"]
           owner_id: string | null
           priority: Database["public"]["Enums"]["case_priority"]
           reported_skill_id: string | null
           reporter_phone: string | null
           resolved_at: string | null
+          service_address: string | null
+          service_lat: number | null
+          service_lng: number | null
           sla_due_at: string | null
           status: Database["public"]["Enums"]["case_status"]
           subject: string
@@ -458,12 +462,16 @@ export type Database = {
           id?: string
           incident_type?: string | null
           issue_type_id?: string | null
+          location_source?: string | null
           origin?: Database["public"]["Enums"]["case_origin"]
           owner_id?: string | null
           priority?: Database["public"]["Enums"]["case_priority"]
           reported_skill_id?: string | null
           reporter_phone?: string | null
           resolved_at?: string | null
+          service_address?: string | null
+          service_lat?: number | null
+          service_lng?: number | null
           sla_due_at?: string | null
           status?: Database["public"]["Enums"]["case_status"]
           subject: string
@@ -484,12 +492,16 @@ export type Database = {
           id?: string
           incident_type?: string | null
           issue_type_id?: string | null
+          location_source?: string | null
           origin?: Database["public"]["Enums"]["case_origin"]
           owner_id?: string | null
           priority?: Database["public"]["Enums"]["case_priority"]
           reported_skill_id?: string | null
           reporter_phone?: string | null
           resolved_at?: string | null
+          service_address?: string | null
+          service_lat?: number | null
+          service_lng?: number | null
           sla_due_at?: string | null
           status?: Database["public"]["Enums"]["case_status"]
           subject?: string

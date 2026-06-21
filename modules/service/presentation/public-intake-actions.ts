@@ -1,6 +1,7 @@
 "use server"
 
 import { submitPublicReport } from "@/modules/service/composition"
+import { geocodeServiceAddress } from "@/modules/service/infrastructure/google-geocoding"
 
 export type PublicReportState =
   | { ok: false; error: string | null }
@@ -41,6 +42,17 @@ export async function submitReportAction(
     ? reporterEmailRaw
     : null
   const photoDataUrl = field(formData, "photo")
+  // Coordenadas GPS del cliente (camino A — "estoy en el lugar del reporte").
+  // OJO: field() devuelve "" cuando el hidden viene vacío (camino manual / GPS
+  // denegado) y Number("") === 0, lo que haría pasar (0,0) como coords válidas.
+  // Por eso exigimos que los crudos NO estén vacíos antes de interpretarlos.
+  const latRaw = field(formData, "service_lat")
+  const lngRaw = field(formData, "service_lng")
+  const lat = Number(latRaw)
+  const lng = Number(lngRaw)
+  const hasGps =
+    !!latRaw && !!lngRaw &&
+    Number.isFinite(lat) && Number.isFinite(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180
 
   if (!slug) return { ok: false, error: "Enlace inválido." }
   if (!categoryId) return { ok: false, error: "Elige una categoría." }
@@ -48,12 +60,40 @@ export async function submitReportAction(
   if (!reportedSkillId && !description) {
     return { ok: false, error: "Cuéntanos qué ocurrió." }
   }
-  if (!location) return { ok: false, error: "Indícanos dónde ocurrió." }
   if (!reporterName) return { ok: false, error: "Déjanos tu nombre." }
   // El correo es obligatorio: es el canal por el que confirmamos la visita y
   // avisamos que el técnico va en camino. Sin él, ambas notificaciones se omiten.
   if (!reporterEmailRaw) return { ok: false, error: "Déjanos tu correo para confirmarte la visita." }
   if (!reporterEmail) return { ok: false, error: "El correo no parece válido. Revísalo, por favor." }
+
+  // Resolución del destino del ETA — BEST-EFFORT, NUNCA bloquea. Principio rector:
+  // un caso siempre puede crearse; el ETA es una capacidad adicional.
+  //   A) GPS del reportante  → location_source='gps'
+  //   B) dirección escrita   → Geocoding (bias CO) → 'geocoded'; si falla → 'manual'
+  //                            (se guarda la dirección como texto, sin coords).
+  let serviceLat: number | null = null
+  let serviceLng: number | null = null
+  let serviceAddress: string | null = null
+  let locationSource: "gps" | "geocoded" | "manual" | null = null
+
+  if (hasGps) {
+    serviceLat = lat
+    serviceLng = lng
+    serviceAddress = location || null
+    locationSource = "gps"
+  } else if (location) {
+    const geo = await geocodeServiceAddress(location)
+    if (geo) {
+      serviceLat = geo.lat
+      serviceLng = geo.lng
+      serviceAddress = geo.formattedAddress || location
+      locationSource = "geocoded"
+    } else {
+      // Geocoding falló: NO bloqueamos. Guardamos la dirección como texto.
+      serviceAddress = location
+      locationSource = "manual"
+    }
+  }
 
   try {
     const result = await submitPublicReport(slug, {
@@ -65,6 +105,10 @@ export async function submitReportAction(
       reporterPhone: reporterPhone || null,
       reporterEmail,
       photoDataUrl: photoDataUrl || null,
+      serviceLat,
+      serviceLng,
+      serviceAddress,
+      locationSource,
     })
     if (!result) return { ok: false, error: "Enlace inválido." }
     const folio = result.caseNumber.replace(/^CASE/i, "REP")

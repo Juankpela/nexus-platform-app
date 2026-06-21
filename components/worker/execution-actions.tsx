@@ -2,7 +2,7 @@
 
 import { Camera, CheckCircle2, Loader2, MapPin, Play, Send, ThumbsUp, X, XCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useActionState, useEffect, useState } from "react"
+import { useActionState, useCallback, useEffect, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -207,6 +207,94 @@ function BillableChoice() {
   )
 }
 
+/**
+ * Captura PUNTUAL de la ubicación del técnico al salir hacia el cliente. Una sola
+ * lectura (`getCurrentPosition`) cuando aparece la pantalla "Voy en camino" — sin
+ * `watchPosition`, sin tracking en segundo plano, sin polling. NEXUS coordina, no
+ * rastrea. Rellena hidden inputs que la acción `notifyEnRouteAction` guarda en la
+ * auditoría para alimentar el ETA (Fase 3). Si el técnico niega el permiso, el
+ * aviso se envía igual (sin ETA): la operación nunca se bloquea por geolocalización.
+ */
+/** Lectura ÚNICA de alta precisión — sin `watchPosition`, sin caché de posición. */
+const GEO_OPTS: PositionOptions = { enableHighAccuracy: true, timeout: 10_000, maximumAge: 0 }
+
+function EnRouteCapture() {
+  const [snap, setSnap] = useState<
+    { lat: number; lng: number; accuracy: number; capturedAt: string } | null
+  >(null)
+  const [status, setStatus] = useState<
+    "locating" | "ready" | "denied" | "unavailable"
+  >("locating")
+
+  // Callbacks asíncronos de la Geolocation API: sus setState no son síncronos al
+  // efecto, así que no provocan renders en cascada.
+  const onSuccess = useCallback((pos: GeolocationPosition) => {
+    setSnap({
+      lat: pos.coords.latitude,
+      lng: pos.coords.longitude,
+      accuracy: pos.coords.accuracy,
+      capturedAt: new Date().toISOString(),
+    })
+    setStatus("ready")
+  }, [])
+  const onError = useCallback((err: GeolocationPositionError) => {
+    setStatus(err.code === err.PERMISSION_DENIED ? "denied" : "unavailable")
+  }, [])
+
+  // Reintento manual (event handler, no efecto): aquí sí podemos resetear estado.
+  const capture = useCallback(() => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setStatus("unavailable")
+      return
+    }
+    setStatus("locating")
+    navigator.geolocation.getCurrentPosition(onSuccess, onError, GEO_OPTS)
+  }, [onSuccess, onError])
+
+  // Se dispara al montar la acción dominante (pantalla "accepted"): para cuando el
+  // técnico pulse "Voy en camino", la ubicación ya está lista sin pasos extra. El
+  // efecto solo lanza la lectura asíncrona — sin setState síncrono.
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) return
+    navigator.geolocation.getCurrentPosition(onSuccess, onError, GEO_OPTS)
+  }, [onSuccess, onError])
+
+  const failed = status === "denied" || status === "unavailable"
+
+  return (
+    <div className="rounded-lg border border-input bg-muted/30 p-2.5 text-xs">
+      <input type="hidden" name="tech_lat" value={snap?.lat ?? ""} />
+      <input type="hidden" name="tech_lng" value={snap?.lng ?? ""} />
+      <input type="hidden" name="tech_accuracy" value={snap?.accuracy ?? ""} />
+      <input type="hidden" name="captured_at" value={snap?.capturedAt ?? ""} />
+      {status === "locating" ? (
+        <span className="flex items-center gap-2 text-muted-foreground">
+          <Loader2 className="size-3.5 animate-spin" /> Obteniendo tu ubicación…
+        </span>
+      ) : null}
+      {status === "ready" && snap ? (
+        <span className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+          <MapPin className="size-3.5" /> Ubicación lista · precisión ±
+          {Math.round(snap.accuracy)} m
+        </span>
+      ) : null}
+      {failed ? (
+        <div className="flex items-center justify-between gap-2 text-muted-foreground">
+          <span className="flex items-center gap-2">
+            <MapPin className="size-3.5" />
+            {status === "denied"
+              ? "Sin permiso de ubicación · el aviso se enviará sin ETA"
+              : "Ubicación no disponible · el aviso se enviará sin ETA"}
+          </span>
+          <Button type="button" variant="ghost" size="sm" onClick={capture}>
+            Reintentar
+          </Button>
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 export function ExecutionActions({
   tenantSlug,
   assignmentId,
@@ -260,6 +348,7 @@ export function ExecutionActions({
             icon={Send}
             successLabel="✓ Cliente avisado"
           >
+            <EnRouteCapture />
             {etaSelector}
           </ActionForm>
           {/* Subordinada: ya llegué (para cuando esté en el sitio). */}

@@ -61,9 +61,14 @@ export function PublicReportForm({
   categories: PublicReportCategory[]
 }) {
   const [state, formAction, pending] = useActionState(submitReportAction, initial)
-  // El campo de ubicación es controlado para poder autocompletarlo con el GPS.
+  // Camino A (GPS) vs Camino B (dirección). Por defecto el reportante está en sitio.
+  const [atSite, setAtSite] = useState(true)
+  // Dirección escrita (camino B). El servidor la geocodifica al enviar.
   const [location, setLocation] = useState("")
   const [geo, setGeo] = useState<GeoState>({ status: "idle" })
+  // Coords GPS (camino A). Best-effort: si no se comparten, el caso se crea igual
+  // (el ETA es una capacidad adicional, no una condición para operar).
+  const [coords, setCoords] = useState<{ lat: number; lng: number; accuracy: number } | null>(null)
   const [photo, setPhoto] = useState<string | null>(null)
   const [photoStatus, setPhotoStatus] = useState<"idle" | "loading" | "error">("idle")
   // Paso 1 — categoría (skill). Controla el catálogo del Paso 2.
@@ -94,15 +99,17 @@ export function PublicReportForm({
     setGeo({ status: "loading" })
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        const { latitude, longitude } = pos.coords
-        const link = `https://maps.google.com/?q=${latitude},${longitude}`
-        setLocation((prev) => (prev.trim() ? `${prev.trim()} — ${link}` : link))
+        const { latitude, longitude, accuracy } = pos.coords
+        // Guardamos las coords ESTRUCTURADAS (no las pegamos al texto). El campo de
+        // texto queda para la referencia humana (sede/área).
+        setCoords({ lat: latitude, lng: longitude, accuracy })
         setGeo({ status: "done" })
       },
       () =>
         setGeo({
           status: "error",
-          message: "No pudimos obtener tu ubicación. Escríbela manualmente abajo.",
+          message:
+            "No pudimos obtener tu ubicación. Puedes desmarcar la casilla y escribir la dirección, o enviar igual.",
         }),
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
     )
@@ -197,37 +204,83 @@ export function PublicReportForm({
           />
         </div>
 
-        {/* Ubicación */}
+        {/* Ubicación — Camino A (GPS en sitio) o Camino B (dirección). Best-effort:
+            nunca bloquea la creación del caso. */}
         <div>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <label htmlFor="location" className={labelCls}>¿Dónde ocurrió?</label>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleUseLocation}
-              disabled={geo.status === "loading"}
-            >
-              {geo.status === "loading" ? (
-                <Loader2 className="mr-2 size-4 animate-spin" />
+          <input type="hidden" name="at_site" value={String(atSite)} />
+          {/* Coords GPS (camino A); vacías en camino B. La precisión NO se persiste:
+              se usa solo para el "±N m" de confirmación al reportante (en memoria). */}
+          <input type="hidden" name="service_lat" value={coords?.lat ?? ""} />
+          <input type="hidden" name="service_lng" value={coords?.lng ?? ""} />
+
+          <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-foreground">
+            <input
+              type="checkbox"
+              checked={atSite}
+              onChange={(e) => {
+                const v = e.target.checked
+                setAtSite(v)
+                // Al cambiar de camino, descartamos coords GPS previas para no mezclar.
+                if (!v) {
+                  setCoords(null)
+                  setGeo({ status: "idle" })
+                }
+              }}
+              className="size-4 rounded border-input accent-primary"
+            />
+            Estoy en el lugar del reporte
+          </label>
+
+          {atSite ? (
+            <div className="mt-2">
+              <Button
+                type="button"
+                variant={coords ? "outline" : "default"}
+                size="sm"
+                onClick={handleUseLocation}
+                disabled={geo.status === "loading"}
+              >
+                {geo.status === "loading" ? (
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                ) : coords ? (
+                  <CheckCircle2 className="mr-2 size-4" />
+                ) : (
+                  <MapPin className="mr-2 size-4" />
+                )}
+                {coords ? "Ubicación compartida" : "Compartir mi ubicación"}
+              </Button>
+              {coords ? (
+                <p className="mt-1 text-xs text-emerald-600 dark:text-emerald-400">
+                  Ubicación compartida · precisión ±{Math.round(coords.accuracy)} m. El técnico
+                  llegará exactamente aquí.
+                </p>
+              ) : geo.status === "error" && geo.message ? (
+                <p className="mt-1 text-xs text-muted-foreground">{geo.message}</p>
               ) : (
-                <MapPin className="mr-2 size-4" />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Comparte tu ubicación para calcular el tiempo de llegada del técnico.
+                </p>
               )}
-              {geo.status === "done" ? "Ubicación agregada" : "Usar mi ubicación"}
-            </Button>
-          </div>
-          <Input
-            id="location"
-            name="location"
-            required
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            className={fieldCls}
-            placeholder="Sede, escenario, dirección o área"
-          />
-          {geo.status === "error" && geo.message ? (
-            <p className="mt-1 text-xs text-muted-foreground">{geo.message}</p>
-          ) : null}
+            </div>
+          ) : (
+            <div className="mt-2">
+              <label htmlFor="location" className={labelCls}>
+                Dirección del servicio <span className="text-destructive">*</span>
+              </label>
+              <Input
+                id="location"
+                name="location"
+                required
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                className={fieldCls}
+                placeholder="Ej. Cra 43A #5-15 Medellín"
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                Escribe la dirección del sitio. La usamos para calcular el tiempo de llegada.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Foto */}
