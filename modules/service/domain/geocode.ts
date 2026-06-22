@@ -22,6 +22,22 @@ type GoogleGeocodeResponse = {
 }
 
 /**
+ * Heurística MÍNIMA para no preguntarle a Google por texto que NO es una dirección
+ * física. Con billing activo, Google resuelve casi cualquier texto vago al centroide
+ * del país ("Bodega principal" → centro de Colombia), guardándolo como destino
+ * "confiable" falso. La señal más robusta en Colombia: una dirección real tiene un
+ * número (nomenclatura). Sin scores ni confidence — tres reglas legibles:
+ *   - longitud mínima razonable
+ *   - contiene al menos un número
+ *   - más de una palabra
+ * Si no pasa, NO se geocodifica → el caso cae a `manual` (best-effort, no bloquea).
+ */
+export function looksLikeServiceAddress(text: string): boolean {
+  const t = (text ?? "").trim()
+  return t.length >= 6 && /\d/.test(t) && t.split(/\s+/).length >= 2
+}
+
+/**
  * Extrae el mejor resultado (results[0]) de una respuesta de Google Geocoding.
  * Devuelve null si el status no es "OK", no hay resultados, o las coordenadas
  * están ausentes / fuera de rango. Best-effort: null nunca bloquea la creación

@@ -346,7 +346,7 @@ export function ExecutionActions({
             action={notifyEnRouteAction}
             label="Voy en camino"
             icon={Send}
-            successLabel="✓ Cliente avisado"
+            successLabel="✓ En camino"
           >
             <EnRouteCapture />
             {etaSelector}

@@ -316,14 +316,22 @@ export async function notifyEnRouteAction(
       )
     }
 
-    await notifyCustomerEnRoute({
-      tenantId: context.tenantId,
-      requestId: context.requestId,
-      assignmentId: assignment.assignmentId,
-      workOrderId: assignment.workOrderId,
-      triggeredByUserId: context.userId,
-      technicianLocation: readTechnicianLocation(formData),
-    })
+    // Aviso al cliente: LATERAL y best-effort. Un fallo de notificación NO debe
+    // bloquear la salida del técnico (mismo patrón que aceptar/completar). El
+    // fallo queda registrado en auditoría (customer.enroute.failed) por el caso
+    // de uso y es reintentable; la operación del técnico avanza igual.
+    try {
+      await notifyCustomerEnRoute({
+        tenantId: context.tenantId,
+        requestId: context.requestId,
+        assignmentId: assignment.assignmentId,
+        workOrderId: assignment.workOrderId,
+        triggeredByUserId: context.userId,
+        technicianLocation: readTechnicianLocation(formData),
+      })
+    } catch {
+      // best-effort: el aviso es reintentable; nunca bloquea al técnico.
+    }
   } catch (error) {
     return { error: describe(error), ok: false }
   }

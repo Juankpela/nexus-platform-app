@@ -1,6 +1,10 @@
 import "server-only"
 
-import { parseGeocodeResult, type GeocodeResult } from "@/modules/service/domain/geocode"
+import {
+  looksLikeServiceAddress,
+  parseGeocodeResult,
+  type GeocodeResult,
+} from "@/modules/service/domain/geocode"
 
 const GEOCODE_URL = "https://maps.googleapis.com/maps/api/geocode/json"
 /** Cota defensiva: una dirección legítima no necesita más; acota abuso/costo. */
@@ -18,6 +22,9 @@ export async function geocodeServiceAddress(address: string): Promise<GeocodeRes
   const key = process.env.GOOGLE_MAPS_API_KEY
   const clean = address.trim().slice(0, MAX_ADDRESS_LEN)
   if (!key || !clean) return null
+  // No preguntamos a Google por texto que no parece una dirección física: evita
+  // resultados basura (centroide del país) guardados como destino "confiable".
+  if (!looksLikeServiceAddress(clean)) return null
 
   const url = new URL(GEOCODE_URL)
   url.searchParams.set("address", clean)
