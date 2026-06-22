@@ -17,12 +17,31 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  // Base absoluta para que og:image/icons resuelvan a URL completa (WhatsApp,
+  // que arma la vista previa del enlace, exige URLs absolutas).
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL ?? "https://nexus-platform-app-rouge.vercel.app",
+  ),
   title: {
     default: "Nexus",
     template: "%s | Nexus",
   },
   description: "Enterprise operations platform",
   manifest: "/manifest.webmanifest",
+  // Logo oficial de Nexus → favicon + avatar de la vista previa del enlace.
+  icons: {
+    icon: "/brand/nexus-icon.png",
+    shortcut: "/brand/nexus-icon.png",
+    apple: "/brand/nexus-icon.png",
+  },
+  // Vista previa del enlace (WhatsApp/redes): muestra el logo de Nexus.
+  openGraph: {
+    title: "Nexus",
+    description: "Enterprise operations platform",
+    siteName: "Nexus",
+    type: "website",
+    images: ["/brand/nexus-icon.png"],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
