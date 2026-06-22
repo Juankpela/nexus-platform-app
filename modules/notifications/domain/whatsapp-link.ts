@@ -58,6 +58,10 @@ export type WhatsAppMessageContext = {
   whenText: string | null
   /** URL pública de seguimiento (o null si no hay token). */
   trackingUrl: string | null
+  /** ETA real (Fase 3): minutos estimados de llegada. Null = sin ETA. */
+  etaMinutes?: number | null
+  /** Hora de llegada estimada ya formateada (ej. "9:48 a. m."). */
+  arrivalText?: string | null
 }
 
 function trackingLine(ctx: WhatsAppMessageContext): string {
@@ -78,11 +82,19 @@ export function confirmationMessage(ctx: WhatsAppMessageContext): string {
   )
 }
 
+/** Línea de ETA real (Fase 3), o vacío si no hay ETA. */
+function etaLine(ctx: WhatsAppMessageContext): string {
+  if (ctx.etaMinutes == null) return ""
+  const arrival = ctx.arrivalText ? ` (aprox. ${ctx.arrivalText})` : ""
+  return `\n\nTiempo estimado de llegada: ~${ctx.etaMinutes} min${arrival}.`
+}
+
 /** Aviso de que el técnico va en camino. */
 export function enRouteMessage(ctx: WhatsAppMessageContext): string {
   const tech = ctx.technicianName ?? "Su técnico asignado"
   return (
     `Hola 👋 ${tech} va en camino para atender su solicitud "${ctx.caseSubject}"${orderRef(ctx)}.` +
+    etaLine(ctx) +
     trackingLine(ctx)
   )
 }

@@ -10,6 +10,8 @@ import {
   type RescheduleMode,
 } from "@/modules/scheduling/application/use-cases/plan-reschedule"
 import { SupabaseAuditRepository } from "@/modules/audit/infrastructure/supabase-audit-repository"
+import { buildEta, type Eta } from "@/modules/service/domain/eta"
+import { computeDirections } from "@/modules/service/infrastructure/google-directions"
 import { getIssueTypeOutcomes } from "@/modules/dispatch/composition"
 import type { TechnicianIssueTypeOutcome } from "@/modules/dispatch/domain/technician-outcomes"
 import { SERVICE_PERMISSIONS } from "@/modules/authorization/domain/permission"
@@ -517,6 +519,32 @@ const WORKDONE_SENT_EVENT = "customer.work_completed.sent"
 const WORKDONE_SKIPPED_EVENT = "customer.work_completed.skipped"
 const WORKDONE_FAILED_EVENT = "customer.work_completed.failed"
 
+/**
+ * Lee el ETA real más reciente guardado para una asignación (Fase 3). Busca el
+ * último evento de en-camino (sent/skipped/failed) con `eta` en su metadata — el
+ * ETA se guarda en cualquiera de los tres, así que NO depende del canal de aviso.
+ * Devuelve null si no hay ETA. La regla "ocultar si arrivalAt pasó" la aplica el
+ * consumidor con `etaIfCurrent`.
+ */
+export async function readEnRouteEta(
+  tenantId: UUID,
+  assignmentId: UUID,
+): Promise<Eta | null> {
+  const admin = createAdminSupabaseClient()
+  const { data } = await admin
+    .from("audit_events")
+    .select("metadata")
+    .eq("tenant_id", tenantId)
+    .eq("subject_id", assignmentId)
+    .in("event_type", [ENROUTE_SENT_EVENT, ENROUTE_SKIPPED_EVENT, ENROUTE_FAILED_EVENT])
+    .order("occurred_at", { ascending: false })
+    .limit(5)
+  for (const row of (data ?? []) as Array<{ metadata?: { eta?: Eta } | null }>) {
+    if (row.metadata?.eta) return row.metadata.eta
+  }
+  return null
+}
+
 type CustomerCommContext = {
   customerEmail: string | null
   techName: string
@@ -526,6 +554,9 @@ type CustomerCommContext = {
   startIso: string | null
   /** Token de seguimiento del caso (para el link público en los correos). */
   trackingToken: string | null
+  /** Coordenadas del sitio del servicio (destino del ETA). Null si el caso no las tiene. */
+  serviceLat: number | null
+  serviceLng: number | null
 }
 
 /** Link público de seguimiento, o null si falta token o URL base. */
@@ -564,12 +595,16 @@ async function resolveCustomerCommContext(
   let customerEmail: string | null = null
   let caseSubject = (woRow?.subject as string | null) ?? "su solicitud"
   let trackingToken: string | null = null
+  let serviceLat: number | null = null
+  let serviceLng: number | null = null
   if (caseId) {
     const { data: c } = await admin.from("cases").select("*").eq("id", caseId).maybeSingle()
     const cRow = c as Record<string, unknown> | null
     customerEmail = (cRow?.reporter_email as string | null) ?? null
     caseSubject = (cRow?.subject as string | null) ?? caseSubject
     trackingToken = (cRow?.tracking_token as string | null) ?? null
+    serviceLat = (cRow?.service_lat as number | null) ?? null
+    serviceLng = (cRow?.service_lng as number | null) ?? null
     const contactId = (cRow?.contact_id as string | null) ?? null
     if (!customerEmail && contactId) {
       const { data: ct } = await admin.from("contacts").select("email").eq("id", contactId).maybeSingle()
@@ -589,7 +624,7 @@ async function resolveCustomerCommContext(
     (asg?.scheduled_start as string | null) ?? (woRow?.scheduled_start as string | null) ?? null
   const woNumber = (woRow?.work_order_number as string | null) ?? "—"
 
-  return { customerEmail, techName, company, woNumber, caseSubject, startIso, trackingToken }
+  return { customerEmail, techName, company, woNumber, caseSubject, startIso, trackingToken, serviceLat, serviceLng }
 }
 
 /**
@@ -789,6 +824,28 @@ export async function notifyCustomerEnRoute(input: {
     input.assignmentId,
   )
 
+  // ETA real (Fase 3, best-effort): origen = GPS del técnico, destino = coords del
+  // servicio. Si falta cualquiera o Directions falla → sin ETA, nunca bloquea.
+  const nowIso = new Date().toISOString()
+  let eta: Eta | null = null
+  if (input.technicianLocation && ctx.serviceLat != null && ctx.serviceLng != null) {
+    try {
+      const dir = await computeDirections(
+        { lat: input.technicianLocation.lat, lng: input.technicianLocation.lng },
+        { lat: ctx.serviceLat, lng: ctx.serviceLng },
+      )
+      if (dir) eta = buildEta(dir, nowIso)
+    } catch {
+      /* best-effort: sin ETA, el aviso sigue su curso */
+    }
+  }
+  // Metadata operacional del aviso que sobrevive al canal: se adjunta a CUALQUIERA
+  // de los eventos (sent/skipped/failed) para que el ETA no dependa del correo.
+  const enrouteMeta = {
+    ...(input.technicianLocation ? { technicianLocation: input.technicianLocation } : {}),
+    ...(eta ? { eta } : {}),
+  }
+
   if (!ctx.customerEmail) {
     await audit.append({
       eventType: ENROUTE_SKIPPED_EVENT,
@@ -798,14 +855,13 @@ export async function notifyCustomerEnRoute(input: {
       subjectType: "work_order_assignment",
       subjectId: input.assignmentId,
       action: "customer.enroute.skipped",
-      metadata: { reason: "no_email", workOrderId: input.workOrderId },
+      metadata: { reason: "no_email", workOrderId: input.workOrderId, ...enrouteMeta },
       requestId: input.requestId,
       source: "field",
     })
     return { sent: false, skipped: "no_email" }
   }
 
-  const nowIso = new Date().toISOString()
   const deliverability = channel.kind === "email" ? emailConfigStatus() : "production"
   try {
     const enrouteTrackUrl = trackingUrl(ctx.trackingToken)
@@ -849,6 +905,7 @@ export async function notifyCustomerEnRoute(input: {
         deliverability,
         triggeredByUserId: input.triggeredByUserId,
         error: error instanceof Error ? error.message : String(error),
+        ...enrouteMeta,
       },
       requestId: input.requestId,
       source: "field",
@@ -874,9 +931,7 @@ export async function notifyCustomerEnRoute(input: {
       triggeredByUserId: input.triggeredByUserId,
       deliverability,
       sentAt: nowIso,
-      ...(input.technicianLocation
-        ? { technicianLocation: input.technicianLocation }
-        : {}),
+      ...enrouteMeta,
     },
     requestId: input.requestId,
     source: "field",

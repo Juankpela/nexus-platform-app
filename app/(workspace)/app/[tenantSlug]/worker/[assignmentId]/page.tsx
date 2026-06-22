@@ -14,6 +14,8 @@ import {
   resolveCurrentTechnician,
 } from "@/modules/field-execution/composition"
 import { getTechnicianRecord, getWorkOrderLifecycle } from "@/modules/service/composition"
+import { readEnRouteEta } from "@/modules/scheduling/composition"
+import { etaIfCurrent } from "@/modules/service/domain/eta"
 import { EXECUTION_STATUS_LABELS } from "@/modules/field-execution/domain/execution"
 import { technicianFullName } from "@/modules/service/domain/technician"
 import { formatWhen } from "@/modules/service/domain/service-lifecycle"
@@ -40,6 +42,15 @@ function fmt(iso: string): string {
   })
 }
 
+/** Hora corta (ej. "11:54 p. m.") para la llegada estimada del ETA. */
+function fmtTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString("es-CO", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "America/Bogota",
+  })
+}
+
 export default async function WorkerAssignmentDetailPage({
   params,
 }: {
@@ -59,6 +70,17 @@ export default async function WorkerAssignmentDetailPage({
   )
   if (!assignment) notFound()
 
+  // ETA real (Fase 3): si el técnico va en camino y la llegada estimada aún no ha
+  // pasado, se muestra en la cabecera. `etaIfCurrent` aplica la regla de ocultarlo
+  // cuando `arrivalAt` ya pasó.
+  const eta = etaIfCurrent(
+    await readEnRouteEta(context.tenantId, assignmentId),
+    new Date().toISOString(),
+  )
+  const enRoute = eta
+    ? { etaLabel: `${eta.durationMinutes} min`, arrivalLabel: fmtTime(eta.arrivalAt) }
+    : null
+
   // Línea de vida de la solicitud (misma que ve el cliente y el admin), para que
   // el técnico tenga el contexto completo de la operación en su móvil.
   const lifecycle = await getWorkOrderLifecycle(context.tenantId, assignment.workOrderId)
@@ -77,6 +99,10 @@ export default async function WorkerAssignmentDetailPage({
     workOrderNumber: assignment.workOrderNumber,
     whenText: formatWhen(assignment.scheduledStart),
     trackingUrl,
+    // ETA real (Fase 3): el mensaje de WhatsApp "Voy en camino" incluye el tiempo
+    // estimado de llegada cuando el técnico va en camino y sigue vigente.
+    etaMinutes: eta?.durationMinutes ?? null,
+    arrivalText: eta ? fmtTime(eta.arrivalAt) : null,
   }
   const customerPhone = assignment.reporterPhone
   const isDone = assignment.executionStatus === "completed"
@@ -118,6 +144,7 @@ export default async function WorkerAssignmentDetailPage({
         issueTypeLabel={assignment.issueTypeLabel}
         priority={assignment.priority}
         slaDueAt={assignment.slaDueAt}
+        enRoute={enRoute}
       />
 
       <div className="space-y-2 rounded-xl border bg-card p-4 text-sm">

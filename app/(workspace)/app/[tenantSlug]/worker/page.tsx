@@ -16,8 +16,19 @@ import {
 } from "@/modules/field-execution/domain/execution"
 import { greetingFor } from "@/modules/platform/presentation/mission-control"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
+import { readEnRouteEta } from "@/modules/scheduling/composition"
+import { etaIfCurrent } from "@/modules/service/domain/eta"
 
 export const metadata: Metadata = { title: "Campo" }
+
+/** Hora corta (ej. "11:54 p. m.") para la llegada estimada del ETA. */
+function fmtTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString("es-CO", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "America/Bogota",
+  })
+}
 
 const OPEN_STATUSES: ExecutionStatus[] = ["pending", "accepted", "on_site", "working"]
 const ACTIVE_STATUSES: ExecutionStatus[] = ["accepted", "on_site", "working"]
@@ -60,6 +71,17 @@ export default async function WorkerHomePage({
   const rest = hero ? open.filter((a) => a.assignmentId !== hero.assignmentId) : []
   const base = `/app/${tenantSlug}/worker`
 
+  // ETA real (Fase 3) del héroe: solo si va en camino y la llegada aún no pasó.
+  const heroEta = hero
+    ? etaIfCurrent(
+        await readEnRouteEta(context.tenantId, hero.assignmentId),
+        new Date().toISOString(),
+      )
+    : null
+  const heroEnRoute = heroEta
+    ? { etaLabel: `${heroEta.durationMinutes} min`, arrivalLabel: fmtTime(heroEta.arrivalAt) }
+    : null
+
   return (
     <div className="space-y-6">
       {/* ── 1 · HÉROE — qué debo hacer ahora ──────────────────────────────── */}
@@ -75,6 +97,7 @@ export default async function WorkerHomePage({
             issueTypeLabel={hero.issueTypeLabel}
             priority={hero.priority}
             slaDueAt={hero.slaDueAt}
+            enRoute={heroEnRoute}
           />
           {/* Acción dominante visible SIN entrar al detalle. */}
           <ExecutionActions

@@ -59,6 +59,16 @@ describe("mensajes al cliente", () => {
     expect(m).toContain("https://nexus.app/seguimiento/abc")
   })
 
+  it("en camino incluye el ETA cuando viene (Fase 3)", () => {
+    const m = enRouteMessage({ ...ctx, etaMinutes: 12, arrivalText: "9:48 a. m." })
+    expect(m).toContain("Tiempo estimado de llegada: ~12 min")
+    expect(m).toContain("aprox. 9:48 a. m.")
+  })
+
+  it("en camino sin ETA no agrega la línea de llegada", () => {
+    expect(enRouteMessage(ctx)).not.toContain("Tiempo estimado de llegada")
+  })
+
   it("confirmación incluye el horario agendado", () => {
     expect(confirmationMessage(ctx)).toContain("viernes 20 de junio, 3:30 p.m.")
   })
