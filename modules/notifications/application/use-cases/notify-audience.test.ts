@@ -25,7 +25,6 @@ class FakeNotifications implements NotificationRepository {
   async countUnread() {
     return 0
   }
-  async markRead() {}
   async markAllRead() {}
 }
 

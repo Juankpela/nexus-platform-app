@@ -64,21 +64,6 @@ export class SupabaseNotificationRepository implements NotificationRepository {
     return count ?? 0
   }
 
-  async markRead(tenantId: UUID, userId: UUID, id: UUID): Promise<void> {
-    const client = await this.createClient()
-    const { error } = await client
-      .from("notifications")
-      .update({ read_at: new Date().toISOString() })
-      .eq("tenant_id", tenantId)
-      .eq("recipient_user_id", userId)
-      .eq("id", id)
-      .is("read_at", null)
-
-    if (error) {
-      throw new ApplicationError("Unable to mark notification read.", "NOTIFICATION_MARK_FAILED", error)
-    }
-  }
-
   async markAllRead(tenantId: UUID, userId: UUID): Promise<void> {
     const client = await this.createClient()
     const { error } = await client
