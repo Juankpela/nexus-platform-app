@@ -17,7 +17,12 @@ import {
 import { greetingFor } from "@/modules/platform/presentation/mission-control"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 import { readEnRouteEta } from "@/modules/scheduling/composition"
+import { getTechnicianRecord } from "@/modules/service/composition"
 import { etaIfCurrent } from "@/modules/service/domain/eta"
+import { formatWhen } from "@/modules/service/domain/service-lifecycle"
+import { technicianFullName } from "@/modules/service/domain/technician"
+import { notifyLinks, type WhatsAppMessageContext } from "@/modules/notifications/domain/whatsapp-link"
+import { env } from "@/lib/config/env"
 
 export const metadata: Metadata = { title: "Campo" }
 
@@ -79,8 +84,30 @@ export default async function WorkerHomePage({
       )
     : null
   const heroEnRoute = heroEta
-    ? { etaLabel: `${heroEta.durationMinutes} min`, arrivalLabel: fmtTime(heroEta.arrivalAt) }
+    ? {
+        etaLabel: `${heroEta.durationMinutes} min`,
+        arrivalLabel: fmtTime(heroEta.arrivalAt),
+        arrivalAtIso: heroEta.arrivalAt,
+      }
     : null
+
+  // Aviso CONTEXTUAL al cliente por WhatsApp para el héroe (mismo que el detalle):
+  // cada paso muestra el mensaje que toca, ya con el ETA si va en camino.
+  let heroNotify = null
+  if (hero) {
+    const techRecord = await getTechnicianRecord(context.tenantId, technician.id)
+    const appUrl = env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? ""
+    const waContext: WhatsAppMessageContext = {
+      technicianName: techRecord ? technicianFullName(techRecord) : null,
+      caseSubject: hero.workOrderSubject ?? "su solicitud",
+      workOrderNumber: hero.workOrderNumber,
+      whenText: formatWhen(hero.scheduledStart),
+      trackingUrl: hero.trackingToken ? `${appUrl}/seguimiento/${hero.trackingToken}` : null,
+      etaMinutes: heroEta?.durationMinutes ?? null,
+      arrivalText: heroEta ? fmtTime(heroEta.arrivalAt) : null,
+    }
+    heroNotify = notifyLinks(waContext, hero.reporterPhone)
+  }
 
   return (
     <div className="space-y-6">
@@ -104,6 +131,7 @@ export default async function WorkerHomePage({
             tenantSlug={tenantSlug}
             assignmentId={hero.assignmentId}
             status={hero.executionStatus}
+            notify={heroNotify}
           />
           <Link
             href={`${base}/${hero.assignmentId}`}

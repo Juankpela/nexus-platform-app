@@ -1,5 +1,11 @@
+import { Clock3, Navigation } from "lucide-react"
+import Link from "next/link"
+
+import { EtaCountdown } from "@/components/service/eta-countdown"
 import type { ExecutionStatus } from "@/modules/field-execution/domain/execution"
+import { travelMinutes } from "@/modules/service/domain/eta"
 import type { LifecycleMilestone } from "@/modules/service/domain/service-lifecycle"
+import type { UUID } from "@/types/shared"
 
 /**
  * Fila de "Operación activa" del stream N2 — Nexus está coordinando esto ahora.
@@ -10,7 +16,11 @@ import type { LifecycleMilestone } from "@/modules/service/domain/service-lifecy
 
 export type ActiveOperationView = {
   technicianName: string
+  /** Técnico (UUID) — enlace a su vista operativa en vivo. */
+  technicianId: UUID
   workOrderNumber: string | null
+  /** Work Order (UUID) — enlace al detalle de la orden. */
+  workOrderId: UUID
   workOrderSubject: string | null
   companyName: string | null
   priority: string | null
@@ -62,9 +72,14 @@ function segTone(a: LifecycleMilestone | undefined, b: LifecycleMilestone | unde
 export function ActiveOperationCard({
   op,
   milestones,
+  tenantSlug,
+  etaArrivalAt = null,
 }: {
   op: ActiveOperationView
   milestones: LifecycleMilestone[]
+  tenantSlug: string
+  /** Hora estimada de llegada (ISO) del aviso "voy en camino" vigente, o null. */
+  etaArrivalAt?: string | null
 }) {
   const current =
     milestones.find((m) => m.state === "current") ??
@@ -74,23 +89,43 @@ export function ActiveOperationCard({
   const pillLive = current && ["accepted", "en_route", "on_site", "working"].includes(current.key)
   const pillDone = current && ["completed", "invoiced", "paid"].includes(current.key)
 
+  // Contador de desplazamiento: vivo mientras va en camino (sello "en camino" sin
+  // "llegué"), congelado como referencia una vez que llegó. Deriva de los sellos
+  // de la línea de vida (sin columnas nuevas).
+  const enRouteAt = milestones.find((m) => m.key === "en_route")?.at ?? null
+  const arrivedAt = milestones.find((m) => m.key === "on_site")?.at ?? null
+  const travel = travelMinutes(enRouteAt, arrivedAt)
+  const counting = !!enRouteAt && !arrivedAt && !!etaArrivalAt
+
   return (
     <div className="grid items-center gap-4 px-4 py-3.5 lg:grid-cols-[minmax(160px,1.1fr)_5fr_minmax(130px,1fr)]">
-      {/* Cliente / Técnico */}
+      {/* Cliente / Técnico — dos enlaces: la orden (empresa/WO) y el técnico. */}
       <div className="min-w-0">
-        <div className="flex items-center gap-2">
-          <p className="truncate font-semibold text-foreground">{op.companyName ?? "—"}</p>
-          {op.workOrderNumber ? (
-            <span className="shrink-0 font-mono text-[10px] text-muted-foreground">{op.workOrderNumber}</span>
-          ) : null}
-        </div>
-        <p className="truncate text-xs text-muted-foreground">{op.workOrderSubject ?? ""}</p>
-        <div className="mt-1.5 flex items-center gap-2">
+        <Link
+          href={`/app/${tenantSlug}/work-orders/${op.workOrderId}`}
+          className="group block rounded-md outline-none focus-visible:ring-2 focus-visible:ring-nexus-blue/40"
+        >
+          <div className="flex items-center gap-2">
+            <p className="truncate font-semibold text-foreground group-hover:text-nexus-blue group-hover:underline">
+              {op.companyName ?? "—"}
+            </p>
+            {op.workOrderNumber ? (
+              <span className="shrink-0 font-mono text-[10px] text-muted-foreground">{op.workOrderNumber}</span>
+            ) : null}
+          </div>
+          <p className="truncate text-xs text-muted-foreground">{op.workOrderSubject ?? ""}</p>
+        </Link>
+        <Link
+          href={`/app/${tenantSlug}/field-monitor/${op.technicianId}`}
+          className="group mt-1.5 flex items-center gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-nexus-blue/40"
+        >
           <span className="grid size-6 shrink-0 place-items-center rounded-md bg-gradient-to-br from-nexus-blue to-emerald-500 text-[10px] font-bold text-white">
             {initials(op.technicianName)}
           </span>
-          <span className="truncate text-xs text-foreground">{op.technicianName}</span>
-        </div>
+          <span className="truncate text-xs text-foreground group-hover:text-nexus-blue group-hover:underline">
+            {op.technicianName}
+          </span>
+        </Link>
       </div>
 
       {/* Línea de vida operacional · 9 hitos */}
@@ -146,7 +181,17 @@ export function ActiveOperationCard({
           />
           {pill}
         </span>
-        {current ? (
+        {counting && etaArrivalAt ? (
+          <span className="inline-flex items-center gap-1 rounded-full bg-nexus-blue/10 px-2 py-0.5 text-[11px] font-medium text-nexus-blue">
+            <Navigation className="size-3" />
+            llega en <EtaCountdown arrivalAt={etaArrivalAt} fallback="—" />
+          </span>
+        ) : travel != null ? (
+          <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+            <Clock3 className="size-3" />
+            desplazamiento {travel} min
+          </span>
+        ) : current ? (
           <span className="font-mono text-[10px] text-muted-foreground">
             hito: {SHORT_LABEL[current.key] ?? current.label}
           </span>

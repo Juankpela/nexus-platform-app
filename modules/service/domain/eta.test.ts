@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { buildEta, etaIfCurrent, parseDirectionsResult, type Eta } from "./eta"
+import { buildEta, etaIfCurrent, parseDirectionsResult, travelMinutes, type Eta } from "./eta"
 
 describe("parseDirectionsResult", () => {
   it("extrae duración (min) y distancia (m) del primer leg", () => {
@@ -63,5 +63,27 @@ describe("etaIfCurrent", () => {
   })
   it("null entra → null sale", () => {
     expect(etaIfCurrent(null, "2026-06-22T14:00:00.000Z")).toBeNull()
+  })
+})
+
+describe("travelMinutes", () => {
+  it("redondea los minutos entre 'en camino' y 'llegué'", () => {
+    expect(
+      travelMinutes("2026-06-22T14:00:00.000Z", "2026-06-22T14:12:00.000Z"),
+    ).toBe(12)
+    expect(
+      travelMinutes("2026-06-22T14:00:00.000Z", "2026-06-22T14:12:40.000Z"),
+    ).toBe(13)
+  })
+
+  it("devuelve null si falta algún sello", () => {
+    expect(travelMinutes(null, "2026-06-22T14:12:00.000Z")).toBeNull()
+    expect(travelMinutes("2026-06-22T14:00:00.000Z", null)).toBeNull()
+  })
+
+  it("devuelve null si la llegada es anterior a la salida (incoherente)", () => {
+    expect(
+      travelMinutes("2026-06-22T14:12:00.000Z", "2026-06-22T14:00:00.000Z"),
+    ).toBeNull()
   })
 })

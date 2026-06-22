@@ -13,7 +13,7 @@ import {
 import { listTenantInvoices } from "@/modules/billing/composition"
 import { getTenantDispatchStats } from "@/modules/dispatch/composition"
 import { getFieldMonitorBoard } from "@/modules/field-execution/composition"
-import { listDispatchInbox } from "@/modules/scheduling/composition"
+import { listDispatchInbox, readEnRouteEta } from "@/modules/scheduling/composition"
 import { getWorkOrderLifecycle, listTenantWorkOrders } from "@/modules/service/composition"
 import { formatCOP } from "@/lib/format/money"
 import type { UUID } from "@/types/shared"
@@ -126,19 +126,31 @@ export async function OperationalCenter({
   // Operaciones activas: técnicos con un job en ejecución. Línea de vida con la
   // MISMA función canónica (sin timeline nuevo).
   const activeRaw = board.entries.filter((e) => e.activeJob)
-  const lifecycles = await Promise.all(
-    activeRaw.map((e) => getWorkOrderLifecycle(tenantId, e.activeJob!.workOrderId)),
-  )
+  const [lifecycles, etas] = await Promise.all([
+    Promise.all(activeRaw.map((e) => getWorkOrderLifecycle(tenantId, e.activeJob!.workOrderId))),
+    Promise.all(
+      activeRaw.map((e) =>
+        e.activeJob!.assignmentId
+          ? readEnRouteEta(tenantId, e.activeJob!.assignmentId)
+          : Promise.resolve(null),
+      ),
+    ),
+  ])
   const activeOps = activeRaw.map((e, i) => ({
     op: {
       technicianName: e.technicianName,
+      technicianId: e.technicianId,
       workOrderNumber: e.activeJob!.workOrderNumber,
+      workOrderId: e.activeJob!.workOrderId,
       workOrderSubject: e.activeJob!.workOrderSubject,
       companyName: e.activeJob!.companyName,
       priority: e.activeJob!.priority,
       executionStatus: e.activeJob!.executionStatus,
     },
     milestones: lifecycles[i] ?? [],
+    // ETA vivo del aviso "voy en camino" (raw): el contador muestra "Llegando" si
+    // la hora estimada ya pasó pero el técnico aún no marca "llegué".
+    etaArrivalAt: etas[i]?.arrivalAt ?? null,
   }))
 
   // Completadas: WO completadas + su factura (match por workOrderId).
@@ -320,6 +332,8 @@ export async function OperationalCenter({
                   key={a.op.workOrderNumber ?? `op-${i}`}
                   op={a.op}
                   milestones={a.milestones}
+                  tenantSlug={tenantSlug}
+                  etaArrivalAt={a.etaArrivalAt}
                 />
               ))}
             </div>

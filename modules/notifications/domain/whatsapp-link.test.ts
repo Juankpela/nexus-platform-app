@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  arrivedMessage,
   buildWhatsAppUrl,
   completedMessage,
   confirmationMessage,
   enRouteMessage,
   normalizePhone,
+  notifyLinks,
   type WhatsAppMessageContext,
 } from "./whatsapp-link"
 
@@ -73,10 +75,34 @@ describe("mensajes al cliente", () => {
     expect(confirmationMessage(ctx)).toContain("viernes 20 de junio, 3:30 p.m.")
   })
 
+  it("llegó al sitio menciona técnico y solicitud, sin horario", () => {
+    const m = arrivedMessage(ctx)
+    expect(m).toContain("Daniel Peláez llegó al sitio")
+    expect(m).toContain('"HVAC — No enfría"')
+    expect(m).not.toContain("3:30")
+  })
+
   it("completado agradece y no incluye horario", () => {
     const m = completedMessage(ctx)
     expect(m).toContain("quedó completado")
     expect(m).not.toContain("3:30")
+  })
+
+  it("notifyLinks arma un enlace wa.me por cada momento", () => {
+    const links = notifyLinks(ctx, "3001234567")
+    expect(links.confirm).toContain("https://wa.me/573001234567?text=")
+    expect(links.enRoute).toContain("https://wa.me/573001234567?text=")
+    expect(links.arrived).toContain("https://wa.me/573001234567?text=")
+    expect(links.completed).toContain("https://wa.me/573001234567?text=")
+    expect(decodeURIComponent(links.arrived!)).toContain("llegó al sitio")
+  })
+
+  it("notifyLinks devuelve null en todos si no hay teléfono", () => {
+    const links = notifyLinks(ctx, null)
+    expect(links.confirm).toBeNull()
+    expect(links.enRoute).toBeNull()
+    expect(links.arrived).toBeNull()
+    expect(links.completed).toBeNull()
   })
 
   it("sin tracking ni orden, el mensaje sigue siendo válido", () => {

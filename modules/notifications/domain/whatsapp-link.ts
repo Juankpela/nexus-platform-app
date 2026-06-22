@@ -99,6 +99,15 @@ export function enRouteMessage(ctx: WhatsAppMessageContext): string {
   )
 }
 
+/** Aviso de que el técnico llegó al sitio. */
+export function arrivedMessage(ctx: WhatsAppMessageContext): string {
+  const tech = ctx.technicianName ?? "Su técnico asignado"
+  return (
+    `Hola 👋 ${tech} llegó al sitio para atender su solicitud "${ctx.caseSubject}"${orderRef(ctx)}.` +
+    trackingLine(ctx)
+  )
+}
+
 /** Aviso de trabajo completado. */
 export function completedMessage(ctx: WhatsAppMessageContext): string {
   return (
@@ -106,4 +115,26 @@ export function completedMessage(ctx: WhatsAppMessageContext): string {
     `¡Gracias por confiar en nosotros!` +
     trackingLine(ctx)
   )
+}
+
+/**
+ * Enlaces wa.me listos por momento de la operación (o null si el teléfono no es
+ * utilizable). Permite a la UI mostrar, en cada paso, SOLO el aviso que toca —
+ * sin que el técnico tenga que elegir entre varios y arriesgar enviar el equivocado.
+ */
+export function notifyLinks(
+  ctx: WhatsAppMessageContext,
+  rawPhone: string | null | undefined,
+): {
+  confirm: string | null
+  enRoute: string | null
+  arrived: string | null
+  completed: string | null
+} {
+  return {
+    confirm: buildWhatsAppUrl(rawPhone, confirmationMessage(ctx)),
+    enRoute: buildWhatsAppUrl(rawPhone, enRouteMessage(ctx)),
+    arrived: buildWhatsAppUrl(rawPhone, arrivedMessage(ctx)),
+    completed: buildWhatsAppUrl(rawPhone, completedMessage(ctx)),
+  }
 }
