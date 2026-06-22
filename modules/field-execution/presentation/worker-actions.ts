@@ -11,7 +11,7 @@ import {
   notifyCustomerWorkCompleted,
 } from "@/modules/scheduling/composition"
 import { createAdminSupabaseClient } from "@/lib/supabase/admin"
-import { generateExpressInvoiceFromWorkOrder } from "@/modules/billing/infrastructure/express-invoice-from-work-order"
+import { generateExpressInvoiceFromWorkOrderRecord } from "@/modules/billing/composition"
 import {
   SERVICE_PERMISSIONS,
   hasPermission,
@@ -217,7 +217,7 @@ async function transition(
       // facturación NO revierte el cierre del trabajo.
       if (extras.billable) {
         try {
-          await generateExpressInvoiceFromWorkOrder({
+          await generateExpressInvoiceFromWorkOrderRecord({
             tenantId: context.tenantId,
             workOrderId: assignment.workOrderId,
             actorUserId: context.userId,

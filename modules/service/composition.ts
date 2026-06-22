@@ -1,5 +1,9 @@
 import "server-only"
 
+// Geocoding del sitio de servicio: adaptador de infraestructura expuesto por el
+// seam para que la presentación (intake público) no importe la infra directamente.
+export { geocodeServiceAddress } from "@/modules/service/infrastructure/google-geocoding"
+
 import { SupabaseAuditRepository } from "@/modules/audit/infrastructure/supabase-audit-repository"
 import {
   assignCaseOwner,
