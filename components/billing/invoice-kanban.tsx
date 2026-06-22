@@ -6,7 +6,7 @@ import {
   INVOICE_STATUS_LABELS,
   type InvoiceListItem,
 } from "@/modules/billing/domain/invoice"
-import { formatDateNumeric } from "@/lib/format/datetime"
+import { formatDateNumeric, todayInAppZone } from "@/lib/format/datetime"
 import { formatCOP } from "@/lib/format/money"
 
 /**
@@ -23,7 +23,7 @@ export function InvoiceKanban({
   tenantSlug: string
   invoices: InvoiceListItem[]
 }) {
-  const todayISO = new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" })
+  const todayISO = todayInAppZone()
   const isOverdue = (inv: InvoiceListItem) =>
     (inv.status === "issued" || inv.status === "partially_paid") &&
     inv.balance > 0 &&

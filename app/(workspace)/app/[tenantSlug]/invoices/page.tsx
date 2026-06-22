@@ -17,7 +17,7 @@ import {
   type InvoiceStatus,
 } from "@/modules/billing/domain/invoice"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
-import { formatDateNumeric } from "@/lib/format/datetime"
+import { formatDateNumeric, todayInAppZone } from "@/lib/format/datetime"
 import { formatCOP } from "@/lib/format/money"
 
 export const metadata: Metadata = { title: "Facturas" }
@@ -67,7 +67,7 @@ export default async function InvoicesPage({
       ).items
     : []
 
-  const todayISO = new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" })
+  const todayISO = todayInAppZone()
   const isOverdue = (inv: (typeof items)[number]) =>
     (inv.status === "issued" || inv.status === "partially_paid") &&
     inv.balance > 0 &&

@@ -7,6 +7,7 @@ import { Pagination } from "@/components/crm/pagination"
 import { Button } from "@/components/ui/button"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
 import { INVENTORY_PERMISSIONS } from "@/modules/authorization/domain/permission"
+import { formatDateTime } from "@/lib/format/datetime"
 import { listInventoryTransactions } from "@/modules/inventory/composition"
 import {
   REFERENCE_TYPE_LABELS,
@@ -19,12 +20,6 @@ import { getRequestContext } from "@/modules/request-context/application/get-req
 export const metadata: Metadata = { title: "Movimientos de inventario" }
 
 const PAGE_SIZE = 25
-
-function fmt(iso: string): string {
-  return new Date(iso).toLocaleString("es-CO", {
-    day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "America/Bogota",
-  })
-}
 
 export default async function TransactionHistoryPage({
   params,
@@ -99,7 +94,7 @@ export default async function TransactionHistoryPage({
                     <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
                       {tx.createdBy.slice(0, 8)}
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{fmt(tx.createdAt)}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{formatDateTime(tx.createdAt)}</td>
                   </tr>
                 ))}
               </tbody>

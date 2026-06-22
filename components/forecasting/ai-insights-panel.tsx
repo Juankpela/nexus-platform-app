@@ -3,6 +3,7 @@
 import { AlertTriangle, ArrowRight, CheckCircle, Info, Lightbulb, Loader2, Sparkles, XCircle } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
+import { formatDateTime } from "@/lib/format/datetime"
 import type { AiInsight, AiRevenueInsights } from "@/modules/forecasting/domain/ai-insight"
 import { Button } from "@/components/ui/button"
 
@@ -189,7 +190,7 @@ export function AiInsightsPanel({ tenantSlug, initialInsights }: Props) {
               <ScoreGauge label="Forecast Score" value={insights.forecastScore} color="#2563eb" />
               <div className="text-center px-4">
                 <p className="text-xs text-muted-foreground mb-1">
-                  {new Date(insights.generatedAt).toLocaleString("es-CO", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short", timeZone: "America/Bogota" })}
+                  {formatDateTime(insights.generatedAt, { year: undefined })}
                 </p>
                 <p className="text-xs text-muted-foreground">{insights.insights.length} insights</p>
               </div>

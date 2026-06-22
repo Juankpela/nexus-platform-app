@@ -1,3 +1,4 @@
+import { formatDate } from "@/lib/format/datetime"
 import type { ForecastSnapshot } from "@/modules/forecasting/domain/forecast-snapshot"
 
 function fmt(n: number) {
@@ -5,10 +6,6 @@ function fmt(n: number) {
   if (n >= 1_000_000)     return `$${(n / 1_000_000).toFixed(1)}M`
   if (n >= 1_000)         return `$${(n / 1_000).toFixed(0)}K`
   return `$${n.toFixed(0)}`
-}
-
-function fmtDate(d: string) {
-  return new Date(d).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric", timeZone: "America/Bogota" })
 }
 
 const PERIOD_LABELS: Record<string, string> = {
@@ -51,7 +48,7 @@ export function ForecastSnapshotsTable({ snapshots }: { snapshots: ForecastSnaps
           <tbody className="divide-y">
             {snapshots.map((s, i) => (
               <tr key={s.id} className={i % 2 === 0 ? "bg-card" : "bg-muted/20"}>
-                <td className="px-4 py-3 text-muted-foreground">{fmtDate(s.snapshotDate)}</td>
+                <td className="px-4 py-3 text-muted-foreground">{formatDate(s.snapshotDate)}</td>
                 <td className="px-4 py-3">
                   <span className="inline-flex items-center gap-1.5">
                     <span className="text-xs text-muted-foreground">{PERIOD_LABELS[s.periodType]}</span>

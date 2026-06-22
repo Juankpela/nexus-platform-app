@@ -47,6 +47,7 @@ import {
   type WorkOrder,
 } from "@/modules/service/domain/work-order"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
+import { formatDateTime, formatTime, todayInAppZone } from "@/lib/format/datetime"
 import { cn } from "@/lib/utils"
 
 export const metadata: Metadata = { title: "Tablero de despacho" }
@@ -75,30 +76,6 @@ function fmtHours(min: number): string {
   const m = min % 60
   return m === 0 ? `${h}h` : `${h}h ${m}m`
 }
-function fmtTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString("es-CO", {
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "America/Bogota",
-  })
-}
-function fmtDateTime(iso: string): string {
-  return new Date(iso).toLocaleString("es-CO", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "America/Bogota",
-  })
-}
-function todayLocal(): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Bogota",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date())
-}
 /** Assign window from the WO: its scheduled window, defaulting end to start + 1h. */
 function woWindow(wo: WorkOrder): { start: string; end: string } | null {
   if (!wo.scheduledStart) return null
@@ -119,7 +96,7 @@ export default async function DispatchPage({
   requirePermission(context.effectivePermissions, SERVICE_PERMISSIONS.dispatchRead)
 
   const tab = parseTab(sp.tab)
-  const date = /^\d{4}-\d{2}-\d{2}$/.test(sp.date ?? "") ? sp.date! : todayLocal()
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(sp.date ?? "") ? sp.date! : todayInAppZone()
   const basePath = `/app/${tenantSlug}/dispatch`
 
   const canSchedule = hasPermission(context.effectivePermissions, SERVICE_PERMISSIONS.schedulingWrite)
@@ -248,7 +225,7 @@ export default async function DispatchPage({
                           <span className="text-muted-foreground">{wo.subject}</span>
                           {wo.companyName ? <span className="text-xs text-muted-foreground/70">{wo.companyName}</span> : null}
                           {win ? (
-                            <span className="text-xs tabular-nums text-muted-foreground/70">{fmtDateTime(win.start)}</span>
+                            <span className="text-xs tabular-nums text-muted-foreground/70">{formatDateTime(win.start, { year: undefined })}</span>
                           ) : (
                             <span className="rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-600 dark:text-amber-400">Sin fecha</span>
                           )}
@@ -344,7 +321,7 @@ export default async function DispatchPage({
                               <div className="flex flex-wrap items-center justify-between gap-2">
                                 <Link href={`/app/${tenantSlug}/work-orders/${a.workOrderId}`} className="flex flex-wrap items-center gap-2 hover:underline">
                                   <span className="font-medium text-foreground">{a.workOrderNumber}</span>
-                                  <span className="tabular-nums text-muted-foreground">{fmtTime(a.scheduledStart)}–{fmtTime(a.scheduledEnd)}</span>
+                                  <span className="tabular-nums text-muted-foreground">{formatTime(a.scheduledStart)}–{formatTime(a.scheduledEnd)}</span>
                                   <span className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium ${assignmentStyles[a.status]}`}>
                                     {ASSIGNMENT_STATUS_LABELS[a.status]}
                                   </span>

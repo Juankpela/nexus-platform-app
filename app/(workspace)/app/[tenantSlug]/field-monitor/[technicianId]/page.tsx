@@ -12,6 +12,7 @@ import {
   type ExecutionStatus,
 } from "@/modules/field-execution/domain/execution"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
+import { formatDateTime } from "@/lib/format/datetime"
 
 export const metadata: Metadata = { title: "Técnico — Monitor de Campo" }
 export const dynamic = "force-dynamic"
@@ -28,14 +29,7 @@ const STATUS_STYLES: Record<ExecutionStatus, string> = {
 const OPEN: ExecutionStatus[] = ["pending", "accepted", "on_site", "working"]
 
 function fmt(iso: string): string {
-  return new Date(iso).toLocaleString("es-CO", {
-    weekday: "short",
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "America/Bogota",
-  })
+  return formatDateTime(iso, { weekday: "short", year: undefined })
 }
 
 export default async function TechnicianMonitorPage({

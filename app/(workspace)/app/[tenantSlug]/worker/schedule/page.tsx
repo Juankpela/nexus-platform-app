@@ -14,6 +14,7 @@ import {
   type ExecutionStatus,
 } from "@/modules/field-execution/domain/execution"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
+import { formatDateTime } from "@/lib/format/datetime"
 
 export const metadata: Metadata = { title: "Mi agenda" }
 
@@ -24,15 +25,6 @@ const statusStyles: Record<ExecutionStatus, string> = {
   working: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
   completed: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
   unable_to_complete: "bg-red-500/10 text-red-600 dark:text-red-400",
-}
-
-function fmt(iso: string): string {
-  return new Date(iso).toLocaleString("es-CO", {
-    weekday: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "America/Bogota",
-  })
 }
 
 export default async function WorkerSchedulePage({
@@ -87,7 +79,7 @@ export default async function WorkerSchedulePage({
                     {a.workOrderSubject}
                   </p>
                   <p className="mt-0.5 text-[11px] text-muted-foreground">
-                    {a.companyName ?? "—"} · {fmt(a.scheduledStart)}
+                    {a.companyName ?? "—"} · {formatDateTime(a.scheduledStart, { weekday: "short", day: undefined, month: undefined, year: undefined })}
                   </p>
                 </div>
               </Link>

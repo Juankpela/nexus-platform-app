@@ -27,29 +27,10 @@ import {
   type WhatsAppMessageContext,
 } from "@/modules/notifications/domain/whatsapp-link"
 import { env } from "@/lib/config/env"
+import { formatDateTime, formatTime } from "@/lib/format/datetime"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 
 export const metadata: Metadata = { title: "Asignación" }
-
-function fmt(iso: string): string {
-  return new Date(iso).toLocaleString("es-CO", {
-    weekday: "long",
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "America/Bogota",
-  })
-}
-
-/** Hora corta (ej. "11:54 p. m.") para la llegada estimada del ETA. */
-function fmtTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString("es-CO", {
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "America/Bogota",
-  })
-}
 
 export default async function WorkerAssignmentDetailPage({
   params,
@@ -78,7 +59,7 @@ export default async function WorkerAssignmentDetailPage({
     new Date().toISOString(),
   )
   const enRoute = eta
-    ? { etaLabel: `${eta.durationMinutes} min`, arrivalLabel: fmtTime(eta.arrivalAt) }
+    ? { etaLabel: `${eta.durationMinutes} min`, arrivalLabel: formatTime(eta.arrivalAt) }
     : null
 
   // Línea de vida de la solicitud (misma que ve el cliente y el admin), para que
@@ -102,7 +83,7 @@ export default async function WorkerAssignmentDetailPage({
     // ETA real (Fase 3): el mensaje de WhatsApp "Voy en camino" incluye el tiempo
     // estimado de llegada cuando el técnico va en camino y sigue vigente.
     etaMinutes: eta?.durationMinutes ?? null,
-    arrivalText: eta ? fmtTime(eta.arrivalAt) : null,
+    arrivalText: eta ? formatTime(eta.arrivalAt) : null,
   }
   const customerPhone = assignment.reporterPhone
   const isDone = assignment.executionStatus === "completed"
@@ -159,7 +140,7 @@ export default async function WorkerAssignmentDetailPage({
           </p>
         ) : null}
         <p className="flex items-center gap-2 text-muted-foreground">
-          <MapPin className="size-4" /> {fmt(assignment.scheduledStart)}
+          <MapPin className="size-4" /> {formatDateTime(assignment.scheduledStart, { weekday: "long", day: "numeric", year: undefined })}
         </p>
       </div>
 

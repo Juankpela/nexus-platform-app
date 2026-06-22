@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useActionState, useEffect, useRef, useState } from "react"
 
+import { formatDateTime } from "@/lib/format/datetime"
 import { Button } from "@/components/ui/button"
 import type { Notification } from "@/modules/notifications/domain/notification"
 import {
@@ -13,16 +14,6 @@ import {
 } from "@/modules/notifications/presentation/notification-actions"
 
 const initialState: NotificationActionState = { ok: false }
-
-function fmt(iso: string): string {
-  return new Date(iso).toLocaleString("es-CO", {
-    day: "2-digit",
-    month: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "America/Bogota",
-  })
-}
 
 export function NotificationBell({
   tenantSlug,
@@ -106,7 +97,7 @@ export function NotificationBell({
                         {n.body ? (
                           <span className="block truncate text-muted-foreground">{n.body}</span>
                         ) : null}
-                        <span className="block text-[11px] text-muted-foreground/70">{fmt(n.createdAt)}</span>
+                        <span className="block text-[11px] text-muted-foreground/70">{formatDateTime(n.createdAt, { month: "2-digit", year: undefined })}</span>
                       </span>
                     </div>
                   )

@@ -11,6 +11,7 @@ import {
   INVENTORY_PERMISSIONS,
   hasPermission,
 } from "@/modules/authorization/domain/permission"
+import { formatDateTime } from "@/lib/format/datetime"
 import {
   getInventorySnapshot,
   listInventoryTransactions,
@@ -24,12 +25,6 @@ import { getRequestContext } from "@/modules/request-context/application/get-req
 export const metadata: Metadata = { title: "Material" }
 
 const PAGE_SIZE = 20
-
-function fmt(iso: string): string {
-  return new Date(iso).toLocaleString("es-CO", {
-    day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "America/Bogota",
-  })
-}
 
 function Stat({ label, value }: { label: string; value: number | string }) {
   return (
@@ -119,7 +114,7 @@ export default async function MaterialDetailPage({
                       <td className="px-4 py-2.5">{TRANSACTION_TYPE_LABELS[tx.type]}</td>
                       <td className="px-4 py-2.5 text-right tabular-nums">{tx.quantity}</td>
                       <td className="px-4 py-2.5 text-muted-foreground">{REFERENCE_TYPE_LABELS[tx.referenceType]}</td>
-                      <td className="px-4 py-2.5 text-muted-foreground">{fmt(tx.createdAt)}</td>
+                      <td className="px-4 py-2.5 text-muted-foreground">{formatDateTime(tx.createdAt, { year: undefined })}</td>
                     </tr>
                   ))}
                 </tbody>

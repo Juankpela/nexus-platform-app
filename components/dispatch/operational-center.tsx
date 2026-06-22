@@ -15,6 +15,7 @@ import { getTenantDispatchStats } from "@/modules/dispatch/composition"
 import { getFieldMonitorBoard } from "@/modules/field-execution/composition"
 import { listDispatchInbox } from "@/modules/scheduling/composition"
 import { getWorkOrderLifecycle, listTenantWorkOrders } from "@/modules/service/composition"
+import { todayInAppZone } from "@/lib/format/datetime"
 import { formatCOP } from "@/lib/format/money"
 import type { UUID } from "@/types/shared"
 
@@ -87,7 +88,7 @@ export async function OperationalCenter({
   const canWorkOrders = can(SERVICE_PERMISSIONS.workOrdersRead)
   const canInvoices = can(BILLING_PERMISSIONS.invoicesRead)
   const canDispatch = can(SERVICE_PERMISSIONS.dispatchRead)
-  const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" })
+  const today = todayInAppZone()
 
   const [inbox, board, completedPage, invoicesPage, stats] = await Promise.all([
     listDispatchInbox(tenantId),

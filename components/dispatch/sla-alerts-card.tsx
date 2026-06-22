@@ -1,6 +1,7 @@
 import { AlertTriangle, CheckCircle2, Clock } from "lucide-react"
 import Link from "next/link"
 
+import { formatDateTime } from "@/lib/format/datetime"
 import type {
   SlaAlertBoard,
   SlaAlertItem,
@@ -9,13 +10,7 @@ import type {
 const MAX_PER_GROUP = 6
 
 function fmtDeadline(iso: string): string {
-  return new Date(iso).toLocaleString("es-CO", {
-    day: "2-digit",
-    month: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "America/Bogota",
-  })
+  return formatDateTime(iso, { month: "2-digit", year: undefined })
 }
 
 function AlertRow({

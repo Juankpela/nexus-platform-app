@@ -30,6 +30,7 @@ import {
 import { listTenantTechnicians } from "@/modules/service/composition"
 import { technicianFullName } from "@/modules/service/domain/technician"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
+import { formatTime } from "@/lib/format/datetime"
 import { cn } from "@/lib/utils"
 
 export const metadata: Metadata = { title: "Calendario" }
@@ -50,14 +51,6 @@ function parseTab(v?: string): Tab {
 function todayUtc(): string {
   return new Date().toISOString().slice(0, 10)
 }
-function fmtTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString("es-CO", {
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "America/Bogota",
-  })
-}
-
 function AssignmentChip({
   a,
   tenantSlug,
@@ -78,7 +71,7 @@ function AssignmentChip({
       <div className="flex items-center justify-between gap-2">
         <span className="font-semibold">{a.workOrderNumber}</span>
         <span className="tabular-nums opacity-80">
-          {fmtTime(a.scheduledStart)}–{fmtTime(a.scheduledEnd)}
+          {formatTime(a.scheduledStart)}–{formatTime(a.scheduledEnd)}
         </span>
       </div>
       {showTechnician && a.technicianName ? (

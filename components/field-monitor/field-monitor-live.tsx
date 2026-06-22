@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 
+import { formatTime } from "@/lib/format/datetime"
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser"
 import { cn } from "@/lib/utils"
 
@@ -57,12 +58,7 @@ export function FieldMonitorLive({
       {connected ? connectedLabel : connectingLabel}
       {showClock ? (
         <span className="ml-1 tabular-nums opacity-60">
-          {new Date(generatedAt).toLocaleTimeString("es-CO", {
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-            timeZone: "America/Bogota",
-          })}
+          {formatTime(generatedAt, { second: "2-digit" })}
         </span>
       ) : null}
     </span>

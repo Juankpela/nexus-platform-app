@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/layout/page-header"
 import { Pagination } from "@/components/crm/pagination"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
 import { FOUNDATION_PERMISSIONS } from "@/modules/authorization/domain/permission"
+import { formatDateTime } from "@/lib/format/datetime"
 import { listMyExportJobs } from "@/modules/integrations/composition"
 import { EXPORT_JOB_STATUS_LABELS } from "@/modules/integrations/domain/export-job"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
@@ -13,13 +14,6 @@ import { getRequestContext } from "@/modules/request-context/application/get-req
 export const metadata: Metadata = { title: "Exportaciones" }
 
 const PAGE_SIZE = 20
-
-function fmt(iso: string | null): string {
-  if (!iso) return "—"
-  return new Date(iso).toLocaleString("es-CO", {
-    day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "America/Bogota",
-  })
-}
 
 const statusStyle: Record<string, string> = {
   queued: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
@@ -83,7 +77,7 @@ export default async function ExportsPage({
                       ) : null}
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums">{job.rowCount ?? "—"}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{fmt(job.createdAt)}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{formatDateTime(job.createdAt, { year: undefined })}</td>
                     <td className="px-4 py-3">
                       <div className="flex justify-end">
                         {job.status === "completed" ? (
