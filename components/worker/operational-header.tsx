@@ -1,5 +1,7 @@
 import { Building2, Clock, Navigation, TriangleAlert, Wrench } from "lucide-react"
 
+import { EtaCountdown } from "@/components/service/eta-countdown"
+
 /**
  * Cabecera operacional del trabajo (Worker Mobile V2): el contexto que el técnico
  * necesita SIEMPRE a la vista — WO, cliente, problema, tipo de daño, prioridad y
@@ -54,11 +56,11 @@ export function WorkerOperationalHeader({
   priority: string | null
   slaDueAt: string | null
   /**
-   * SEAM de ETA (FASE 3): cuando el técnico va en camino, esta línea muestra el
-   * ETA y la llegada estimada con el mismo estilo del SLA. Hoy nadie lo pasa →
-   * la estructura está lista pero invisible. NO depende de la base de datos aún.
+   * ETA (FASE 3): cuando el técnico va en camino, esta línea muestra la cuenta
+   * regresiva viva hacia la llegada estimada. `arrivalAtIso` alimenta el contador
+   * de cliente (`EtaCountdown`); `etaLabel` es el texto estable de respaldo.
    */
-  enRoute?: { etaLabel: string; arrivalLabel?: string | null } | null
+  enRoute?: { etaLabel: string; arrivalLabel?: string | null; arrivalAtIso?: string | null } | null
 }) {
   const sla = slaView(slaDueAt)
   const priorityTone = priority ? PRIORITY_TONE[priority] ?? "bg-muted text-muted-foreground" : null
@@ -97,12 +99,19 @@ export function WorkerOperationalHeader({
             {sla.label}
           </p>
         ) : null}
-        {/* SEAM ETA (FASE 3): estado "En camino" + ETA + llegada estimada. */}
+        {/* ETA (FASE 3): "En camino" + cuenta regresiva viva + llegada estimada. */}
         {enRoute ? (
           <p className="flex items-center gap-2 font-medium text-nexus-blue">
             <Navigation className="size-4 shrink-0" />
-            En camino · {enRoute.etaLabel}
-            {enRoute.arrivalLabel ? ` · llega ${enRoute.arrivalLabel}` : ""}
+            <span>
+              En camino ·{" "}
+              {enRoute.arrivalAtIso ? (
+                <EtaCountdown arrivalAt={enRoute.arrivalAtIso} fallback={enRoute.etaLabel} />
+              ) : (
+                enRoute.etaLabel
+              )}
+              {enRoute.arrivalLabel ? ` · llega ${enRoute.arrivalLabel}` : ""}
+            </span>
           </p>
         ) : null}
       </div>

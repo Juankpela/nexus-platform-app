@@ -1,6 +1,6 @@
 "use client"
 
-import { Camera, CheckCircle2, Loader2, MapPin, Play, Send, ThumbsUp, X, XCircle } from "lucide-react"
+import { Camera, CheckCircle2, Loader2, MapPin, MessageCircle, Play, Send, ThumbsUp, X, XCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useActionState, useCallback, useEffect, useState } from "react"
 
@@ -110,6 +110,7 @@ function ActionForm({
   emphasis = "primary",
   successLabel,
   children,
+  afterSuccess,
 }: {
   action: Action
   tenantSlug: string
@@ -120,6 +121,8 @@ function ActionForm({
   emphasis?: "primary" | "secondary"
   successLabel?: string
   children?: React.ReactNode
+  /** Contenido que aparece bajo el botón al completarse la acción (ej. avisar al cliente). */
+  afterSuccess?: React.ReactNode
 }) {
   const [state, formAction, pending] = useActionState(action, initial)
   const router = useRouter()
@@ -154,7 +157,35 @@ function ActionForm({
           {successLabel}
         </p>
       ) : null}
+      {state.ok && afterSuccess ? afterSuccess : null}
     </form>
+  )
+}
+
+/**
+ * Botón contextual "avisar al cliente por WhatsApp" — aparece en el paso exacto de
+ * la operación (al salir, al llegar, al completar) con el mensaje correcto ya
+ * armado en el servidor. El técnico no tiene que elegir entre varios avisos ni
+ * bajar a la línea de vida: el botón que toca está justo donde acaba de actuar.
+ */
+function WhatsAppCta({ url, label }: { url: string | null; label: string }) {
+  if (!url) {
+    return (
+      <p className="rounded-lg border border-dashed bg-muted/30 p-2.5 text-center text-xs text-muted-foreground">
+        Sin número de WhatsApp del cliente para avisarle.
+      </p>
+    )
+  }
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 text-sm font-semibold text-white transition-colors hover:bg-emerald-700"
+    >
+      <MessageCircle className="size-4" />
+      {label}
+    </a>
   )
 }
 
@@ -295,11 +326,20 @@ function EnRouteCapture() {
   )
 }
 
+/** Enlaces wa.me por momento (armados en el servidor con `notifyLinks`). */
+export type NotifyLinks = {
+  confirm: string | null
+  enRoute: string | null
+  arrived: string | null
+  completed: string | null
+}
+
 export function ExecutionActions({
   tenantSlug,
   assignmentId,
   status,
   etaSelector = null,
+  notify = null,
 }: {
   tenantSlug: string
   assignmentId: string
@@ -310,15 +350,26 @@ export function ExecutionActions({
    * pero invisible. NO depende de la base de datos aún.
    */
   etaSelector?: React.ReactNode
+  /**
+   * Enlaces de WhatsApp por momento. Cuando se pasan, cada paso de la operación
+   * muestra el aviso al cliente que corresponde (salir, llegar, completar) sin que
+   * el técnico tenga que bajar a la línea de vida ni elegir el mensaje equivocado.
+   */
+  notify?: NotifyLinks | null
 }) {
   const common = { tenantSlug, assignmentId }
   const [showUnable, setShowUnable] = useState(false)
 
   if (status === "completed") {
     return (
-      <p className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-center text-sm font-medium text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300">
-        ✓ Trabajo completado
-      </p>
+      <div className="space-y-3">
+        <p className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-center text-sm font-medium text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300">
+          ✓ Trabajo completado
+        </p>
+        {notify ? (
+          <WhatsAppCta url={notify.completed} label="Avisar al cliente: trabajo completado" />
+        ) : null}
+      </div>
     )
   }
   if (status === "unable_to_complete") {
@@ -347,6 +398,11 @@ export function ExecutionActions({
             label="Voy en camino"
             icon={Send}
             successLabel="✓ En camino"
+            afterSuccess={
+              notify ? (
+                <WhatsAppCta url={notify.enRoute} label="Avisar al cliente: voy en camino" />
+              ) : null
+            }
           >
             <EnRouteCapture />
             {etaSelector}
@@ -363,7 +419,13 @@ export function ExecutionActions({
       ) : null}
 
       {status === "on_site" ? (
-        <ActionForm {...common} action={startWorkAction} label="Iniciar trabajo" icon={Play} />
+        <>
+          {/* Al llegar, el aviso al cliente se ofrece de una (paso recién dado). */}
+          {notify ? (
+            <WhatsAppCta url={notify.arrived} label="Avisar al cliente: llegué al sitio" />
+          ) : null}
+          <ActionForm {...common} action={startWorkAction} label="Iniciar trabajo" icon={Play} />
+        </>
       ) : null}
 
       {status === "working" ? (

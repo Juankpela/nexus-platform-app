@@ -69,3 +69,22 @@ export function etaIfCurrent(eta: Eta | null | undefined, nowIso: string): Eta |
   if (!eta) return null
   return new Date(eta.arrivalAt).getTime() > new Date(nowIso).getTime() ? eta : null
 }
+
+/**
+ * Tiempo REAL de desplazamiento (minutos): desde que el técnico avisó "voy en
+ * camino" (`enRouteAt`) hasta que marcó "llegué" (`arrivedAt`). Es el número que
+ * el contador "congela" al llegar y queda como referencia para el motor de
+ * aprendizaje. Pura: deriva de los sellos existentes (sin columnas nuevas).
+ * Devuelve null si falta algún sello o el orden es incoherente.
+ */
+export function travelMinutes(
+  enRouteAt: string | null | undefined,
+  arrivedAt: string | null | undefined,
+): number | null {
+  if (!enRouteAt || !arrivedAt) return null
+  const startMs = new Date(enRouteAt).getTime()
+  const endMs = new Date(arrivedAt).getTime()
+  if (Number.isNaN(startMs) || Number.isNaN(endMs)) return null
+  const diffMin = Math.round((endMs - startMs) / 60_000)
+  return diffMin >= 0 ? diffMin : null
+}

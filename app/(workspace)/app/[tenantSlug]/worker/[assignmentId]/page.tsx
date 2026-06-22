@@ -24,6 +24,7 @@ import {
   completedMessage,
   confirmationMessage,
   enRouteMessage,
+  notifyLinks,
   type WhatsAppMessageContext,
 } from "@/modules/notifications/domain/whatsapp-link"
 import { env } from "@/lib/config/env"
@@ -59,7 +60,11 @@ export default async function WorkerAssignmentDetailPage({
     new Date().toISOString(),
   )
   const enRoute = eta
-    ? { etaLabel: `${eta.durationMinutes} min`, arrivalLabel: formatTime(eta.arrivalAt) }
+    ? {
+        etaLabel: `${eta.durationMinutes} min`,
+        arrivalLabel: formatTime(eta.arrivalAt),
+        arrivalAtIso: eta.arrivalAt,
+      }
     : null
 
   // Línea de vida de la solicitud (misma que ve el cliente y el admin), para que
@@ -86,6 +91,9 @@ export default async function WorkerAssignmentDetailPage({
     arrivalText: eta ? formatTime(eta.arrivalAt) : null,
   }
   const customerPhone = assignment.reporterPhone
+  // Enlaces por momento para el aviso CONTEXTUAL (el que aparece en cada paso de
+  // la ejecución). Reutiliza el mismo contexto/mensajes del panel de respaldo.
+  const notify = notifyLinks(waContext, customerPhone)
   const isDone = assignment.executionStatus === "completed"
   const whatsappActions = [
     {
@@ -144,16 +152,26 @@ export default async function WorkerAssignmentDetailPage({
         </p>
       </div>
 
-      {/* Execution actions (the only thing the technician can mutate) */}
+      {/* Execution actions (the only thing the technician can mutate). El aviso al
+          cliente por WhatsApp aparece CONTEXTUAL en cada paso (`notify`): al salir,
+          al llegar y al completar — sin bajar a la línea de vida. */}
       <ExecutionActions
         tenantSlug={tenantSlug}
         assignmentId={assignment.assignmentId}
         status={assignment.executionStatus}
+        notify={notify}
       />
 
-      {/* Avisar al cliente por WhatsApp — canal confiable (sale del WhatsApp del
-          técnico, no del email en sandbox). */}
-      <WhatsAppNotifyPanel phonePresent={!!customerPhone} actions={whatsappActions} />
+      {/* Respaldo: todos los avisos disponibles (plegado), por si el técnico
+          necesita reenviar un mensaje de otro momento. */}
+      <details className="rounded-xl border bg-card">
+        <summary className="cursor-pointer px-5 py-3 text-sm font-medium text-muted-foreground">
+          Otros avisos al cliente por WhatsApp
+        </summary>
+        <div className="border-t">
+          <WhatsAppNotifyPanel phonePresent={!!customerPhone} actions={whatsappActions} />
+        </div>
+      </details>
 
       {/* Línea de vida de la solicitud */}
       {lifecycle ? (
