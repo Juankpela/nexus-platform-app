@@ -15,10 +15,6 @@ export function countMyUnread(tenantId: UUID, userId: UUID) {
   return repo().countUnread(tenantId, userId)
 }
 
-export function markNotificationReadRecord(tenantId: UUID, userId: UUID, id: UUID) {
-  return repo().markRead(tenantId, userId, id)
-}
-
 export function markAllNotificationsReadRecord(tenantId: UUID, userId: UUID) {
   return repo().markAllRead(tenantId, userId)
 }
