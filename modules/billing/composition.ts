@@ -34,6 +34,7 @@ import {
   voidInvoice,
   type VoidInvoiceInput,
 } from "@/modules/billing/application/use-cases/void-invoice"
+import { generateExpressInvoiceFromWorkOrder } from "@/modules/billing/infrastructure/express-invoice-from-work-order"
 import { SupabaseInvoiceRepository } from "@/modules/billing/infrastructure/supabase-invoice-repository"
 import { SupabasePaymentRepository } from "@/modules/billing/infrastructure/supabase-payment-repository"
 import { SupabaseRevenueTimelineRepository } from "@/modules/billing/infrastructure/supabase-revenue-timeline-repository"
@@ -90,6 +91,20 @@ export function generateInvoiceFromQuoteRecord(
     { invoices: invoiceRepo(), audit: audit() },
     input,
   )
+}
+
+/**
+ * Factura exprés desde una Work Order (Opción A). Acción de sistema con admin
+ * (vive en infraestructura), expuesta aquí como seam para que field-execution la
+ * consuma sin importar la infraestructura de billing directamente.
+ */
+export function generateExpressInvoiceFromWorkOrderRecord(input: {
+  tenantId: UUID
+  workOrderId: UUID
+  actorUserId: UUID
+  requestId: UUID
+}) {
+  return generateExpressInvoiceFromWorkOrder(input)
 }
 
 export function updateInvoiceDraftRecord(input: UpdateInvoiceDraftInput) {

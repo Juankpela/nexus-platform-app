@@ -3,9 +3,7 @@
 import { redirect } from "next/navigation"
 
 import { ApplicationError } from "@/lib/errors/application-error"
-import { authenticate } from "@/modules/identity/application/use-cases/authenticate"
-import { endSession } from "@/modules/identity/application/use-cases/end-session"
-import { SupabaseAuthRepository } from "@/modules/identity/infrastructure/supabase-auth-repository"
+import { endUserSession, loginUser } from "@/modules/identity/composition"
 
 export type LoginActionState = {
   error: string | null
@@ -23,7 +21,7 @@ export async function loginAction(
   formData: FormData,
 ): Promise<LoginActionState> {
   try {
-    await authenticate(new SupabaseAuthRepository(), {
+    await loginUser({
       email: formData.get("email"),
       password: formData.get("password"),
     })
@@ -38,6 +36,6 @@ export async function loginAction(
 }
 
 export async function logoutAction() {
-  await endSession(new SupabaseAuthRepository())
+  await endUserSession()
   redirect("/login")
 }

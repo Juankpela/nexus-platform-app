@@ -1,7 +1,6 @@
 "use server"
 
-import { submitPublicReport } from "@/modules/service/composition"
-import { geocodeServiceAddress } from "@/modules/service/infrastructure/google-geocoding"
+import { geocodeServiceAddress, submitPublicReport } from "@/modules/service/composition"
 
 export type PublicReportState =
   | { ok: false; error: string | null }
