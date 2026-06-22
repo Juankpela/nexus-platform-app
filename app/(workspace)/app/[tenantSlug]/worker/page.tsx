@@ -4,6 +4,7 @@ import Link from "next/link"
 
 import { ExecutionActions } from "@/components/worker/execution-actions"
 import { WorkerOperationalHeader } from "@/components/worker/operational-header"
+import { formatTime } from "@/lib/format/datetime"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
 import { SERVICE_PERMISSIONS } from "@/modules/authorization/domain/permission"
 import {
@@ -20,15 +21,6 @@ import { readEnRouteEta } from "@/modules/scheduling/composition"
 import { etaIfCurrent } from "@/modules/service/domain/eta"
 
 export const metadata: Metadata = { title: "Campo" }
-
-/** Hora corta (ej. "11:54 p. m.") para la llegada estimada del ETA. */
-function fmtTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString("es-CO", {
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "America/Bogota",
-  })
-}
 
 const OPEN_STATUSES: ExecutionStatus[] = ["pending", "accepted", "on_site", "working"]
 const ACTIVE_STATUSES: ExecutionStatus[] = ["accepted", "on_site", "working"]
@@ -79,7 +71,7 @@ export default async function WorkerHomePage({
       )
     : null
   const heroEnRoute = heroEta
-    ? { etaLabel: `${heroEta.durationMinutes} min`, arrivalLabel: fmtTime(heroEta.arrivalAt) }
+    ? { etaLabel: `${heroEta.durationMinutes} min`, arrivalLabel: formatTime(heroEta.arrivalAt) }
     : null
 
   return (

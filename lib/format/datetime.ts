@@ -88,3 +88,12 @@ export function formatTime(value: DateInput, opts?: Intl.DateTimeFormatOptions):
   if (!date) return "—"
   return date.toLocaleTimeString(APP_LOCALE, { ...TIME_DEFAULTS, ...opts, timeZone: APP_TIME_ZONE })
 }
+
+/**
+ * Fecha de HOY en la zona de la app como "YYYY-MM-DD". Fuente única para el cálculo
+ * de "qué día es hoy para el tenant" (vencimientos, SLA, facturación), que estaba
+ * copiado como `new Date().toLocaleDateString("en-CA", { timeZone })` en varios sitios.
+ */
+export function todayInAppZone(): string {
+  return new Date().toLocaleDateString("en-CA", { timeZone: APP_TIME_ZONE })
+}

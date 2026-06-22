@@ -49,7 +49,7 @@ import {
   buildCompanyNextAction,
 } from "@/modules/platform/application/company-cockpit"
 import { formatCOP } from "@/lib/format/money"
-import { formatDateNumeric } from "@/lib/format/datetime"
+import { formatDateNumeric, todayInAppZone } from "@/lib/format/datetime"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 
 export const metadata: Metadata = { title: "Cliente" }
@@ -137,7 +137,7 @@ export default async function CompanyDetailPage({
   const workOrders = workOrdersPage?.items ?? []
   const quotes = quotesPage?.items ?? []
   const invoices = invoicesPage?.items ?? []
-  const todayISO = new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" })
+  const todayISO = todayInAppZone()
 
   const financials = buildCompanyFinancials({
     invoiced: revenue?.summary.invoiced ?? 0,

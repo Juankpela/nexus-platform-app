@@ -3,6 +3,7 @@ import "server-only"
 import { ApplicationError } from "@/lib/errors/application-error"
 import { env } from "@/lib/config/env"
 import { emailConfigStatus, sendEmail } from "@/lib/email/send-email"
+import { formatDateTime } from "@/lib/format/datetime"
 import { createAdminSupabaseClient } from "@/lib/supabase/admin"
 import { createServerSupabaseClient } from "@/lib/supabase/server"
 import {
@@ -436,13 +437,10 @@ export async function runAutoDispatchForCase(input: {
       .maybeSingle()
     const recipientUserId = (techRow as { user_id?: string | null } | null)?.user_id ?? null
     if (recipientUserId) {
-      const when = new Date(plan.startsAt).toLocaleString("es-CO", {
-        timeZone: TENANT_TIMEZONE,
+      const when = formatDateTime(plan.startsAt, {
         weekday: "short",
         day: "numeric",
-        month: "short",
-        hour: "2-digit",
-        minute: "2-digit",
+        year: undefined,
       })
       await new SupabaseNotificationRepository(() => admin).createMany(input.tenantId, [
         {
@@ -691,13 +689,11 @@ export async function confirmCustomerOnAcceptance(input: {
   }
 
   const when = startIso
-    ? new Date(startIso).toLocaleString("es-CO", {
-        timeZone: TENANT_TIMEZONE,
+    ? formatDateTime(startIso, {
         weekday: "long",
         day: "numeric",
         month: "long",
-        hour: "2-digit",
-        minute: "2-digit",
+        year: undefined,
       })
     : "por confirmar"
 
@@ -1189,22 +1185,17 @@ export async function listDispatchInbox(tenantId: UUID): Promise<DispatchInbox> 
     })
 
     if (plan.verdict === "PROCEED" && plan.chosen && plan.startsAt && plan.endsAt) {
-      const whenText = new Date(plan.startsAt).toLocaleString("es-CO", {
-        timeZone: TENANT_TIMEZONE,
+      const whenText = formatDateTime(plan.startsAt, {
         weekday: "long",
         day: "numeric",
         month: "long",
-        hour: "2-digit",
-        minute: "2-digit",
+        year: undefined,
       })
       // Etiqueta corta para la tarjeta (formateada en servidor → sin hidratación).
-      const scheduleLabel = new Date(plan.startsAt).toLocaleString("es-CO", {
-        timeZone: TENANT_TIMEZONE,
+      const scheduleLabel = formatDateTime(plan.startsAt, {
         weekday: "short",
         day: "numeric",
-        month: "short",
-        hour: "2-digit",
-        minute: "2-digit",
+        year: undefined,
       })
       // Experiencia REAL del técnico elegido en el tipo de daño del caso. Solo si
       // el reporte trae issue_type_id estructurado (Pilares 2 y 3).

@@ -15,6 +15,7 @@ import { CalendarClock } from "lucide-react"
 import Link from "next/link"
 import { startTransition, useEffect, useOptimistic, useRef, useState } from "react"
 
+import { formatDate } from "@/lib/format/datetime"
 import { cn } from "@/lib/utils"
 import {
   WORK_ORDER_PRIORITY_LABELS,
@@ -55,9 +56,7 @@ function isTerminal(status: WorkOrderStatus) {
 }
 
 function fmtDate(iso: string | null): string | null {
-  return iso
-    ? new Date(iso).toLocaleDateString("es-CO", { day: "2-digit", month: "short", timeZone: "America/Bogota" })
-    : null
+  return iso ? formatDate(iso, { year: undefined }) : null
 }
 
 function CardBody({ wo, dimmed = false }: { wo: WorkOrder; dimmed?: boolean }) {

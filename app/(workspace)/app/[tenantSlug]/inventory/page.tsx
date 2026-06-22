@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/layout/page-header"
 import { EmptyState } from "@/components/layout/empty-state"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
 import { INVENTORY_PERMISSIONS } from "@/modules/authorization/domain/permission"
+import { formatDateTime } from "@/lib/format/datetime"
 import { getInventoryOverviewStats } from "@/modules/inventory/composition"
 import {
   REFERENCE_TYPE_LABELS,
@@ -14,16 +15,6 @@ import {
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 
 export const metadata: Metadata = { title: "Inventario" }
-
-function fmt(iso: string): string {
-  return new Date(iso).toLocaleString("es-CO", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "America/Bogota",
-  })
-}
 
 function Kpi({
   label,
@@ -120,7 +111,7 @@ export default async function InventoryOverviewPage({
                     <td className="px-4 py-2.5 text-muted-foreground">
                       {REFERENCE_TYPE_LABELS[m.referenceType]}
                     </td>
-                    <td className="px-4 py-2.5 text-muted-foreground">{fmt(m.createdAt)}</td>
+                    <td className="px-4 py-2.5 text-muted-foreground">{formatDateTime(m.createdAt, { year: undefined })}</td>
                   </tr>
                 ))}
               </tbody>

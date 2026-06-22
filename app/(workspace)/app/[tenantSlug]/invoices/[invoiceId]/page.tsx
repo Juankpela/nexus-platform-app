@@ -25,7 +25,7 @@ import {
   INVOICE_STATUS_LABELS,
 } from "@/modules/billing/domain/invoice"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
-import { formatDateNumeric } from "@/lib/format/datetime"
+import { formatDateNumeric, todayInAppZone } from "@/lib/format/datetime"
 import { formatCOP } from "@/lib/format/money"
 import { InvoiceDetailActions } from "./_components/invoice-detail-actions"
 import { InvoicePaymentsSection } from "./_components/invoice-payments-section"
@@ -63,7 +63,7 @@ export default async function InvoiceDetailPage({
 
   // Cobro/compartir por WhatsApp (canal real del cliente PYME). wa.me es un
   // hipervínculo — sin APIs ni dependencias. Mensaje según estado de la factura.
-  const todayISO = new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" })
+  const todayISO = todayInAppZone()
   const hasBalance = invoice.balance > 0
   const isOverdue =
     (invoice.status === "issued" || invoice.status === "partially_paid") &&

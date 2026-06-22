@@ -9,6 +9,7 @@ import {
   getQuoteRecord,
   listQuoteLines,
 } from "@/modules/crm/composition"
+import { formatDate } from "@/lib/format/datetime"
 import { QUOTE_STATUS_LABELS } from "@/modules/crm/domain/quote"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 
@@ -89,13 +90,7 @@ export default async function QuotePrintPage({
               </p>
             )}
             <p>
-              Date:{" "}
-              {new Date(quote.createdAt).toLocaleDateString("es-CO", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-                timeZone: "America/Bogota",
-              })}
+              Date: {formatDate(quote.createdAt, { day: "numeric", month: "long" })}
             </p>
           </div>
         </div>
