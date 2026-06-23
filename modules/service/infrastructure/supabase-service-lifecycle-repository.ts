@@ -29,9 +29,15 @@ export type PublicTrackingView = {
   tenantId: string
   tenantName: string
   caseNumber: string
+  /** Número de la orden de trabajo asociada (WO-XXXX), o null si aún no se despacha. */
+  workOrderNumber: string | null
   subject: string
   technicianName: string | null
   scheduledStart: string | null
+  /** Hora estimada de llegada (ISO) para el contador de desplazamiento, o null. */
+  etaArrivalAt: string | null
+  /** Duración estimada del desplazamiento (min) — texto estable del contador. */
+  etaDurationMinutes: number | null
   milestones: LifecycleMilestone[]
 }
 
@@ -41,7 +47,11 @@ async function resolveLifecycleInput(
   tenantId: UUID,
   reportedAt: string,
   woRow: Row,
-): Promise<{ input: ServiceLifecycleInput; technicianName: string | null }> {
+): Promise<{
+  input: ServiceLifecycleInput
+  technicianName: string | null
+  enRouteEta: { arrivalAt: string; durationMinutes: number } | null
+}> {
   const empty: ServiceLifecycleInput = {
     reportedAt,
     coordinatedAt: null,
@@ -57,7 +67,7 @@ async function resolveLifecycleInput(
     invoiceIssuedAt: null,
     paidAt: null,
   }
-  if (!woRow) return { input: empty, technicianName: null }
+  if (!woRow) return { input: empty, technicianName: null, enRouteEta: null }
 
   const workOrderId = woRow.id as string
   const cancelled = (woRow.status as string | null) === "cancelled"
@@ -97,17 +107,25 @@ async function resolveLifecycleInput(
   }
 
   // Aviso "en camino" (acción lateral; no cambia estado, vive en auditoría).
+  // De ese mismo evento sacamos el ETA guardado (arrival/duración) para el
+  // contador de desplazamiento — el mismo dato que ve el admin.
   let enRouteAt: string | null = null
+  let enRouteEta: { arrivalAt: string; durationMinutes: number } | null = null
   if (asgRow?.id) {
     const { data: ev } = await admin
       .from("audit_events")
-      .select("occurred_at")
+      .select("occurred_at, metadata")
       .eq("subject_id", asgRow.id as string)
       .eq("event_type", ENROUTE_SENT_EVENT)
       .order("occurred_at", { ascending: false })
       .limit(1)
       .maybeSingle()
-    enRouteAt = (ev as { occurred_at?: string } | null)?.occurred_at ?? null
+    const evRow = ev as { occurred_at?: string; metadata?: { eta?: { arrivalAt?: string; durationMinutes?: number } } } | null
+    enRouteAt = evRow?.occurred_at ?? null
+    const eta = evRow?.metadata?.eta
+    if (eta?.arrivalAt && typeof eta.durationMinutes === "number") {
+      enRouteEta = { arrivalAt: eta.arrivalAt, durationMinutes: eta.durationMinutes }
+    }
   }
 
   // Factura derivada de la WO.
@@ -167,6 +185,7 @@ async function resolveLifecycleInput(
 
   return {
     technicianName,
+    enRouteEta,
     input: {
       reportedAt,
       coordinatedAt:
@@ -204,19 +223,25 @@ export async function getPublicTracking(
     const tenantId = caseRow.tenant_id as string
     const { data: wo } = await admin
       .from("work_orders")
-      .select("id, status, scheduled_start, created_at, actual_end, updated_at")
+      .select("id, work_order_number, status, scheduled_start, created_at, actual_end, updated_at")
       .eq("tenant_id", tenantId)
       .eq("case_id", caseRow.id as string)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle()
 
-    const { input, technicianName } = await resolveLifecycleInput(
+    const { input, technicianName, enRouteEta } = await resolveLifecycleInput(
       admin,
       tenantId,
       caseRow.created_at as string,
       wo as Row,
     )
+
+    // Contador de desplazamiento: vivo solo mientras el técnico va en camino y aún
+    // no llega/cierra (mismo criterio que la tarjeta de operación del admin). El
+    // reloj del cliente (EtaCountdown) muestra "Llegando" si la hora ya pasó.
+    const arrived = !!input.arrivedAt || !!input.completedAt
+    const showEta = !!enRouteEta && !!input.enRouteAt && !arrived
 
     const { data: tenant } = await admin
       .from("tenants")
@@ -228,9 +253,12 @@ export async function getPublicTracking(
       tenantId,
       tenantName: (tenant as { name?: string } | null)?.name ?? "Nexus",
       caseNumber: (caseRow.case_number as string).replace(/^CASE/i, "REP"),
+      workOrderNumber: (wo as Row)?.work_order_number as string | null ?? null,
       subject: (caseRow.subject as string | null) ?? "Tu solicitud",
       technicianName,
       scheduledStart: input.scheduledStart,
+      etaArrivalAt: showEta ? enRouteEta!.arrivalAt : null,
+      etaDurationMinutes: showEta ? enRouteEta!.durationMinutes : null,
       milestones: buildServiceLifecycle(input),
     }
   } catch {

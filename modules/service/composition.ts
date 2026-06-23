@@ -458,3 +458,16 @@ export {
   getWorkOrderLifecycle,
   type PublicTrackingView,
 } from "@/modules/service/infrastructure/supabase-service-lifecycle-repository"
+
+// ── Interacciones del cliente desde el seguimiento (comentario / reagendar / cancelar) ──
+export {
+  insertTrackingMessageByToken,
+  listTrackingMessagesByWorkOrder,
+  resolveTrackingMessage,
+} from "@/modules/service/infrastructure/supabase-tracking-message-repository"
+export {
+  TRACKING_MESSAGE_LABELS,
+  isOpenRequest,
+  type CustomerTrackingMessage,
+  type TrackingMessageKind,
+} from "@/modules/service/domain/tracking-message"

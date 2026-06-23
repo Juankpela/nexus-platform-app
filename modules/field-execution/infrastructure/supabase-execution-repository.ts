@@ -31,7 +31,7 @@ type WorkerAssignmentRow = {
     work_order_number: string
     subject: string
     priority: string | null
-    companies: { name: string } | null
+    companies: { name: string; phone: string | null } | null
     assets: { name: string; asset_number: string } | null
     cases: {
       sla_due_at: string | null
@@ -53,7 +53,7 @@ type WorkerAssignmentRow = {
 
 const ASSIGNMENT_SELECT =
   "id, scheduled_start, scheduled_end, work_order_id, " +
-  "work_orders(work_order_number, subject, priority, companies(name), assets(name, asset_number), " +
+  "work_orders(work_order_number, subject, priority, companies(name, phone), assets(name, asset_number), " +
   "cases(sla_due_at, incident_type, reporter_phone, tracking_token, service_issue_types(name))), " +
   "work_order_executions(id, status, resolution_notes, unable_reason)"
 
@@ -89,6 +89,7 @@ function toWorkerAssignment(row: WorkerAssignmentRow): WorkerAssignment {
     workOrderNumber: wo?.work_order_number ?? null,
     workOrderSubject: wo?.subject ?? null,
     companyName: wo?.companies?.name ?? null,
+    companyPhone: wo?.companies?.phone ?? null,
     assetName: wo?.assets ? `${wo.assets.asset_number} · ${wo.assets.name}` : null,
     executionId: exec?.id ?? null,
     executionStatus: exec?.status ?? "pending",

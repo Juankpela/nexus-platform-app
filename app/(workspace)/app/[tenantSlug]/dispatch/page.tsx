@@ -16,6 +16,7 @@ import { AssignmentFormDialog } from "@/components/scheduling/assignment-form-di
 import { KpiCard } from "@/components/dashboard/kpi-card"
 import { RefreshBoardButton } from "@/components/dispatch/refresh-board-button"
 import { EmptyState } from "@/components/layout/empty-state"
+import { FieldMonitorLive } from "@/components/field-monitor/field-monitor-live"
 import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -187,6 +188,11 @@ export default async function DispatchPage({
               <Input type="date" name="date" defaultValue={date} className="w-40" />
               <Button type="submit" variant="outline" size="sm">Ver</Button>
             </form>
+            <FieldMonitorLive
+              tenantId={context.tenantId}
+              generatedAt={new Date().toISOString()}
+              showClock={false}
+            />
             <RefreshBoardButton tenantSlug={tenantSlug} />
           </div>
         </div>

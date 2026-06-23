@@ -4,6 +4,8 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 
 import { ActivityTimeline } from "@/components/crm/activity-timeline"
+import { CustomerMessages } from "@/components/service/customer-messages"
+import { FieldMonitorLive } from "@/components/field-monitor/field-monitor-live"
 import { LifecycleTimeline } from "@/components/service/lifecycle-timeline"
 import { PageHeader } from "@/components/layout/page-header"
 import { WorkOrderFormDialog } from "@/components/service/work-order-form-dialog"
@@ -21,6 +23,7 @@ import {
 } from "@/modules/authorization/domain/permission"
 import { GenerateInvoiceButton } from "./_components/generate-invoice-button"
 import {
+  getCompanyRecord,
   listCompanyOptions,
   listWorkOrderActivityTimeline,
 } from "@/modules/crm/composition"
@@ -39,6 +42,7 @@ import {
   listTenantSkills,
   listTenantTechnicians,
   listTenantZones,
+  listTrackingMessagesByWorkOrder,
 } from "@/modules/service/composition"
 import { WhatsAppNotifyPanel } from "@/components/service/whatsapp-notify-panel"
 import {
@@ -46,6 +50,7 @@ import {
   completedMessage,
   confirmationMessage,
   enRouteMessage,
+  pickWhatsAppPhone,
   type WhatsAppMessageContext,
 } from "@/modules/notifications/domain/whatsapp-link"
 import { env } from "@/lib/config/env"
@@ -177,6 +182,20 @@ export default async function WorkOrderDetailPage({
     ? await getCaseRecord(context.tenantId, workOrder.caseId)
     : null
 
+  // Cliente (empresa) de la WO: su teléfono es el respaldo del reportante cuando
+  // el número del caso no es usable, para que el aviso por WhatsApp no caiga en
+  // un número incompleto/placeholder.
+  const company = workOrder.companyId
+    ? await getCompanyRecord(context.tenantId, workOrder.companyId)
+    : null
+
+  // Mensajes del cliente desde el seguimiento (comentarios + solicitudes de
+  // reagendar/cancelar). El coordinador los atiende desde aquí.
+  const customerMessages = await listTrackingMessagesByWorkOrder(
+    context.tenantId,
+    workOrder.id,
+  )
+
   // ADR-031: technician + assignment derive from the scheduling aggregate.
   const technicianOptions = techPage.items.map((t) => ({
     id: t.id,
@@ -199,8 +218,9 @@ export default async function WorkOrderDetailPage({
   }))
 
   // Aviso al cliente por WhatsApp (Nivel 1): mensajes pre-escritos al teléfono del
-  // reportante. La acción primaria depende del estado de la WO.
-  const customerPhone = linkedCase?.reporterPhone ?? null
+  // reportante, con respaldo al teléfono del cliente. La acción primaria depende
+  // del estado de la WO.
+  const customerPhone = pickWhatsAppPhone([linkedCase?.reporterPhone, company?.phone])
   const trackingUrl = linkedCase?.trackingToken
     ? `${env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? ""}/seguimiento/${linkedCase.trackingToken}`
     : null
@@ -347,11 +367,23 @@ export default async function WorkOrderDetailPage({
           />
         ) : null}
 
+        {/* Mensajes del cliente desde el seguimiento (con acción "Marcar atendida"). */}
+        <CustomerMessages messages={customerMessages} tenantSlug={tenantSlug} />
+
         <div className="rounded-xl border bg-card p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <span className="text-sm font-semibold">
-              {WORK_ORDER_STATUS_LABELS[workOrder.status]}
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-semibold">
+                {WORK_ORDER_STATUS_LABELS[workOrder.status]}
+              </span>
+              {/* En vivo: refresca el estado cuando el técnico avanza desde campo
+                  (acepta / va en camino / llega / cierra). Reusa el canal del Monitor. */}
+              <FieldMonitorLive
+                tenantId={context.tenantId}
+                generatedAt={new Date().toISOString()}
+                showClock={false}
+              />
+            </div>
             {canWrite && !isCompleted ? (
               <div className="flex flex-wrap items-center gap-3">
                 <WorkOrderStatusControl

@@ -5,6 +5,7 @@ import { notFound } from "next/navigation"
 
 import { ExecutionActions } from "@/components/worker/execution-actions"
 import { WorkerOperationalHeader } from "@/components/worker/operational-header"
+import { CustomerMessages } from "@/components/service/customer-messages"
 import { LifecycleTimeline } from "@/components/service/lifecycle-timeline"
 import { WhatsAppNotifyPanel } from "@/components/service/whatsapp-notify-panel"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
@@ -13,7 +14,11 @@ import {
   getMyAssignment,
   resolveCurrentTechnician,
 } from "@/modules/field-execution/composition"
-import { getTechnicianRecord, getWorkOrderLifecycle } from "@/modules/service/composition"
+import {
+  getTechnicianRecord,
+  getWorkOrderLifecycle,
+  listTrackingMessagesByWorkOrder,
+} from "@/modules/service/composition"
 import { readEnRouteEta } from "@/modules/scheduling/composition"
 import { etaIfCurrent } from "@/modules/service/domain/eta"
 import { EXECUTION_STATUS_LABELS } from "@/modules/field-execution/domain/execution"
@@ -25,6 +30,7 @@ import {
   confirmationMessage,
   enRouteMessage,
   notifyLinks,
+  pickWhatsAppPhone,
   type WhatsAppMessageContext,
 } from "@/modules/notifications/domain/whatsapp-link"
 import { env } from "@/lib/config/env"
@@ -71,6 +77,13 @@ export default async function WorkerAssignmentDetailPage({
   // el técnico tenga el contexto completo de la operación en su móvil.
   const lifecycle = await getWorkOrderLifecycle(context.tenantId, assignment.workOrderId)
 
+  // Mensajes que el cliente dejó desde el seguimiento (comentarios + solicitudes):
+  // el técnico los ve para llegar con contexto.
+  const customerMessages = await listTrackingMessagesByWorkOrder(
+    context.tenantId,
+    assignment.workOrderId,
+  )
+
   // Aviso al cliente por WhatsApp (Nivel 1, R2): el técnico envía desde su propio
   // WhatsApp el mensaje pre-escrito → el cliente SÍ lo recibe (no depende del
   // email en sandbox). Reutiliza WhatsAppNotifyPanel + helpers wa.me (WA2/WA3).
@@ -90,7 +103,9 @@ export default async function WorkerAssignmentDetailPage({
     etaMinutes: eta?.durationMinutes ?? null,
     arrivalText: eta ? formatTime(eta.arrivalAt) : null,
   }
-  const customerPhone = assignment.reporterPhone
+  // Avisar al cliente: el reportante del caso primero; si su número no es usable
+  // (vacío o incompleto), se cae al teléfono del cliente (empresa) de la WO.
+  const customerPhone = pickWhatsAppPhone([assignment.reporterPhone, assignment.companyPhone])
   // Enlaces por momento para el aviso CONTEXTUAL (el que aparece en cada paso de
   // la ejecución). Reutiliza el mismo contexto/mensajes del panel de respaldo.
   const notify = notifyLinks(waContext, customerPhone)
@@ -172,6 +187,9 @@ export default async function WorkerAssignmentDetailPage({
           <WhatsAppNotifyPanel phonePresent={!!customerPhone} actions={whatsappActions} />
         </div>
       </details>
+
+      {/* Mensajes del cliente (comentarios + solicitudes desde el seguimiento). */}
+      <CustomerMessages messages={customerMessages} title="Mensajes del cliente" />
 
       {/* Línea de vida de la solicitud */}
       {lifecycle ? (

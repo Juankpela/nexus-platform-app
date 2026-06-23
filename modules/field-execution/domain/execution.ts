@@ -80,6 +80,8 @@ export type WorkerAssignment = {
   workOrderNumber: string | null
   workOrderSubject: string | null
   companyName: string | null
+  /** Teléfono del cliente (empresa) — respaldo del reportante para avisar por WhatsApp. */
+  companyPhone: string | null
   assetName: string | null
   executionId: UUID | null
   executionStatus: ExecutionStatus

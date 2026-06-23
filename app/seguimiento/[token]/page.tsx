@@ -1,9 +1,11 @@
-import { CalendarClock, Clock3, TriangleAlert, UserCheck } from "lucide-react"
+import { CalendarClock, Clock3, Navigation, TriangleAlert, UserCheck } from "lucide-react"
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
+import { EtaCountdown } from "@/components/service/eta-countdown"
 import { FieldMonitorLive } from "@/components/field-monitor/field-monitor-live"
 import { LifecycleTimeline } from "@/components/service/lifecycle-timeline"
+import { TrackingCustomerActions } from "@/components/service/tracking-customer-actions"
 import { getPublicTracking } from "@/modules/service/composition"
 import { formatWhen, type LifecycleMilestone } from "@/modules/service/domain/service-lifecycle"
 
@@ -81,9 +83,46 @@ export default async function TrackingPage({
             {view.subject}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Folio <span className="font-medium tabular-nums text-foreground">{view.caseNumber}</span>
+            {view.workOrderNumber ? (
+              <>
+                Orden{" "}
+                <span className="font-medium tabular-nums text-foreground">
+                  {view.workOrderNumber}
+                </span>
+                <span className="opacity-60"> · Folio {view.caseNumber}</span>
+              </>
+            ) : (
+              <>
+                Folio{" "}
+                <span className="font-medium tabular-nums text-foreground">
+                  {view.caseNumber}
+                </span>
+              </>
+            )}
           </p>
         </div>
+
+        {/* Contador de desplazamiento — el mismo dato que ve el admin: cuenta viva
+            hacia la hora estimada de llegada mientras el técnico va en camino. */}
+        {view.etaArrivalAt ? (
+          <div className="mt-5 flex items-center gap-3 rounded-xl border border-blue-500/25 bg-blue-500/[0.07] p-3.5">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-blue-500/15 text-blue-600 dark:text-blue-400">
+              <Navigation className="size-5" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Tu técnico va en camino
+              </p>
+              <p className="text-sm font-semibold text-foreground">
+                Llega en{" "}
+                <EtaCountdown
+                  arrivalAt={view.etaArrivalAt}
+                  fallback={view.etaDurationMinutes ? `~${view.etaDurationMinutes} min` : "—"}
+                />
+              </p>
+            </div>
+          </div>
+        ) : null}
 
         {/* Lo que Nexus coordinó (técnico + horario) */}
         {view.technicianName || view.scheduledStart ? (
@@ -148,6 +187,9 @@ export default async function TrackingPage({
           </div>
           <LifecycleTimeline milestones={view.milestones} />
         </div>
+
+        {/* Acciones del cliente: comentario al técnico + solicitar reagendar/cancelar. */}
+        <TrackingCustomerActions token={token} />
       </div>
 
       <p className="mt-4 text-center text-xs text-muted-foreground">

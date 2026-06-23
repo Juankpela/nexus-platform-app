@@ -419,6 +419,70 @@ export type Database = {
           },
         ]
       }
+      case_tracking_messages: {
+        Row: {
+          body: string | null
+          case_id: string
+          created_at: string
+          id: string
+          kind: string
+          preferred_at: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          tenant_id: string
+          work_order_id: string | null
+        }
+        Insert: {
+          body?: string | null
+          case_id: string
+          created_at?: string
+          id?: string
+          kind: string
+          preferred_at?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          tenant_id: string
+          work_order_id?: string | null
+        }
+        Update: {
+          body?: string | null
+          case_id?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          preferred_at?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          tenant_id?: string
+          work_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_tracking_messages_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_tracking_messages_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_tracking_messages_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cases: {
         Row: {
           asset_id: string | null

@@ -33,6 +33,23 @@ export function normalizePhone(
 }
 
 /**
+ * Elige el primer teléfono UTILIZABLE de una lista de candidatos en orden de
+ * preferencia (p.ej. [reportante del caso, contacto del cliente]). Devuelve el
+ * valor crudo del primero que normaliza, o null si ninguno sirve. Esto evita que
+ * el aviso al cliente caiga en un número incompleto/placeholder cuando hay un
+ * teléfono válido del cliente disponible como respaldo.
+ */
+export function pickWhatsAppPhone(
+  candidates: Array<string | null | undefined>,
+  countryCode: string = DEFAULT_COUNTRY_CODE,
+): string | null {
+  for (const candidate of candidates) {
+    if (normalizePhone(candidate, countryCode)) return candidate ?? null
+  }
+  return null
+}
+
+/**
  * Arma el enlace wa.me con el mensaje pre-escrito. Devuelve null si el teléfono
  * no es utilizable (así la UI puede mostrar el botón deshabilitado con motivo).
  */
