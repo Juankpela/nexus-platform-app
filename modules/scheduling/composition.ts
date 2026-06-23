@@ -60,6 +60,7 @@ import type {
 } from "@/modules/scheduling/domain/work-order-assignment"
 import { SupabaseTechnicianRepository } from "@/modules/service/infrastructure/supabase-technician-repository"
 import { SupabaseWorkOrderRepository } from "@/modules/service/infrastructure/supabase-work-order-repository"
+import { hasActiveWorkOrder } from "@/modules/service/domain/work-order"
 import {
   createWorkOrderRecord,
   getCaseRecord,
@@ -355,12 +356,21 @@ export async function runAutoDispatchForCase(input: {
    */
   force?: boolean
 }): Promise<AutoDispatchResult> {
-  const [serviceCase, skills] = await Promise.all([
+  const [serviceCase, skills, existingWorkOrders] = await Promise.all([
     getCaseRecord(input.tenantId, input.caseId),
     listTenantSkills(input.tenantId),
+    listWorkOrdersForCase(input.tenantId, input.caseId),
   ])
   if (!serviceCase) {
     throw new ApplicationError("Caso no encontrado.", "CASE_NOT_FOUND")
+  }
+  // Un caso ya asignado (con WO no cancelada) no se re-despacha: se gestiona
+  // desde su orden de trabajo. Cortamos antes de correr el motor.
+  if (hasActiveWorkOrder(existingWorkOrders)) {
+    throw new ApplicationError(
+      "Este caso ya tiene una orden de trabajo activa.",
+      "CASE_ALREADY_HAS_WORK_ORDER",
+    )
   }
 
   const plan = await planAutoDispatch(
@@ -1170,9 +1180,10 @@ export async function listDispatchInbox(tenantId: UUID): Promise<DispatchInbox> 
   // Cache de historial por tipo de daño (una consulta por issue type, no por caso).
   const outcomesByIssueType = new Map<UUID, Map<UUID, TechnicianIssueTypeOutcome>>()
   for (const c of webCases) {
-    // Excluir casos que YA tienen una WO (no re-despachar).
+    // Excluir casos que YA tienen una WO activa (no re-despachar). Si todas sus
+    // WO están canceladas, el caso vuelve a ser candidato.
     const existing = await listWorkOrdersForCase(tenantId, c.id)
-    if (existing.length > 0) continue
+    if (hasActiveWorkOrder(existing)) continue
 
     const plan = await planAutoDispatch(deps, {
       tenantId,

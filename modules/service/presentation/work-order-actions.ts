@@ -121,6 +121,12 @@ function describeError(error: unknown): string {
   ) {
     return "Solo las órdenes completadas pueden aprobarse para facturación."
   }
+  if (
+    error instanceof ApplicationError &&
+    error.code === "CASE_ALREADY_HAS_WORK_ORDER"
+  ) {
+    return "Este caso ya tiene una orden de trabajo activa."
+  }
   if (error instanceof ApplicationError && error.code === "QUOTE_NOT_ACCEPTED") {
     return "Solo las cotizaciones aceptadas pueden generar una orden de trabajo."
   }

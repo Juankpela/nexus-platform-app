@@ -50,10 +50,14 @@ export async function autoDispatchCaseAction(
     revalidatePath(`/app/${tenantSlug}/work-orders`)
     return { error: null, result }
   } catch (error) {
-    const message =
-      error instanceof ApplicationError && error.code === "FORBIDDEN"
-        ? "No tienes permiso para despachar."
-        : "No se pudo ejecutar el despacho autónomo."
+    let message = "No se pudo ejecutar el despacho autónomo."
+    if (error instanceof ApplicationError) {
+      if (error.code === "FORBIDDEN") {
+        message = "No tienes permiso para despachar."
+      } else if (error.code === "CASE_ALREADY_HAS_WORK_ORDER") {
+        message = "Este caso ya tiene una orden de trabajo activa."
+      }
+    }
     return { error: message, result: null }
   }
 }

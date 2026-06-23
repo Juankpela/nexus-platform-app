@@ -110,6 +110,18 @@ export function isWorkOrderInvoiceable(wo: {
   return wo.billable && wo.billingApprovedAt !== null && wo.status === "completed"
 }
 
+/**
+ * Un caso queda "asignado" cuando ya tiene al menos una orden de trabajo que no
+ * está cancelada. Mientras eso sea cierto, el caso no debe permitir crear ni
+ * despachar nuevas WO: la operación se gestiona desde la WO. Si todas las WO del
+ * caso están canceladas, el caso vuelve a estar disponible para despacho.
+ */
+export function hasActiveWorkOrder(
+  workOrders: { status: WorkOrderStatus }[],
+): boolean {
+  return workOrders.some((wo) => wo.status !== "cancelled")
+}
+
 /** Fields a user may set when creating/editing a work order (status/technician managed separately). */
 export type WorkOrderInput = {
   subject: string

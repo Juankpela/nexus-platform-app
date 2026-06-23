@@ -37,7 +37,10 @@ import {
   listWorkOrdersForCase,
 } from "@/modules/service/composition"
 import type { AssetOption } from "@/modules/service/domain/asset"
-import { WORK_ORDER_STATUS_LABELS } from "@/modules/service/domain/work-order"
+import {
+  hasActiveWorkOrder,
+  WORK_ORDER_STATUS_LABELS,
+} from "@/modules/service/domain/work-order"
 import {
   CASE_ORIGIN_LABELS,
   CASE_PRIORITY_LABELS,
@@ -167,6 +170,14 @@ export default async function CaseDetailPage({
       : Promise.resolve([]),
   ])
 
+  // El caso "pasa a WO" cuando tiene una orden de trabajo no cancelada: ahí la
+  // operación se gestiona desde la WO, así que el caso ya no ofrece crear ni
+  // despachar (evita duplicados). Si todas sus WO están canceladas, se reabre.
+  const caseAssigned = hasActiveWorkOrder(relatedWorkOrders)
+  const activeWorkOrder = relatedWorkOrders.find(
+    (wo) => wo.status !== "cancelled",
+  )
+
   const ownerOptions = members.map((m) => ({
     id: m.userId,
     label: m.fullName ?? m.email ?? m.userId,
@@ -281,7 +292,7 @@ export default async function CaseDetailPage({
                   ({relatedWorkOrders.length})
                 </span>
               </h2>
-              {canWriteWorkOrders ? (
+              {canWriteWorkOrders && !caseAssigned ? (
                 <WorkOrderFormDialog
                   tenantSlug={tenantSlug}
                   companyOptions={companyOptions}
@@ -306,7 +317,25 @@ export default async function CaseDetailPage({
                 />
               ) : null}
             </div>
-            {canAutoDispatch ? (
+            {caseAssigned && activeWorkOrder ? (
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-muted/30 px-4 py-3">
+                <div className="text-sm">
+                  <p className="font-medium text-foreground">
+                    Este caso ya está asignado
+                  </p>
+                  <p className="text-muted-foreground">
+                    Gestiónalo desde su orden de trabajo.
+                  </p>
+                </div>
+                <Link
+                  href={`/app/${tenantSlug}/work-orders/${activeWorkOrder.id}`}
+                  className="text-sm font-medium text-primary hover:underline"
+                >
+                  {activeWorkOrder.workOrderNumber} ·{" "}
+                  {WORK_ORDER_STATUS_LABELS[activeWorkOrder.status]}
+                </Link>
+              </div>
+            ) : canAutoDispatch ? (
               <div className="mb-4">
                 <AutoDispatchButton tenantSlug={tenantSlug} caseId={caseId} />
               </div>
