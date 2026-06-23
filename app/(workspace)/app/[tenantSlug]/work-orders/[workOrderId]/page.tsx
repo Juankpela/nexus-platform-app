@@ -22,7 +22,6 @@ import {
 import { GenerateInvoiceButton } from "./_components/generate-invoice-button"
 import {
   listCompanyOptions,
-  listSubjectAuditEvents,
   listWorkOrderActivityTimeline,
 } from "@/modules/crm/composition"
 import {
@@ -130,10 +129,6 @@ export default async function WorkOrderDetailPage({
     context.effectivePermissions,
     BILLING_PERMISSIONS.invoicesWrite,
   )
-  const canReadAudit = hasPermission(
-    context.effectivePermissions,
-    "tenant.audit.read",
-  )
   const canReadActivities = hasPermission(
     context.effectivePermissions,
     CRM_PERMISSIONS.activitiesRead,
@@ -146,7 +141,7 @@ export default async function WorkOrderDetailPage({
   const filters = parseActivityFilters(sp)
   const returnPath = `/app/${tenantSlug}/work-orders/${workOrderId}`
 
-  const [techPage, companyOptions, assetOptions, caseResult, activities, auditEvents, skillCatalog, zoneCatalog, activeAssignmentMap, lifecycle] =
+  const [techPage, companyOptions, assetOptions, caseResult, activities, skillCatalog, zoneCatalog, activeAssignmentMap, lifecycle] =
     await Promise.all([
       listTenantTechnicians(
         context.tenantId,
@@ -169,9 +164,6 @@ export default async function WorkOrderDetailPage({
         : Promise.resolve({ items: [], total: 0, page: 1, pageSize: 0 }),
       canReadActivities
         ? listWorkOrderActivityTimeline(context.tenantId, workOrderId, filters)
-        : Promise.resolve([]),
-      canReadAudit
-        ? listSubjectAuditEvents(context.tenantId, workOrderId, 20)
         : Promise.resolve([]),
       listTenantSkills(context.tenantId),
       listTenantZones(context.tenantId),
@@ -222,23 +214,34 @@ export default async function WorkOrderDetailPage({
     trackingUrl,
   }
   const isCompleted = workOrder.status === "completed"
-  const whatsappActions = [
-    {
-      label: "Confirmar visita",
-      url: buildWhatsAppUrl(customerPhone, confirmationMessage(waContext)),
-      primary: false,
-    },
-    {
-      label: "Voy en camino",
-      url: buildWhatsAppUrl(customerPhone, enRouteMessage(waContext)),
-      primary: !isCompleted,
-    },
-    {
-      label: "Trabajo completado",
-      url: buildWhatsAppUrl(customerPhone, completedMessage(waContext)),
-      primary: isCompleted,
-    },
-  ]
+  // Una WO completada es terminal: el único aviso que tiene sentido es informar al
+  // cliente que el trabajo quedó listo. Los demás avisos (confirmar visita / voy en
+  // camino) ya no aplican.
+  const whatsappActions = isCompleted
+    ? [
+        {
+          label: "Trabajo completado",
+          url: buildWhatsAppUrl(customerPhone, completedMessage(waContext)),
+          primary: true,
+        },
+      ]
+    : [
+        {
+          label: "Confirmar visita",
+          url: buildWhatsAppUrl(customerPhone, confirmationMessage(waContext)),
+          primary: false,
+        },
+        {
+          label: "Voy en camino",
+          url: buildWhatsAppUrl(customerPhone, enRouteMessage(waContext)),
+          primary: true,
+        },
+        {
+          label: "Trabajo completado",
+          url: buildWhatsAppUrl(customerPhone, completedMessage(waContext)),
+          primary: false,
+        },
+      ]
 
   return (
     <>
@@ -256,7 +259,7 @@ export default async function WorkOrderDetailPage({
             Órdenes de trabajo
           </Link>
           <div className="flex items-center gap-2">
-            {canWrite ? (
+            {canWrite && !isCompleted ? (
               <WorkOrderFormDialog
                 tenantSlug={tenantSlug}
                 companyOptions={companyOptions}
@@ -349,7 +352,7 @@ export default async function WorkOrderDetailPage({
             <span className="text-sm font-semibold">
               {WORK_ORDER_STATUS_LABELS[workOrder.status]}
             </span>
-            {canWrite ? (
+            {canWrite && !isCompleted ? (
               <div className="flex flex-wrap items-center gap-3">
                 <WorkOrderStatusControl
                   tenantSlug={tenantSlug}
@@ -423,14 +426,17 @@ export default async function WorkOrderDetailPage({
           ) : null}
         </div>
 
-        {/* Eligibility suggestion (PR4) — read-only, never assigns */}
-        <WorkOrderEligibilityPanel
-          tenantSlug={tenantSlug}
-          workOrderId={workOrder.id}
-          hasWindow={Boolean(workOrder.scheduledStart && workOrder.scheduledEnd)}
-          skills={skillCatalog}
-          zones={zoneCatalog}
-        />
+        {/* Eligibility suggestion (PR4) — read-only, never assigns. Sin sentido en
+            una WO completada: ya no se valida ni se reasigna. */}
+        {!isCompleted ? (
+          <WorkOrderEligibilityPanel
+            tenantSlug={tenantSlug}
+            workOrderId={workOrder.id}
+            hasWindow={Boolean(workOrder.scheduledStart && workOrder.scheduledEnd)}
+            skills={skillCatalog}
+            zones={zoneCatalog}
+          />
+        ) : null}
 
         {canWrite || canInvoice ? (
           <WorkOrderBillingControls
@@ -461,32 +467,6 @@ export default async function WorkOrderDetailPage({
             <h2 className="text-sm font-semibold">Línea de vida de la solicitud</h2>
             <div className="rounded-xl border bg-card p-5">
               <LifecycleTimeline milestones={lifecycle} />
-            </div>
-          </div>
-        ) : null}
-
-        {canReadAudit && auditEvents.length > 0 ? (
-          <div className="space-y-3">
-            <h2 className="text-sm font-semibold">Historial de auditoría</h2>
-            <div className="overflow-hidden rounded-xl border bg-card">
-              <table className="w-full text-sm">
-                <thead className="border-b bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
-                  <tr>
-                    <th className="px-4 py-3 font-medium">Evento</th>
-                    <th className="px-4 py-3 font-medium">Cuándo</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {auditEvents.map((ev) => (
-                    <tr key={ev.id} className="align-top">
-                      <td className="px-4 py-3 font-medium">{ev.action}</td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {new Date(ev.occurredAt).toLocaleString("es-CO", { timeZone: "America/Bogota" })}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
             </div>
           </div>
         ) : null}

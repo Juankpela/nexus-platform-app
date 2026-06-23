@@ -16,6 +16,7 @@ import {
   setWorkOrderRecordBillable,
   updateWorkOrderRecord,
 } from "@/modules/service/composition"
+import { ensureWorkOrderResponsibleRecord } from "@/modules/scheduling/composition"
 import {
   WORK_ORDER_PRIORITIES,
   WORK_ORDER_STATUSES,
@@ -127,6 +128,12 @@ function describeError(error: unknown): string {
   ) {
     return "Este caso ya tiene una orden de trabajo activa."
   }
+  if (
+    error instanceof ApplicationError &&
+    error.code === "WORK_ORDER_TERMINAL"
+  ) {
+    return "No se puede editar una orden completada o cancelada."
+  }
   if (error instanceof ApplicationError && error.code === "QUOTE_NOT_ACCEPTED") {
     return "Solo las cotizaciones aceptadas pueden generar una orden de trabajo."
   }
@@ -225,6 +232,17 @@ export async function setWorkOrderStatusAction(
       tenantSlug,
       SERVICE_PERMISSIONS.workOrdersWrite,
     )
+    // Una WO no puede quedar completada sin responsable: si se cierra sin técnico
+    // asignado (cierre manual del admin), se registra al admin como responsable
+    // ANTES de completar (mientras la WO aún no es terminal).
+    if (status.data === "completed") {
+      await ensureWorkOrderResponsibleRecord({
+        actorId: context.userId,
+        tenantId: context.tenantId,
+        requestId: context.requestId,
+        workOrderId: id.data,
+      })
+    }
     await changeWorkOrderRecordStatus({
       actorId: context.userId,
       tenantId: context.tenantId,

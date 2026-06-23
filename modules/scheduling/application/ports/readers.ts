@@ -1,4 +1,5 @@
 import type { TechnicianStatus } from "@/modules/service/domain/technician"
+import type { WorkOrderStatus } from "@/modules/service/domain/work-order"
 import type { UUID } from "@/types/shared"
 
 /** Minimal technician view Scheduling needs to validate an assignment. */
@@ -15,6 +16,7 @@ export interface TechnicianReader {
 /** Minimal work order view Scheduling needs to validate an assignment. */
 export type WorkOrderView = {
   id: UUID
+  status: WorkOrderStatus
 }
 
 export interface WorkOrderReader {

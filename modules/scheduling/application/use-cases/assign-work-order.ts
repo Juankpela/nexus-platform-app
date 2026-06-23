@@ -10,6 +10,7 @@ import {
   type AssignmentInput,
   type WorkOrderAssignment,
 } from "@/modules/scheduling/domain/work-order-assignment"
+import { isWorkOrderTerminal } from "@/modules/service/domain/work-order"
 import type { UUID } from "@/types/shared"
 
 export type AssignWorkOrderDeps = {
@@ -36,6 +37,14 @@ export async function assignWorkOrder(
   const workOrder = await workOrders.getById(tenantId, data.workOrderId)
   if (!workOrder) {
     throw new ApplicationError("Work order not found.", "WORK_ORDER_NOT_FOUND")
+  }
+
+  // Una WO terminal (completada/cancelada) no admite asignación de técnico.
+  if (isWorkOrderTerminal(workOrder.status)) {
+    throw new ApplicationError(
+      "No se puede asignar técnico a una orden completada o cancelada.",
+      "WORK_ORDER_TERMINAL",
+    )
   }
 
   // Rule 2 + Rule 3 — technician must exist within the tenant.

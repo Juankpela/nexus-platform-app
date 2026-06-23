@@ -111,6 +111,15 @@ export function isWorkOrderInvoiceable(wo: {
 }
 
 /**
+ * Una WO es terminal (completada o cancelada) cuando ya no admite transiciones
+ * de estado. En ese punto no se edita, ni se reasigna técnico, ni se valida
+ * elegibilidad: la orden quedó cerrada operativamente.
+ */
+export function isWorkOrderTerminal(status: WorkOrderStatus): boolean {
+  return WORK_ORDER_STATUS_TRANSITIONS[status].length === 0
+}
+
+/**
  * Un caso queda "asignado" cuando ya tiene al menos una orden de trabajo que no
  * está cancelada. Mientras eso sea cierto, el caso no debe permitir crear ni
  * despachar nuevas WO: la operación se gestiona desde la WO. Si todas las WO del

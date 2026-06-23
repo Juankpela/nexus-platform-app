@@ -2,7 +2,10 @@ import { describe, expect, it, vi } from "vitest"
 
 import type { AuditRepository } from "@/modules/audit/application/ports/audit-repository"
 import type { SchedulingRepository } from "@/modules/scheduling/application/ports/scheduling-repository"
-import type { TechnicianReader } from "@/modules/scheduling/application/ports/readers"
+import type {
+  TechnicianReader,
+  WorkOrderReader,
+} from "@/modules/scheduling/application/ports/readers"
 import { reassignWorkOrder } from "@/modules/scheduling/application/use-cases/reassign-work-order"
 import type { WorkOrderAssignment } from "@/modules/scheduling/domain/work-order-assignment"
 
@@ -41,8 +44,14 @@ function setup(overlaps: WorkOrderAssignment[] = []) {
   const technicians = {
     getById: vi.fn().mockResolvedValue({ id: TECH, status: "active", deletedAt: null }),
   } as unknown as TechnicianReader
+  const workOrders = {
+    getById: vi.fn().mockResolvedValue({
+      id: "44444444-4444-4444-4444-444444444444",
+      status: "scheduled",
+    }),
+  } as unknown as WorkOrderReader
   const audit = { append } as unknown as AuditRepository
-  return { assignments, technicians, audit, reschedule, append, findOverlapping }
+  return { assignments, technicians, workOrders, audit, reschedule, append, findOverlapping }
 }
 
 const input = () => ({
@@ -80,6 +89,18 @@ describe("reassignWorkOrder", () => {
     const deps = setup([fakeAssignment()])
     await expect(reassignWorkOrder(deps, input())).rejects.toMatchObject({
       code: "ASSIGNMENT_OVERLAP",
+    })
+    expect(deps.reschedule).not.toHaveBeenCalled()
+  })
+
+  it("rejects when the work order is terminal (completed/cancelled)", async () => {
+    const deps = setup()
+    ;(deps.workOrders.getById as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: "44444444-4444-4444-4444-444444444444",
+      status: "completed",
+    })
+    await expect(reassignWorkOrder(deps, input())).rejects.toMatchObject({
+      code: "WORK_ORDER_TERMINAL",
     })
     expect(deps.reschedule).not.toHaveBeenCalled()
   })

@@ -35,6 +35,12 @@ export type TechnicianInput = {
   phone: string | null
   employeeId: string | null
   status: TechnicianStatus
+  /**
+   * Vínculo opcional con la cuenta de usuario (auth). Lo usa el cierre de WO sin
+   * técnico: registra al admin que cierra como técnico responsable. El formulario
+   * normal de técnicos no lo envía (queda sin vincular).
+   */
+  userId?: UUID | null
 }
 
 export type TechnicianFilters = {

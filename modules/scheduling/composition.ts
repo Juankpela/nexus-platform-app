@@ -54,20 +54,25 @@ import {
 } from "@/modules/scheduling/application/use-cases/unassign-work-order"
 import { SupabaseOverdueScanRepository } from "@/modules/scheduling/infrastructure/supabase-overdue-scan-repository"
 import { SupabaseSchedulingRepository } from "@/modules/scheduling/infrastructure/supabase-scheduling-repository"
-import type {
-  AssignmentFilters,
-  WorkOrderAssignment,
+import {
+  durationMinutes,
+  type AssignmentFilters,
+  type WorkOrderAssignment,
 } from "@/modules/scheduling/domain/work-order-assignment"
 import { SupabaseTechnicianRepository } from "@/modules/service/infrastructure/supabase-technician-repository"
 import { SupabaseWorkOrderRepository } from "@/modules/service/infrastructure/supabase-work-order-repository"
 import { hasActiveWorkOrder } from "@/modules/service/domain/work-order"
 import {
+  createTechnicianRecord,
   createWorkOrderRecord,
   getCaseRecord,
+  getTechnicianByUserRecord,
+  getWorkOrderRecord,
   listTenantCases,
   listTenantSkills,
   listWorkOrdersForCase,
 } from "@/modules/service/composition"
+import { listCachedTenantMembers } from "@/modules/tenancy/composition"
 import type { EligibilityReasons } from "@/modules/scheduling/domain/eligibility"
 import {
   buildDispatchExplanation,
@@ -146,6 +151,7 @@ export function reassignWorkOrderRecord(input: ReassignWorkOrderInput) {
     {
       assignments: schedulingRepo(),
       technicians: technicianReader(),
+      workOrders: workOrderReader(),
       audit: audit(),
     },
     input,
@@ -157,6 +163,100 @@ export function unassignWorkOrderRecord(input: UnassignWorkOrderInput) {
     { assignments: schedulingRepo(), audit: audit() },
     input,
   )
+}
+
+function splitFullName(name: string | null | undefined): {
+  firstName: string
+  lastName: string
+} {
+  const parts = (name ?? "").trim().split(/\s+/).filter(Boolean)
+  if (parts.length === 0) return { firstName: "Responsable", lastName: "" }
+  if (parts.length === 1) return { firstName: parts[0], lastName: "" }
+  return { firstName: parts[0], lastName: parts.slice(1).join(" ") }
+}
+
+/**
+ * Garantiza que una WO tenga un técnico responsable ANTES de completarla. Una orden
+ * no puede quedar completada sin responsable (dato inválido). Si el cierre lo hace
+ * un admin sin técnico asignado, se registra a ese admin como técnico responsable:
+ * se reutiliza su ficha (vínculo user_id) o se crea una al vuelo. No hace nada si la
+ * WO ya tiene una asignación activa (flujo normal del técnico de campo).
+ */
+export async function ensureWorkOrderResponsibleRecord(input: {
+  actorId: UUID
+  tenantId: UUID
+  requestId: UUID
+  workOrderId: UUID
+}): Promise<void> {
+  const { actorId, tenantId, requestId, workOrderId } = input
+
+  // 1. ¿Ya tiene técnico (asignación activa)? Nada que hacer.
+  const active = await getActiveAssignmentsByWorkOrder(tenantId, [workOrderId])
+  if (active.get(workOrderId)) return
+
+  // 2. La WO debe existir (también da la ventana de tiempo para la asignación).
+  const workOrder = await getWorkOrderRecord(tenantId, workOrderId)
+  if (!workOrder) {
+    throw new ApplicationError("Orden de trabajo no encontrada.", "WORK_ORDER_NOT_FOUND")
+  }
+
+  // 3. Resolver la ficha de técnico del admin; si no tiene, crearla al vuelo y
+  //    vincularla a su cuenta (user_id) para reusarla en cierres futuros.
+  let technician = await getTechnicianByUserRecord(tenantId, actorId)
+  if (!technician) {
+    const members = await listCachedTenantMembers(tenantId)
+    const me = members.find((m) => m.userId === actorId)
+    const { firstName, lastName } = splitFullName(me?.fullName)
+    const email = me?.email ?? `responsable+${actorId}@nexus.local`
+    technician = await createTechnicianRecord({
+      actorId,
+      tenantId,
+      requestId,
+      data: {
+        firstName,
+        lastName,
+        email,
+        phone: null,
+        employeeId: null,
+        status: "active",
+        userId: actorId,
+      },
+    })
+  }
+
+  // 4. Registrar la asignación (responsable del cierre). La ventana real del trabajo
+  //    si existe; si no, una ventana mínima a partir de ahora.
+  const start =
+    workOrder.actualStart ?? workOrder.scheduledStart ?? new Date().toISOString()
+  let end = workOrder.actualEnd ?? workOrder.scheduledEnd ?? start
+  if (new Date(end).getTime() <= new Date(start).getTime()) {
+    end = new Date(new Date(start).getTime() + 60 * 60 * 1000).toISOString()
+  }
+
+  const assignment = await schedulingRepo().create(tenantId, {
+    workOrderId,
+    technicianId: technician.id,
+    scheduledStart: start,
+    scheduledEnd: end,
+    estimatedDurationMinutes: durationMinutes(start, end),
+  })
+
+  await audit().append({
+    eventType: "scheduling.assignment.created",
+    actorType: "user",
+    actorId,
+    tenantId,
+    subjectType: "work_order_assignment",
+    subjectId: assignment.id,
+    action: "assignment.auto_responsible",
+    metadata: {
+      workOrderId,
+      technicianId: technician.id,
+      reason: "work_order_completed_without_technician",
+    },
+    requestId,
+    source: "web",
+  })
 }
 
 /** At-risk lead time before SLA breach. Daily cron makes this best-effort (R4). */

@@ -44,6 +44,8 @@ function describeError(error: unknown): string {
         return "La hora de fin debe ser posterior a la de inicio."
       case "ASSIGNMENT_NOT_FOUND":
         return "Asignación no encontrada."
+      case "WORK_ORDER_TERMINAL":
+        return "La orden está completada o cancelada: no admite reasignación."
       case "NO_RESCHEDULE_CANDIDATE":
         return "Esta orden no es candidata a reagendar (sin ejecución fallida con motivo reagendable)."
       case "NO_SLOT":

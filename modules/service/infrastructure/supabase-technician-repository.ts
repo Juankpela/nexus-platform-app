@@ -41,6 +41,9 @@ function toRow(input: TechnicianInput) {
     phone: input.phone,
     employee_id: input.employeeId,
     status: input.status,
+    // Solo se incluye cuando viene explícito (cierre de WO que vincula al admin);
+    // el formulario normal lo omite y no se pisa en updates.
+    ...(input.userId !== undefined ? { user_id: input.userId } : {}),
   }
 }
 
@@ -131,6 +134,26 @@ export class SupabaseTechnicianRepository implements TechnicianRepository {
     if (error) {
       throw new ApplicationError(
         "Unable to look up technician by email.",
+        "TECHNICIAN_LOOKUP_FAILED",
+        error,
+      )
+    }
+    return data ? toTechnician(data) : null
+  }
+
+  async findByUserId(tenantId: UUID, userId: UUID): Promise<Technician | null> {
+    const client = await createServerSupabaseClient()
+    const { data, error } = await client
+      .from("technicians")
+      .select("*")
+      .eq("tenant_id", tenantId)
+      .eq("user_id", userId)
+      .is("deleted_at", null)
+      .maybeSingle()
+
+    if (error) {
+      throw new ApplicationError(
+        "Unable to look up technician by user.",
         "TECHNICIAN_LOOKUP_FAILED",
         error,
       )

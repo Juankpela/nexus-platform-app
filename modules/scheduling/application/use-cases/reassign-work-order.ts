@@ -1,16 +1,21 @@
 import { ApplicationError } from "@/lib/errors/application-error"
 import type { AuditRepository } from "@/modules/audit/application/ports/audit-repository"
 import type { SchedulingRepository } from "@/modules/scheduling/application/ports/scheduling-repository"
-import type { TechnicianReader } from "@/modules/scheduling/application/ports/readers"
+import type {
+  TechnicianReader,
+  WorkOrderReader,
+} from "@/modules/scheduling/application/ports/readers"
 import {
   durationMinutes,
   type WorkOrderAssignment,
 } from "@/modules/scheduling/domain/work-order-assignment"
+import { isWorkOrderTerminal } from "@/modules/service/domain/work-order"
 import type { UUID } from "@/types/shared"
 
 export type ReassignWorkOrderDeps = {
   assignments: SchedulingRepository
   technicians: TechnicianReader
+  workOrders: WorkOrderReader
   audit: AuditRepository
 }
 
@@ -25,7 +30,7 @@ export type ReassignWorkOrderInput = {
 }
 
 export async function reassignWorkOrder(
-  { assignments, technicians, audit }: ReassignWorkOrderDeps,
+  { assignments, technicians, workOrders, audit }: ReassignWorkOrderDeps,
   input: ReassignWorkOrderInput,
 ): Promise<WorkOrderAssignment> {
   const { tenantId } = input
@@ -33,6 +38,15 @@ export async function reassignWorkOrder(
   const existing = await assignments.getById(tenantId, input.id)
   if (!existing) {
     throw new ApplicationError("Assignment not found.", "ASSIGNMENT_NOT_FOUND")
+  }
+
+  // Una WO terminal (completada/cancelada) no se reasigna: quedó cerrada.
+  const workOrder = await workOrders.getById(tenantId, existing.workOrderId)
+  if (workOrder && isWorkOrderTerminal(workOrder.status)) {
+    throw new ApplicationError(
+      "No se puede reasignar una orden completada o cancelada.",
+      "WORK_ORDER_TERMINAL",
+    )
   }
 
   const technician = await technicians.getById(tenantId, input.technicianId)

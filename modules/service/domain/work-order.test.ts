@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import {
   hasActiveWorkOrder,
+  isWorkOrderTerminal,
   type WorkOrderStatus,
 } from "@/modules/service/domain/work-order"
 
@@ -26,5 +27,25 @@ describe("hasActiveWorkOrder", () => {
   it("basta una WO no cancelada para mantener el caso asignado", () => {
     expect(hasActiveWorkOrder(wos("cancelled", "completed"))).toBe(true)
     expect(hasActiveWorkOrder(wos("cancelled", "new"))).toBe(true)
+  })
+})
+
+describe("isWorkOrderTerminal", () => {
+  it("completed y cancelled son terminales", () => {
+    expect(isWorkOrderTerminal("completed")).toBe(true)
+    expect(isWorkOrderTerminal("cancelled")).toBe(true)
+  })
+
+  it("los estados operativos NO son terminales", () => {
+    const live: WorkOrderStatus[] = [
+      "new",
+      "scheduled",
+      "dispatched",
+      "in_progress",
+      "on_hold",
+    ]
+    for (const status of live) {
+      expect(isWorkOrderTerminal(status)).toBe(false)
+    }
   })
 })

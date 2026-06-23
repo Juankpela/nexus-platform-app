@@ -6,6 +6,7 @@ import type {
   TechnicianReader,
   TechnicianView,
   WorkOrderReader,
+  WorkOrderView,
 } from "@/modules/scheduling/application/ports/readers"
 import { assignWorkOrder } from "@/modules/scheduling/application/use-cases/assign-work-order"
 import type { WorkOrderAssignment } from "@/modules/scheduling/domain/work-order-assignment"
@@ -35,7 +36,7 @@ function fakeAssignment(): WorkOrderAssignment {
 }
 
 function setup(opts: {
-  workOrder?: { id: string } | null
+  workOrder?: WorkOrderView | null
   technician?: TechnicianView | null
   overlaps?: WorkOrderAssignment[]
 }) {
@@ -52,7 +53,7 @@ function setup(opts: {
   } as unknown as TechnicianReader
   const workOrders = {
     getById: vi.fn().mockResolvedValue(
-      opts.workOrder === undefined ? { id: WO } : opts.workOrder,
+      opts.workOrder === undefined ? { id: WO, status: "scheduled" } : opts.workOrder,
     ),
   } as unknown as WorkOrderReader
   const audit = { append } as unknown as AuditRepository
@@ -120,6 +121,14 @@ describe("assignWorkOrder", () => {
     const deps = setup({ workOrder: null })
     await expect(assignWorkOrder(deps, input())).rejects.toMatchObject({
       code: "WORK_ORDER_NOT_FOUND",
+    })
+    expect(deps.create).not.toHaveBeenCalled()
+  })
+
+  it("rejects when the work order is terminal (completed/cancelled)", async () => {
+    const deps = setup({ workOrder: { id: WO, status: "completed" } })
+    await expect(assignWorkOrder(deps, input())).rejects.toMatchObject({
+      code: "WORK_ORDER_TERMINAL",
     })
     expect(deps.create).not.toHaveBeenCalled()
   })

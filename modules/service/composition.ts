@@ -312,6 +312,10 @@ export function getTechnicianRecord(tenantId: UUID, id: UUID) {
   return technicianRepo().getById(tenantId, id)
 }
 
+export function getTechnicianByUserRecord(tenantId: UUID, userId: UUID) {
+  return technicianRepo().findByUserId(tenantId, userId)
+}
+
 export function getTenantTechnicianStats(tenantId: UUID) {
   return getTechnicianStats(technicianRepo(), tenantId)
 }
