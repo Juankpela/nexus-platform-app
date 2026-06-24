@@ -8,10 +8,18 @@ import { MessageCircle } from "lucide-react"
  */
 export type WhatsAppAction = {
   label: string
-  /** Enlace wa.me listo (o null si el teléfono no es utilizable). */
+  /** Enlace wa.me listo (o null si el teléfono no es utilizable o el paso aún no aplica). */
   url: string | null
   /** Acción sugerida según el estado actual (se resalta). */
   primary?: boolean
+  /**
+   * Posición respecto al avance de la operación. Cuando se pasa, el panel muestra
+   * una progresión: "current" resaltado, "past" disponible para reenviar, "future"
+   * atenuado con su motivo. Si se omite, se usa el comportamiento clásico (primary).
+   */
+  phase?: "past" | "current" | "future"
+  /** Motivo legible cuando el paso todavía no aplica (phase "future"). */
+  hint?: string | null
 }
 
 export function WhatsAppNotifyPanel({
@@ -36,20 +44,22 @@ export function WhatsAppNotifyPanel({
       ) : (
         <>
           <p className="mt-1 text-sm text-muted-foreground">
-            Abre WhatsApp con el mensaje ya escrito. Solo confirma el envío.
+            Abre WhatsApp con el mensaje ya escrito. Solo confirma el envío. El aviso
+            sugerido avanza con el estado de la orden.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {actions.map((a) => {
               const base =
                 "inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors"
-              const tone = a.primary
-                ? "bg-emerald-600 text-white hover:bg-emerald-700"
-                : "border border-input hover:bg-muted/50"
-              if (!a.url) {
+              // "current" (o primary clásico) se resalta; "past" queda disponible
+              // para reenviar; "future" se atenúa con su motivo (no clicable).
+              const isCurrent = a.phase ? a.phase === "current" : !!a.primary
+              if (a.phase === "future" || !a.url) {
                 return (
                   <span
                     key={a.label}
                     aria-disabled
+                    title={a.hint ?? undefined}
                     className={`${base} cursor-not-allowed border border-input opacity-50`}
                   >
                     <MessageCircle className="size-4" />
@@ -57,6 +67,9 @@ export function WhatsAppNotifyPanel({
                   </span>
                 )
               }
+              const tone = isCurrent
+                ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                : "border border-input hover:bg-muted/50"
               return (
                 <a
                   key={a.label}

@@ -46,13 +46,10 @@ import {
 } from "@/modules/service/composition"
 import { WhatsAppNotifyPanel } from "@/components/service/whatsapp-notify-panel"
 import {
-  buildWhatsAppUrl,
-  completedMessage,
-  confirmationMessage,
-  enRouteMessage,
   pickWhatsAppPhone,
   type WhatsAppMessageContext,
 } from "@/modules/notifications/domain/whatsapp-link"
+import { buildCustomerNotifyActions } from "@/modules/notifications/domain/customer-notify-plan"
 import { env } from "@/lib/config/env"
 import { formatDateTime } from "@/lib/format/datetime"
 import { getActiveAssignmentsByWorkOrder } from "@/modules/scheduling/composition"
@@ -234,34 +231,15 @@ export default async function WorkOrderDetailPage({
     trackingUrl,
   }
   const isCompleted = workOrder.status === "completed"
-  // Una WO completada es terminal: el único aviso que tiene sentido es informar al
-  // cliente que el trabajo quedó listo. Los demás avisos (confirmar visita / voy en
-  // camino) ya no aplican.
-  const whatsappActions = isCompleted
-    ? [
-        {
-          label: "Trabajo completado",
-          url: buildWhatsAppUrl(customerPhone, completedMessage(waContext)),
-          primary: true,
-        },
-      ]
-    : [
-        {
-          label: "Confirmar visita",
-          url: buildWhatsAppUrl(customerPhone, confirmationMessage(waContext)),
-          primary: false,
-        },
-        {
-          label: "Voy en camino",
-          url: buildWhatsAppUrl(customerPhone, enRouteMessage(waContext)),
-          primary: true,
-        },
-        {
-          label: "Trabajo completado",
-          url: buildWhatsAppUrl(customerPhone, completedMessage(waContext)),
-          primary: false,
-        },
-      ]
+  // Los avisos se DERIVAN de la línea de vida: el sugerido (resaltado) avanza con el
+  // estado real de la WO, los ya pasados quedan disponibles para reenviar y los que
+  // aún no aplican se atenúan. Así nunca se sugiere "voy en camino" antes de que el
+  // técnico acepte. Una sola fuente de verdad, reusada también en el worker.
+  const whatsappActions = buildCustomerNotifyActions(
+    lifecycle ?? [],
+    waContext,
+    customerPhone,
+  )
 
   return (
     <>

@@ -25,14 +25,11 @@ import { EXECUTION_STATUS_LABELS } from "@/modules/field-execution/domain/execut
 import { technicianFullName } from "@/modules/service/domain/technician"
 import { formatWhen } from "@/modules/service/domain/service-lifecycle"
 import {
-  buildWhatsAppUrl,
-  completedMessage,
-  confirmationMessage,
-  enRouteMessage,
   notifyLinks,
   pickWhatsAppPhone,
   type WhatsAppMessageContext,
 } from "@/modules/notifications/domain/whatsapp-link"
+import { buildCustomerNotifyActions } from "@/modules/notifications/domain/customer-notify-plan"
 import { env } from "@/lib/config/env"
 import { formatDateTime, formatTime } from "@/lib/format/datetime"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
@@ -109,24 +106,13 @@ export default async function WorkerAssignmentDetailPage({
   // Enlaces por momento para el aviso CONTEXTUAL (el que aparece en cada paso de
   // la ejecución). Reutiliza el mismo contexto/mensajes del panel de respaldo.
   const notify = notifyLinks(waContext, customerPhone)
-  const isDone = assignment.executionStatus === "completed"
-  const whatsappActions = [
-    {
-      label: "Confirmar visita",
-      url: buildWhatsAppUrl(customerPhone, confirmationMessage(waContext)),
-      primary: false,
-    },
-    {
-      label: "Voy en camino",
-      url: buildWhatsAppUrl(customerPhone, enRouteMessage(waContext)),
-      primary: !isDone,
-    },
-    {
-      label: "Trabajo completado",
-      url: buildWhatsAppUrl(customerPhone, completedMessage(waContext)),
-      primary: isDone,
-    },
-  ]
+  // Panel de respaldo coherente con la línea de vida: mismos avisos derivados que ve
+  // el coordinador (actual resaltado, pasados reenviables, futuros atenuados).
+  const whatsappActions = buildCustomerNotifyActions(
+    lifecycle ?? [],
+    waContext,
+    customerPhone,
+  )
 
   const base = `/app/${tenantSlug}/worker`
 
