@@ -18,8 +18,16 @@ import type { UUID } from "@/types/shared"
  * (p.ej. migración no aplicada), devuelve lo que pueda sin reventar.
  */
 
-// Evento de auditoría del aviso de salida (mismo string que scheduling/composition).
-const ENROUTE_SENT_EVENT = "customer.enroute.sent"
+// Eventos de auditoría del "voy en camino". El técnico salió en camino sin importar
+// si el aviso al cliente se entregó (sent), se omitió (skipped) o falló (failed): el
+// sello de en-camino y el ETA viven en CUALQUIERA de los tres. Leer solo `.sent`
+// dejaba "Técnico en camino" sin hora (y sin ETA) cuando no había email del cliente.
+// Mismo criterio que `readEnRouteEta` en scheduling/composition.
+const ENROUTE_EVENTS = [
+  "customer.enroute.sent",
+  "customer.enroute.skipped",
+  "customer.enroute.failed",
+]
 
 type Admin = ReturnType<typeof createAdminSupabaseClient>
 type Row = Record<string, unknown> | null
@@ -116,7 +124,7 @@ async function resolveLifecycleInput(
       .from("audit_events")
       .select("occurred_at, metadata")
       .eq("subject_id", asgRow.id as string)
-      .eq("event_type", ENROUTE_SENT_EVENT)
+      .in("event_type", ENROUTE_EVENTS)
       .order("occurred_at", { ascending: false })
       .limit(1)
       .maybeSingle()
