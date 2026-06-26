@@ -4,17 +4,17 @@ import { redirect } from "next/navigation"
 
 import { Brain } from "lucide-react"
 
+import { DashboardTabs } from "@/components/dashboard/dashboard-tabs"
 import { OperationalCenter } from "@/components/dispatch/operational-center"
 import { StartReceivingCard } from "@/components/dashboard/start-receiving-card"
 import { Button } from "@/components/ui/button"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
 import {
-  CRM_PERMISSIONS,
   FOUNDATION_PERMISSIONS,
   NLABS_PERMISSIONS,
-  SERVICE_PERMISSIONS,
   hasPermission,
 } from "@/modules/authorization/domain/permission"
+import { dashboardTabsFor } from "@/modules/platform/presentation/navigation"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 import { isTechnicianOnly } from "@/modules/request-context/domain/role"
 
@@ -35,20 +35,8 @@ export default async function MissionControlPage({
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/\/$/, "")
   const reportUrl = appUrl ? `${appUrl}/r/${tenantSlug}` : null
 
-  // Paneles por área (CRM / Service / Field Service): subdashboards ya existentes,
-  // enlazados desde el Centro Operacional y filtrados por permiso de lectura.
-  const dashboardLinks = [
-    hasPermission(context.effectivePermissions, CRM_PERMISSIONS.opportunitiesRead)
-      ? { href: `/app/${tenantSlug}/dashboard/crm`, label: "Panel CRM" }
-      : null,
-    hasPermission(context.effectivePermissions, SERVICE_PERMISSIONS.casesRead)
-      ? { href: `/app/${tenantSlug}/dashboard/service`, label: "Panel Service" }
-      : null,
-    hasPermission(context.effectivePermissions, SERVICE_PERMISSIONS.dispatchRead)
-      ? { href: `/app/${tenantSlug}/dashboard/field-service`, label: "Panel Field Service" }
-      : null,
-  ].filter((x): x is { href: string; label: string } => x !== null)
-
+  // Pestañas del dashboard (Resumen + paneles de detalle por área, por permiso).
+  const tabs = dashboardTabsFor(tenantSlug, context.effectivePermissions)
   const canNlabs = hasPermission(context.effectivePermissions, NLABS_PERMISSIONS.read)
 
   return (
@@ -66,26 +54,16 @@ export default async function MissionControlPage({
         </p>
       </header>
 
-      {dashboardLinks.length > 0 || canNlabs ? (
+      <DashboardTabs tabs={tabs} />
+
+      {canNlabs ? (
         <div className="flex flex-wrap items-center gap-2">
-          {canNlabs ? (
-            <Button asChild size="sm" className="gap-1.5">
-              <Link href={`/app/${tenantSlug}/nlabs`}>
-                <Brain className="size-4" />
-                N-LABS · Inteligencia
-              </Link>
-            </Button>
-          ) : null}
-          {dashboardLinks.length > 0 ? (
-            <span className="text-xs font-medium text-muted-foreground">
-              Paneles por área:
-            </span>
-          ) : null}
-          {dashboardLinks.map((d) => (
-            <Button key={d.href} asChild size="sm" variant="outline">
-              <Link href={d.href}>{d.label}</Link>
-            </Button>
-          ))}
+          <Button asChild size="sm" className="gap-1.5">
+            <Link href={`/app/${tenantSlug}/nlabs`}>
+              <Brain className="size-4" />
+              N-LABS · Inteligencia
+            </Link>
+          </Button>
         </div>
       ) : null}
 

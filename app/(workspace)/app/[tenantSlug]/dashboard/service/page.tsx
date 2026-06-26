@@ -1,8 +1,11 @@
-import { AlertTriangle, CheckCircle2, Cpu, LifeBuoy, ShieldCheck } from "lucide-react"
+import { AlertTriangle, CheckCircle2, Cpu, Flame, LifeBuoy } from "lucide-react"
 import type { Metadata } from "next"
 
+import { DashboardTabs } from "@/components/dashboard/dashboard-tabs"
+import { InsightBanner } from "@/components/dashboard/insight-banner"
+import { DistributionBars, type DistRow } from "@/components/dashboard/distribution-bars"
 import { KpiCard } from "@/components/dashboard/kpi-card"
-import { SummaryWidget } from "@/components/dashboard/summary-widget"
+import { MiniGauge } from "@/components/dashboard/mini-gauge"
 import { PageHeader } from "@/components/layout/page-header"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
 import {
@@ -16,10 +19,21 @@ import {
 import {
   CASE_STATUSES,
   CASE_STATUS_LABELS,
+  type CaseStatus,
 } from "@/modules/service/domain/case"
+import { dashboardTabsFor } from "@/modules/platform/presentation/navigation"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 
 export const metadata: Metadata = { title: "Panel de servicio" }
+
+const CASE_TONE: Record<CaseStatus, DistRow["tone"]> = {
+  new: "silver",
+  working: "blue",
+  waiting_customer: "orange",
+  escalated: "red",
+  resolved: "emerald",
+  closed: "silver",
+}
 
 export default async function ServiceDashboardPage({
   params,
@@ -47,34 +61,61 @@ export default async function ServiceDashboardPage({
       : Promise.resolve({ items: [], total: 0, page: 1, pageSize: 0 }),
   ])
 
-  const closed = caseStats.byStatus.closed
-  const resolved = caseStats.byStatus.resolved
+  const tabs = dashboardTabsFor(tenantSlug, context.effectivePermissions)
 
   return (
     <>
-      <PageHeader title="Dashboard Service" description="Casos, SLA y activos." />
+      <PageHeader title="Servicio" description="Casos, SLA y activos." />
       <div className="space-y-6 px-5 pb-10 sm:px-8">
+        <DashboardTabs tabs={tabs} />
+
+        <InsightBanner
+          level={
+            caseStats.slaCompliancePct == null
+              ? "healthy"
+              : caseStats.slaCompliancePct >= 90
+                ? "healthy"
+                : caseStats.slaCompliancePct >= 75
+                  ? "attention"
+                  : "risk"
+          }
+          headline={
+            caseStats.slaCompliancePct != null && caseStats.slaCompliancePct < 90
+              ? "SLA requiere atención"
+              : "SLA saludable"
+          }
+          detail={`Cumplimiento ${caseStats.slaCompliancePct ?? "—"}%${caseStats.breachedCount > 0 ? `, ${caseStats.breachedCount} caso(s) incumplido(s)` : ""} · ${caseStats.openCount} casos abiertos${caseStats.byStatus.escalated > 0 ? `, ${caseStats.byStatus.escalated} escalado(s)` : ""}.`}
+          action={{ label: "Ver casos", href: `/app/${tenantSlug}/cases` }}
+        />
+
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <KpiCard label="Casos abiertos" value={caseStats.openCount} icon={LifeBuoy} accent="orange" hint={`${caseStats.totalCount} en total`} />
-          <KpiCard label="Resueltos" value={resolved} icon={CheckCircle2} accent="emerald" />
-          <KpiCard label="Cerrados" value={closed} icon={CheckCircle2} accent="silver" />
-          <KpiCard
-            label="Cumplimiento SLA"
-            value={caseStats.slaCompliancePct != null ? `${caseStats.slaCompliancePct}%` : "—"}
-            icon={ShieldCheck}
-            accent="emerald"
-          />
+          <KpiCard label="Resueltos" value={caseStats.byStatus.resolved} icon={CheckCircle2} accent="emerald" />
+          <KpiCard label="Cerrados" value={caseStats.byStatus.closed} icon={CheckCircle2} accent="silver" />
+          <KpiCard label="Escalados" value={caseStats.byStatus.escalated} icon={Flame} accent="orange" />
           <KpiCard label="SLA incumplidos" value={caseStats.breachedCount} icon={AlertTriangle} accent="orange" />
           <KpiCard label="Activos" value={canReadAssets ? assetResult.total : "—"} icon={Cpu} accent="blue" />
         </div>
 
-        <SummaryWidget
-          title="Casos por estado"
-          rows={CASE_STATUSES.map((s) => ({
-            label: CASE_STATUS_LABELS[s],
-            value: caseStats.byStatus[s],
-          }))}
-        />
+        <div className="grid gap-4 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <DistributionBars
+              title="Casos por estado"
+              icon={LifeBuoy}
+              rows={CASE_STATUSES.map((s) => ({
+                label: CASE_STATUS_LABELS[s],
+                value: caseStats.byStatus[s],
+                tone: CASE_TONE[s],
+              }))}
+            />
+          </div>
+          <MiniGauge
+            title="Cumplimiento SLA"
+            pct={caseStats.slaCompliancePct}
+            caption="Casos dentro de SLA"
+            size="lg"
+          />
+        </div>
       </div>
     </>
   )

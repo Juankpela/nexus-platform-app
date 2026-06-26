@@ -36,6 +36,7 @@ import {
   INVENTORY_PERMISSIONS,
   NLABS_PERMISSIONS,
   SERVICE_PERMISSIONS,
+  hasPermission,
 } from "@/modules/authorization/domain/permission"
 
 /**
@@ -165,3 +166,23 @@ export const workspaceNavigation: readonly NavigationItem[] = [
   { label: "Descargas", segment: "exports", icon: FileDown, permission: FOUNDATION_PERMISSIONS.dashboardRead, capability: "admin" },
   { label: "Configuración", segment: "settings", icon: Settings, permission: FOUNDATION_PERMISSIONS.settingsRead, capability: "admin" },
 ] as const
+
+/**
+ * Pestañas del dashboard según permisos: Resumen (Inicio) siempre, y los paneles
+ * de detalle por área que el usuario pueda ver. Reusa el gating de permisos
+ * existente; no introduce navegación ni conceptos nuevos.
+ */
+export function dashboardTabsFor(
+  tenantSlug: string,
+  permissions: readonly string[],
+): { label: string; href: string }[] {
+  const base = `/app/${tenantSlug}/dashboard`
+  const tabs = [{ label: "Resumen", href: base }]
+  if (hasPermission(permissions, CRM_PERMISSIONS.opportunitiesRead))
+    tabs.push({ label: "CRM", href: `${base}/crm` })
+  if (hasPermission(permissions, SERVICE_PERMISSIONS.casesRead))
+    tabs.push({ label: "Servicio", href: `${base}/service` })
+  if (hasPermission(permissions, SERVICE_PERMISSIONS.dispatchRead))
+    tabs.push({ label: "Campo", href: `${base}/field-service` })
+  return tabs
+}
