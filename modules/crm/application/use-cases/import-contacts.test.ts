@@ -19,6 +19,9 @@ function fakeAudit() {
     async listRecentByEventType() {
       return []
     },
+    async listByTenantWindow() {
+      return []
+    },
   }
   return { repo, events }
 }

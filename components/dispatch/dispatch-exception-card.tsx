@@ -1,6 +1,8 @@
 import { AlertTriangle, ArrowRight, PauseCircle } from "lucide-react"
 import Link from "next/link"
 
+import { CASE_PRIORITY_LABELS } from "@/modules/service/domain/case"
+
 export type DispatchExceptionView = {
   caseId: string
   caseNumber: string
@@ -44,7 +46,10 @@ export function DispatchExceptionCard({
           <p className="text-xs text-muted-foreground">{exception.caseNumber}</p>
           <h3 className="truncate font-medium text-foreground">{exception.subject}</h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            {exception.skillLabel ?? "Sin especialidad"} · prioridad {exception.priority}
+            {exception.skillLabel ?? "Sin especialidad"} · prioridad{" "}
+            {CASE_PRIORITY_LABELS[
+              exception.priority as keyof typeof CASE_PRIORITY_LABELS
+            ] ?? exception.priority}
           </p>
         </div>
         <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${badge}`}>

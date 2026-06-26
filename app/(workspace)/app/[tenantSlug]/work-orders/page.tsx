@@ -178,7 +178,7 @@ export default async function WorkOrdersPage({
     <>
       <PageHeader
         title="Órdenes de trabajo"
-        description="Field Service — intervenciones técnicas sobre activos."
+        description="Intervenciones técnicas en sitio sobre tus equipos."
       />
       <div className="space-y-4 px-5 py-6 sm:px-8">
         <div className="flex flex-wrap items-center justify-between gap-3">

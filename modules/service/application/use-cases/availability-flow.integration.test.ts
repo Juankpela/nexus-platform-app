@@ -70,6 +70,9 @@ class FakeAudit {
   async listRecentByEventType() {
     return []
   }
+  async listByTenantWindow() {
+    return []
+  }
 }
 
 describe("availability flow (integration over use-cases)", () => {

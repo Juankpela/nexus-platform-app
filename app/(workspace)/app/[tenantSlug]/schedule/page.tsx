@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 
 import { Pagination } from "@/components/crm/pagination"
+import { ClientOnly } from "@/components/layout/client-only"
 import { EmptyState } from "@/components/layout/empty-state"
 import { PageHeader } from "@/components/layout/page-header"
 import { KpiCard } from "@/components/dashboard/kpi-card"
@@ -162,7 +163,7 @@ export default async function SchedulePage({
               <ListChecks className="size-3.5" /> Asignaciones
             </Link>
             <Link href={`${basePath}?tab=stats`} className={tabClass("stats")}>
-              Stats
+              Métricas
             </Link>
           </div>
 
@@ -228,6 +229,23 @@ export default async function SchedulePage({
                   technicianId || status || dateFrom || dateTo
                     ? "Ninguna asignación coincide con los filtros."
                     : "Asigna una orden de trabajo a un técnico."
+                }
+                actions={
+                  canWrite ? (
+                    <ClientOnly>
+                      <AssignmentFormDialog
+                        tenantSlug={tenantSlug}
+                        workOrderOptions={workOrderOptions}
+                        technicianOptions={technicianOptions}
+                        trigger={
+                          <Button>
+                            <Plus />
+                            Asignar
+                          </Button>
+                        }
+                      />
+                    </ClientOnly>
+                  ) : undefined
                 }
               />
             ) : (

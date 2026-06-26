@@ -3,7 +3,8 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 
-import { PriceBookActiveToggle } from "@/components/crm/price-book-active-toggle"
+import { ActiveToggle } from "@/components/crm/active-toggle"
+import { setPriceBookActiveAction } from "@/modules/crm/presentation/price-book-actions"
 import {
   AddPriceBookEntryDialog,
   DeactivatePriceBookEntryButton,
@@ -95,7 +96,8 @@ export default async function PriceBookDetailPage({
                 priceBook={priceBook}
                 trigger={<Button variant="outline">Editar lista de precios</Button>}
               />
-              <PriceBookActiveToggle
+              <ActiveToggle
+                action={setPriceBookActiveAction}
                 tenantSlug={tenantSlug}
                 id={priceBook.id}
                 active={priceBook.active}

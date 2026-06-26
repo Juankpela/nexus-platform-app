@@ -15,3 +15,8 @@ export type AuditEntry = {
 export type AuditEntryWithSubject = AuditEntry & {
   subjectId: string | null
 }
+
+/** Audit entry enriched with subject identity + type, for cross-entity window reads. */
+export type AuditWindowEntry = AuditEntryWithSubject & {
+  subjectType: string | null
+}

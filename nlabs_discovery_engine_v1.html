@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>N-LABS Discovery Engine v1.0</title>
+<style>
+  :root{
+    --bg:#0b0e0e; --panel:#121717; --panel2:#171d1d; --line:#243030;
+    --ink:#e9efee; --mut:#9fb0ad; --dim:#6f817e;
+    --mag:#C21467; --turq:#35B1AD; --gold:#E39D30; --green:#0D8180; --red:#d6455a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.62 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1060px;margin:0 auto;padding:48px 24px 96px}
+  header.cover{border-bottom:1px solid var(--line);padding-bottom:34px;margin-bottom:18px}
+  .kicker{letter-spacing:.22em;text-transform:uppercase;font-size:12px;color:var(--turq);font-weight:700}
+  h1{font-size:42px;line-height:1.08;margin:14px 0 8px;font-weight:800}
+  h1 span{color:var(--mag)}
+  .sub{color:var(--mut);font-size:18px;max-width:800px}
+  .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+  .pill{font-size:12px;border:1px solid var(--line);background:var(--panel);padding:6px 11px;border-radius:999px;color:var(--mut)}
+  h2{font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--turq);margin:56px 0 4px;font-weight:700}
+  h2 .n{color:var(--dim);margin-right:10px}
+  h3{font-size:23px;margin:8px 0 14px;font-weight:700}
+  p{color:#d4dddb}
+  .lead{font-size:18px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin:16px 0}
+  .warn{background:linear-gradient(180deg,#1d1712,#141010);border:1px solid var(--gold);border-radius:16px;padding:24px;margin:22px 0}
+  .warn h3{color:var(--gold);margin-top:0}
+  .hero{background:linear-gradient(180deg,#161d1d,#101616);border:1px solid var(--mag);border-radius:16px;padding:26px;margin:22px 0}
+  .hero .tag{display:inline-block;background:var(--mag);color:#fff;font-weight:800;letter-spacing:.03em;padding:7px 14px;border-radius:8px;font-size:13px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  @media(max-width:780px){.grid2,.grid3{grid-template-columns:1fr}}
+  .card{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:18px}
+  .card h4{margin:0 0 8px;font-size:15px}
+  .small{font-size:14px;color:var(--mut)}
+  .tiny{font-size:12.5px;color:var(--dim)}
+  table{width:100%;border-collapse:collapse;margin:8px 0;font-size:14.5px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--turq);font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:700}
+  td.num{font-variant-numeric:tabular-nums}
+  ul{margin:8px 0;padding-left:20px} li{margin:5px 0;color:#d4dddb}
+  ol{margin:8px 0;padding-left:22px} ol li{margin:7px 0}
+  .tagline{display:inline-block;font-size:11.5px;font-weight:700;padding:3px 8px;border-radius:6px;letter-spacing:.04em}
+  .t-in{background:rgba(53,177,173,.14);color:var(--turq);border:1px solid rgba(53,177,173,.3)}
+  .t-out{background:rgba(214,69,90,.14);color:var(--red);border:1px solid rgba(214,69,90,.3)}
+  .t-mid{background:rgba(227,157,48,.14);color:var(--gold);border:1px solid rgba(227,157,48,.3)}
+  .do{color:var(--turq)} .dont{color:var(--red)}
+  .flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0}
+  .step{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:13px;font-weight:600}
+  .step b{display:block;color:var(--turq);font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px;font-weight:700}
+  .arr{color:var(--dim);font-weight:700}
+  code{background:#0c1010;border:1px solid var(--line);padding:1px 6px;border-radius:5px;font-size:13px;color:var(--gold)}
+  .foot{margin-top:60px;padding-top:22px;border-top:1px solid var(--line);color:var(--dim);font-size:13px}
+  .formula{background:#0c1010;border:1px solid var(--line);border-radius:10px;padding:16px 18px;font-size:15px;color:#e9efee;margin:12px 0}
+  .formula b{color:var(--gold)}
+  .nv{color:var(--gold);font-size:11px;font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="cover">
+  <div class="kicker">N-LABS · Núcleo · Sistema de Descubrimiento</div>
+  <h1><span>N-LABS</span> Discovery Engine<br>v1.0</h1>
+  <p class="sub">Un método neutral para descubrir cuellos de botella operativos y recomendar la mejor solución disponible — sea automatización, agente, integración, cambio de proceso, Salesforce, NEXUS, otro software, o ninguna herramienta. El motor no vende producto. Vende la verdad operativa.</p>
+  <div class="meta">
+    <span class="pill">Fecha: 25 jun 2026</span>
+    <span class="pill">Entrada: DD v2 + Commercial Blueprint v1.0</span>
+    <span class="pill">Diseño: neutral · multi-industria</span>
+    <span class="pill">Aplicación: enfocada por vertical</span>
+    <span class="pill">NEXUS: una opción entre varias</span>
+  </div>
+</header>
+
+<!-- ADVERTENCIA DE COHERENCIA -->
+<div class="warn">
+  <h3>Aviso de coherencia con el comité (léelo antes de seguir)</h3>
+  <p>Pediste un motor neutral y multi-industria. La neutralidad es excelente y se compra entera. Pero "multi-industria a la vez" reabre la brecha que la DD señaló como modo de fallo: <strong>ser demasiado amplio</strong>. La DD probó que el moat es dato vertical + acceso del fundador y que el flywheel solo compone intra-industria.</p>
+  <p style="margin-bottom:0"><strong>Resolución adoptada en este documento:</strong> el método es <span class="do">genérico y neutral en su diseño</span> (funciona para cualquier empresa), pero su <span class="do">aplicación arranca enfocada en UNA vertical</span> (field service / gas, del Blueprint v1.0) y se generaliza por capas — playbooks y agentes verticales — solo cuando cada vertical está probada. Núcleo universal, despliegue disciplinado. Así obtienes neutralidad sin volver a "demasiado amplio".</p>
+</div>
+
+<!-- QUE ES -->
+<h2><span class="n">00</span>Qué es N-LABS ahora — separado de NEXUS</h2>
+<div class="hero">
+  <span class="tag">DEFINICIÓN</span>
+  <p class="lead" style="margin:14px 0 0;font-size:20px;color:#fff">N-LABS es un <strong>motor de descubrimiento independiente de producto</strong>. Su trabajo es encontrar dónde una empresa pierde dinero en sus operaciones, cuantificarlo y recomendar la mejor solución existente — con la misma honestidad con la que un buen médico recomienda no operar cuando no hace falta. NEXUS es uno de los tratamientos posibles, nunca el diagnóstico por defecto.</p>
+</div>
+<div class="grid2">
+  <div class="card"><h4 class="do">N-LABS SÍ es</h4><ul class="small">
+    <li>Un método de diagnóstico operativo neutral.</li>
+    <li>Un recomendador objetivo de soluciones (cualquier proveedor, incluido "ninguno").</li>
+    <li>El activo que acumula conocimiento reutilizable de cada empresa estudiada.</li>
+  </ul></div>
+  <div class="card"><h4 class="dont">N-LABS NO es</h4><ul class="small">
+    <li>Un canal de venta de NEXUS.</li>
+    <li>Un proceso que empuja software propio.</li>
+    <li>Una consultoría que entrega informes sin número ni decisión.</li>
+  </ul></div>
+</div>
+<p class="panel small" style="margin-bottom:0"><strong>Por qué esta neutralidad es un activo, no una renuncia:</strong> un recomendador que a veces dice "esto se arregla con un cambio de proceso, no compres nada" gana una credibilidad que ningún vendedor de plataforma tiene. Esa confianza es la que abre la puerta a la implementación cuando SÍ corresponde software — incluido NEXUS. La neutralidad es el mecanismo de venta, no su enemigo.</p>
+
+<!-- 1 IDENTIFICAR -->
+<h2><span class="n">01</span>Cómo identificar cuellos de botella en cualquier empresa</h2>
+<p class="lead">El motor mira toda operación como un flujo de trabajo con entradas, transformaciones y salidas. Un cuello de botella es cualquier punto donde el flujo se frena, se repite, se corrige o se pierde.</p>
+<div class="flow">
+  <div class="step"><b>1 Mapear</b>el flujo de valor</div><span class="arr">→</span>
+  <div class="step"><b>2 Medir</b>tiempo, costo, reprocesos</div><span class="arr">→</span>
+  <div class="step"><b>3 Detectar</b>los 6 patrones de fricción</div><span class="arr">→</span>
+  <div class="step"><b>4 Cuantificar</b>el desperdicio en $</div>
+</div>
+<table>
+  <tr><th>Patrón universal de fricción</th><th>Señal observable (en cualquier industria)</th></tr>
+  <tr><td><strong>Captura manual</strong></td><td>Datos que un humano transcribe, fotografía o digita a mano (lecturas, formularios, evidencias).</td></tr>
+  <tr><td><strong>Espera / cola</strong></td><td>Trabajo que se detiene esperando aprobación, información o a otra persona.</td></tr>
+  <tr><td><strong>Reproceso / corrección</strong></td><td>Tareas que se rehacen por error, no conformidad o información incompleta (revisitas, devoluciones).</td></tr>
+  <tr><td><strong>Handoff frágil</strong></td><td>Información que se pierde o degrada al pasar entre sistemas, áreas o personas.</td></tr>
+  <tr><td><strong>Decisión sin dato</strong></td><td>Decisiones tomadas por intuición porque el dato no está disponible a tiempo.</td></tr>
+  <tr><td><strong>Búsqueda / no encontrar</strong></td><td>Tiempo gastado buscando información que debería estar al alcance.</td></tr>
+</table>
+<p class="small">Estos seis patrones son agnósticos de industria — es lo que permite que el método sea universal. Lo que cambia entre sectores es <em>dónde</em> aparecen, no <em>qué</em> son. El playbook vertical (sección 7) solo añade el "dónde buscar primero" de cada industria.</p>
+
+<!-- 2 PRIORIZAR -->
+<h2><span class="n">02</span>Cómo priorizar los problemas encontrados</h2>
+<p>Un solo número por cuello de botella, comparable entre sí. Evita el sesgo de atacar "lo interesante" en vez de "lo rentable".</p>
+<div class="formula">
+  <b>Prioridad</b> = ( Impacto_$anual × Frecuencia × Confianza_del_dato ) ÷ ( Esfuerzo_de_solución × Riesgo_de_cambio )
+</div>
+<div class="grid3">
+  <div class="card"><h4>Numerador — atractivo</h4><ul class="small">
+    <li><strong>Impacto $/año:</strong> costo del desperdicio (horas, revisitas, multas, mermas).</li>
+    <li><strong>Frecuencia:</strong> cuántas veces ocurre al mes.</li>
+    <li><strong>Confianza:</strong> qué tan sólido es el dato (medido vs. estimado vs. anecdótico).</li>
+  </ul></div>
+  <div class="card"><h4>Denominador — costo de resolver</h4><ul class="small">
+    <li><strong>Esfuerzo:</strong> semanas/recursos para implementar la solución.</li>
+    <li><strong>Riesgo de cambio:</strong> resistencia organizacional, dependencia regulatoria, integración compleja.</li>
+  </ul></div>
+  <div class="card"><h4>Salida</h4><ul class="small">
+    <li>Ranking de cuellos de botella.</li>
+    <li>Top 3 al cliente.</li>
+    <li>El #1 es el candidato a primera implementación.</li>
+  </ul></div>
+</div>
+<p class="tiny">Regla anti-sesgo: la confianza del dato penaliza fuertemente los problemas que solo "alguien dijo". Nada sube al Top 3 sin evidencia. Cero figuras fabricadas (regla heredada de los reportes ColMayor y de la DD).</p>
+
+<!-- 3 y 5 DECIDIR TIPO DE SOLUCION -->
+<h2><span class="n">03 · 05</span>Cómo decidir objetivamente el TIPO de solución</h2>
+<p class="lead">Antes de elegir un proveedor, el motor decide la <strong>clase</strong> de solución. Esto es lo que impide el sesgo hacia software: muchos problemas no necesitan tecnología.</p>
+<div class="panel">
+  <p style="margin-top:0"><strong>Árbol de decisión (en orden — se detiene en la primera que aplica):</strong></p>
+  <ol>
+    <li><strong>¿El problema es de reglas/comportamiento humano, no de capacidad?</strong> → <span class="tagline t-mid">Solución de PROCESO</span> (rediseño, política, capacitación). No se recomienda comprar nada. Ej.: aprobaciones lentas por política mal diseñada.</li>
+    <li><strong>¿El dato ya existe en sistemas separados y solo no se habla entre sí?</strong> → <span class="tagline t-mid">INTEGRACIÓN</span>. Conectar lo que ya hay antes de comprar algo nuevo.</li>
+    <li><strong>¿Es una tarea repetitiva, de alto volumen, basada en reglas claras?</strong> → <span class="tagline t-mid">AUTOMATIZACIÓN / RPA</span>. Determinística, sin juicio.</li>
+    <li><strong>¿Requiere interpretar contenido no estructurado o juicio (imágenes, texto, decisiones)?</strong> → <span class="tagline t-mid">AGENTE DE IA</span>. Aquí, y solo aquí, entra la IA.</li>
+    <li><strong>¿Falta un sistema de registro/operación que no existe y es estándar de la industria?</strong> → <span class="tagline t-mid">SOFTWARE EXISTENTE</span> (Salesforce, ServiceNow, vertical SaaS). Comprar antes que construir.</li>
+    <li><strong>¿Ninguna plataforma del mercado opera este flujo específico Y se repetirá en más clientes de la misma vertical?</strong> → <span class="tagline t-in">NEXUS</span>. Última opción, condicionada (sección 6).</li>
+  </ol>
+</div>
+<div class="grid2">
+  <div class="card"><h4>Criterios para PROCESO vs. TECNOLOGÍA</h4>
+    <p class="small">Proceso cuando: el costo de cambio es bajo, la causa raíz es una regla o un incentivo, o la tecnología solo automatizaría un mal proceso. <strong>Automatizar un proceso roto solo produce errores más rápido.</strong> Tecnología cuando: el cuello persiste aun con buen proceso, el volumen lo justifica y el ROI supera el costo total de propiedad.</p>
+  </div>
+  <div class="card"><h4>Criterios para construir vs. comprar</h4>
+    <p class="small">Comprar (incluido Salesforce) cuando existe un estándar maduro de la industria. Construir (NEXUS) solo cuando: no hay plataforma que opere ese flujo específico, el caso se repite en la vertical, y el cliente acepta ser caso de referencia. Si dudas, compra.</p>
+  </div>
+</div>
+
+<!-- 4 ASSESSMENT -->
+<h2><span class="n">04</span>Qué información debe recopilar el Assessment</h2>
+<p>Estructura fija, aplicable a cualquier empresa. Es el instrumento reutilizable — lo que se estandariza para escalar.</p>
+<table>
+  <tr><th>Bloque</th><th>Qué captura</th><th>Para qué sirve</th></tr>
+  <tr><td><strong>A. Contexto</strong></td><td>Industria, tamaño, ingresos, n.º de empleados en operación, geografía, regulación aplicable.</td><td>Calibrar umbrales y elegir playbook vertical.</td></tr>
+  <tr><td><strong>B. Flujo de valor</strong></td><td>Los 3–5 procesos core de extremo a extremo, con sus pasos.</td><td>Mapa donde buscar fricción.</td></tr>
+  <tr><td><strong>C. Volúmenes y tiempos</strong></td><td>Cuántas veces ocurre cada paso, cuánto tarda, cuánto cuesta la hora del recurso.</td><td>Numerador de la fórmula de prioridad.</td></tr>
+  <tr><td><strong>D. Evidencia de fricción</strong></td><td>Los 6 patrones (sección 1) localizados con dato real, no opinión.</td><td>Identificar cuellos de botella.</td></tr>
+  <tr><td><strong>E. Stack actual</strong></td><td>Sistemas que ya tienen (CRM, ERP, Field Service), nivel de integración, calidad del dato.</td><td>Decidir integrar vs. comprar vs. construir; estimar esfuerzo.</td></tr>
+  <tr><td><strong>F. Decisión y cambio</strong></td><td>Quién decide (trío IT + negocio + sponsor), apetito de cambio, restricciones regulatorias.</td><td>Denominador (riesgo de cambio) y mapa de venta.</td></tr>
+  <tr><td><strong>G. Línea base económica</strong></td><td>Costo actual del desperdicio total, en pesos.</td><td>Anclar el ROI y el pricing por resultado.</td></tr>
+</table>
+<p class="tiny">El instrumento reutiliza la capacidad ya demostrada del fundador: assessments estructurados (instrumentos IPIP), master prompts y context-blocks. No se crea nada nuevo; se aplica lo existente a operaciones.</p>
+
+<!-- 6 CUANDO NEXUS -->
+<h2><span class="n">06</span>Cuándo NEXUS es la mejor opción — y cuándo NO recomendarlo</h2>
+<div class="grid2">
+  <div class="card"><h4 class="do">NEXUS SÍ, cuando se cumplen TODAS</h4><ul class="small">
+    <li>El flujo es de operación en terreno y <strong>ninguna plataforma madura</strong> lo opera bien tal cual.</li>
+    <li>La solución requiere un agente (juicio sobre contenido no estructurado) + operar el resultado.</li>
+    <li>El mismo patrón <strong>se repite en otros clientes de la misma vertical</strong> (alimenta el corpus).</li>
+    <li>El cliente acepta pricing por resultado y ser caso de referencia.</li>
+    <li>El esfuerzo de construir es menor que el de forzar una plataforma existente a hacerlo.</li>
+  </ul></div>
+  <div class="card"><h4 class="dont">NEXUS NO, cuando</h4><ul class="small">
+    <li>Existe un estándar maduro (Salesforce/ServiceNow/SaaS vertical) que ya lo hace. <strong>Se recomienda ese, aunque no sea nuestro.</strong></li>
+    <li>El problema se resuelve con proceso, integración o RPA — sin plataforma nueva.</li>
+    <li>Es un caso único, no replicable: no construye corpus, no hay flywheel.</li>
+    <li>El cliente es de una vertical fuera del foco actual (la atención va al recomendador honesto: "esto no es para nosotros todavía").</li>
+  </ul></div>
+</div>
+<p class="panel small" style="margin-bottom:0"><strong>Salvaguarda anti-sesgo (auditable):</strong> en cada diagnóstico, el motor debe registrar <em>por qué se descartó cada clase de solución</em> antes de llegar a NEXUS. Si NEXUS aparece recomendado sin que el árbol de la sección 3 lo justifique paso a paso, la recomendación se invalida. Esto se puede auditar cliente a cliente. La neutralidad no es una intención: es un registro.</p>
+
+<!-- 7 REPETIBLE -->
+<h2><span class="n">07</span>Cómo volverlo repetible y escalable</h2>
+<p class="lead">El motor escala separando lo universal (el núcleo) de lo específico (los playbooks). El núcleo se aprende una vez; cada vertical es una capa fina encima.</p>
+<div class="flow">
+  <div class="step"><b>Núcleo</b>6 patrones · fórmula · árbol · assessment</div><span class="arr">+</span>
+  <div class="step"><b>Playbook vertical</b>dónde buscar · umbrales · benchmarks</div><span class="arr">=</span>
+  <div class="step"><b>Diagnóstico</b>repetible por cualquier analista</div>
+</div>
+<div class="grid3">
+  <div class="card"><h4>Lo que NO cambia (núcleo)</h4><ul class="small">
+    <li>Los 6 patrones de fricción.</li>
+    <li>La fórmula de priorización.</li>
+    <li>El árbol de decisión de solución.</li>
+    <li>La estructura del assessment (7 bloques).</li>
+    <li>La salvaguarda anti-sesgo.</li>
+  </ul></div>
+  <div class="card"><h4>Lo que SÍ cambia (playbook)</h4><ul class="small">
+    <li>Dónde aparecen los patrones en esa industria.</li>
+    <li>Benchmarks y umbrales del sector.</li>
+    <li>Qué soluciones existentes son estándar ahí.</li>
+    <li>Vocabulario y reguladores.</li>
+  </ul></div>
+  <div class="card"><h4>Cómo escala sin clonar al fundador</h4><ul class="small">
+    <li>El núcleo se documenta y se entrena a 1 analista.</li>
+    <li>El fundador hace los primeros 3 de cada vertical; luego supervisa.</li>
+    <li>Cada diagnóstico alimenta el playbook → el siguiente es más rápido.</li>
+  </ul></div>
+</div>
+<div class="panel">
+  <p style="margin-top:0"><strong>Orden de despliegue de verticales (coherente con DD + Blueprint):</strong></p>
+  <ol>
+    <li><strong>Field Service / Gas</strong> — vertical 0. Aquí se prueba el núcleo y se escribe el primer playbook. <span class="tagline t-in">Ahora</span></li>
+    <li><strong>Seguros LATAM</strong> — vertical 1, solo cuando el playbook de gas esté probado (≥3 clientes). <span class="tagline t-mid">Mes 18–24</span></li>
+    <li>Siguientes verticales — una a la vez, cada una con su playbook, nunca en paralelo. <span class="tagline t-out">No antes</span></li>
+  </ol>
+  <p style="margin-bottom:0">El motor es genérico desde el día uno; la <em>aplicación comercial</em> es secuencial. Así tienes neutralidad de método sin caer en "demasiado amplio".</p>
+</div>
+
+<!-- SINTESIS -->
+<h2><span class="n">==</span>Síntesis: el flujo completo del Discovery Engine</h2>
+<div class="hero" style="border-color:var(--turq)">
+  <div class="flow" style="margin:0">
+    <div class="step"><b>Assessment</b>7 bloques</div><span class="arr">→</span>
+    <div class="step"><b>Identificar</b>6 patrones</div><span class="arr">→</span>
+    <div class="step"><b>Priorizar</b>fórmula → Top 3</div><span class="arr">→</span>
+    <div class="step"><b>Decidir clase</b>árbol de 6 niveles</div><span class="arr">→</span>
+    <div class="step"><b>Recomendar</b>proceso · integración · RPA · agente · SaaS · NEXUS · nada</div><span class="arr">→</span>
+    <div class="step"><b>Registrar</b>corpus + salvaguarda</div>
+  </div>
+</div>
+<p class="small">NEXUS aparece en el quinto paso solo si el árbol lo justifica y la salvaguarda lo permite. En la mayoría de los casos sanos, no aparecerá — y eso es exactamente lo que hace creíble al motor cuando sí lo recomienda.</p>
+
+<div class="foot">
+  <p>Coherencia: este documento mantiene la neutralidad pedida y respeta las restricciones vigentes (no se modifica Memory OS, arquitectura, ontología ni se crean conceptos nuevos: los 6 patrones, la fórmula y el árbol son organización del método, no nuevas capas de producto). La única tensión declarada — neutralidad vs. amplitud — se resuelve con núcleo universal + despliegue vertical secuencial, alineado con DD v2 y Commercial Blueprint v1.0. Rangos y umbrales a calibrar con los primeros diagnósticos reales <span class="nv">[NO VERIFICADO]</span>.</p>
+  <p>N-LABS Discovery Engine v1.0 · 25 jun 2026 · El motor no vende producto: vende la verdad operativa.</p>
+</div>
+
+</div>
+</body>
+</html>

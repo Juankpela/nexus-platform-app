@@ -50,6 +50,9 @@ class FakeAudit {
   async listRecentByEventType() {
     return []
   }
+  async listByTenantWindow() {
+    return []
+  }
 }
 
 function deps(reader: RescheduleCandidateReader, audit: FakeAudit): ProposeReschedulesDeps {

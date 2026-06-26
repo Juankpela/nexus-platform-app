@@ -5,6 +5,7 @@ import Link from "next/link"
 import { AiInsightsPanel } from "@/components/forecasting/ai-insights-panel"
 import { ForecastSnapshotsTable } from "@/components/forecasting/forecast-snapshots-table"
 import { PipelineFunnelChart } from "@/components/forecasting/pipeline-funnel-chart"
+import { QuotaCard } from "@/components/forecasting/quota-card"
 import { RepPerformanceTable } from "@/components/forecasting/rep-performance-table"
 import { RevenueKpiCards } from "@/components/forecasting/revenue-kpi-cards"
 import { RevenueTrendChart } from "@/components/forecasting/revenue-trend-chart"
@@ -14,11 +15,13 @@ import { requirePermission } from "@/modules/authorization/application/require-p
 import { FORECASTING_PERMISSIONS, hasPermission } from "@/modules/authorization/domain/permission"
 import {
   getTenantPipelineAnalytics,
+  getTenantQuota,
   getTenantRepPerformance,
   getTenantRevenueMetrics,
   getTenantRevenueTrend,
   listTenantForecastSnapshots,
 } from "@/modules/forecasting/composition"
+import { getPeriodLabel } from "@/modules/forecasting/application/use-cases/take-forecast-snapshot"
 import type { ForecastPeriod } from "@/modules/forecasting/domain/revenue-metrics"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 import { cn } from "@/lib/utils"
@@ -80,13 +83,20 @@ export default async function ForecastingPage({
     return `${basePath}?${p.toString()}`
   }
 
+  // Meta de ventas (a nivel equipo) del período seleccionado — mismo mapeo
+  // período→etiqueta que los snapshots. "Todo" no tiene meta asociada.
+  const { type: quotaType, label: quotaLabel } = getPeriodLabel(period)
+
   // Fetch data in parallel
-  const [metrics, stages, reps, trend, snapshots] = await Promise.all([
+  const [metrics, stages, reps, trend, snapshots, quota] = await Promise.all([
     getTenantRevenueMetrics(context.tenantId, period),
     getTenantPipelineAnalytics(context.tenantId),
     getTenantRepPerformance(context.tenantId, period),
     getTenantRevenueTrend(context.tenantId),
     listTenantForecastSnapshots(context.tenantId, 20),
+    period !== "all_time"
+      ? getTenantQuota(context.tenantId, quotaType, quotaLabel, null)
+      : Promise.resolve(null),
   ])
 
   const tabClass = (t: Tab) =>
@@ -154,6 +164,16 @@ export default async function ForecastingPage({
         {tab === "overview" && (
           <div className="space-y-6">
             <RevenueKpiCards metrics={metrics} />
+            {period !== "all_time" ? (
+              <QuotaCard
+                tenantSlug={tenantSlug}
+                period={period}
+                periodLabelText={PERIOD_LABELS[period]}
+                currentQuota={quota?.quotaAmount ?? null}
+                actual={metrics.closedWonRevenue}
+                canWrite={canWrite}
+              />
+            ) : null}
             <div className="grid gap-5 lg:grid-cols-2">
               <RevenueTrendChart data={trend} />
               <AiInsightsPanel tenantSlug={tenantSlug} />

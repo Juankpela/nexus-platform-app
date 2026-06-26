@@ -5,7 +5,7 @@ import type { ForecastingRepository } from "@/modules/forecasting/application/po
 
 type Deps = { repo: ForecastingRepository }
 
-function getPeriodLabel(period: ForecastPeriod): { type: "month" | "quarter" | "year"; label: string } {
+export function getPeriodLabel(period: ForecastPeriod): { type: "month" | "quarter" | "year"; label: string } {
   const now = new Date()
   const y = now.getFullYear()
   const m = now.getMonth()

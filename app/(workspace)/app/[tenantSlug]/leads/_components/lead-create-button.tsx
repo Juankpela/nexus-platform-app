@@ -32,7 +32,7 @@ export function LeadCreateButton({ tenantSlug }: { tenantSlug: string }) {
     return (
       <Button size="sm" onClick={() => setOpen(true)}>
         <Plus className="mr-2 h-4 w-4" />
-        Nuevo lead
+        Nuevo prospecto
       </Button>
     )
   }
@@ -42,7 +42,7 @@ export function LeadCreateButton({ tenantSlug }: { tenantSlug: string }) {
       action={onSubmit}
       className="w-full space-y-3 rounded-xl border bg-card p-4"
     >
-      <h2 className="text-sm font-semibold">Nuevo lead</h2>
+      <h2 className="text-sm font-semibold">Nuevo prospecto</h2>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <label className="space-y-1 text-sm">
           <span className="text-xs text-muted-foreground">Nombre *</span>
@@ -53,7 +53,7 @@ export function LeadCreateButton({ tenantSlug }: { tenantSlug: string }) {
           <Input name="company" className="h-9" />
         </label>
         <label className="space-y-1 text-sm">
-          <span className="text-xs text-muted-foreground">Email</span>
+          <span className="text-xs text-muted-foreground">Correo</span>
           <Input name="email" type="email" className="h-9" />
         </label>
         <label className="space-y-1 text-sm">

@@ -1,17 +1,20 @@
-import { workspaceNavigation } from "@/modules/platform/presentation/navigation"
+import {
+  capabilityLabel,
+  workspaceNavigation,
+} from "@/modules/platform/presentation/navigation"
 
 export type Breadcrumb = {
   label: string
-  /** Absolute href, or null for non-navigable crumbs (group / detail). */
+  /** Absolute href, or null for non-navigable crumbs (capability / detail). */
   href: string | null
 }
 
-/** segment → { label, group } registry derived from the nav definition. */
+/** segment → { label, capability label } registry derived from the nav definition. */
 const SEGMENT_REGISTRY: Record<string, { label: string; group?: string }> =
   Object.fromEntries(
     workspaceNavigation.map((item) => [
       item.segment,
-      { label: item.label, group: item.group },
+      { label: item.label, group: capabilityLabel(item.capability) },
     ]),
   )
 

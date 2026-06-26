@@ -64,6 +64,9 @@ class FakeAudit {
   async listRecentByEventType() {
     return []
   }
+  async listByTenantWindow() {
+    return []
+  }
 }
 
 describe("zone flow (integration over use-cases)", () => {

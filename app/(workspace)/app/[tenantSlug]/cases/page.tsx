@@ -136,7 +136,7 @@ export default async function CasesPage({
   return (
     <>
       <PageHeader
-        title="Casos"
+        title="Solicitudes"
         description="Gestiona los casos de servicio al cliente y su SLA."
       />
       <div className="space-y-4 px-5 py-6 sm:px-8">

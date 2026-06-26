@@ -6,6 +6,7 @@ import { notFound } from "next/navigation"
 import { EmptyState } from "@/components/layout/empty-state"
 import { PageHeader } from "@/components/layout/page-header"
 import { Pagination } from "@/components/crm/pagination"
+import { StockMovementDialog } from "@/components/inventory/stock-movement-dialog"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
 import {
   INVENTORY_PERMISSIONS,
@@ -48,6 +49,10 @@ export default async function MaterialDetailPage({
   requirePermission(context.effectivePermissions, INVENTORY_PERMISSIONS.materialsRead)
 
   const canReadStock = hasPermission(context.effectivePermissions, INVENTORY_PERMISSIONS.stockRead)
+  // Movimientos manuales de stock: gestión (entrada/ajuste/reserva/liberación) y
+  // consumo tienen permisos distintos (provisionados en 20260610002_inventory_core.sql).
+  const canManageStock = hasPermission(context.effectivePermissions, INVENTORY_PERMISSIONS.stockManage)
+  const canConsumeStock = hasPermission(context.effectivePermissions, INVENTORY_PERMISSIONS.consume)
   const { material, item } = await getInventorySnapshot(context.tenantId, materialId)
   if (!material) notFound()
 
@@ -67,9 +72,21 @@ export default async function MaterialDetailPage({
     <>
       <PageHeader title={material.name} description={material.sku ? `SKU: ${material.sku}` : "Material detail"} />
       <div className="space-y-6 px-5 py-6 sm:px-8">
-        <Link href={base} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="size-4" /> Materials
-        </Link>
+        <div className="flex items-center justify-between gap-3">
+          <Link href={base} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="size-4" /> Materials
+          </Link>
+          {(canManageStock || canConsumeStock) && material.active ? (
+            <StockMovementDialog
+              tenantSlug={tenantSlug}
+              materialId={materialId}
+              materialName={material.name}
+              unitOfMeasure={material.unitOfMeasure}
+              canManage={canManageStock}
+              canConsume={canConsumeStock}
+            />
+          ) : null}
+        </div>
 
         <div className="rounded-xl border bg-card p-4 text-sm">
           <div className="grid gap-3 sm:grid-cols-2">

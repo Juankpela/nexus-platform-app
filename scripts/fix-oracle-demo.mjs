@@ -45,6 +45,9 @@ const SLUG = (val("--slug", "oracle")).toLowerCase()
 const WO = val("--wo", "WO-2026-0006")
 const PHONE = val("--phone", "3017099122")
 const ASSIGNMENT = val("--assignment", null)
+// Reubica el destino del servicio del caso a una dirección lejana (para demos del
+// contador de ETA: distancia técnico↔cliente > 0 → llegada en el futuro → contador).
+const RELOCATE = val("--relocate", null)
 
 async function get(path) {
   const r = await fetch(`${BASE}/rest/v1/${path}`, { headers: H })
@@ -168,6 +171,29 @@ async function main() {
     `\n  → ETA ${hasCoords ? "PUEDE calcularse (hay coords)" : "IMPOSIBLE: faltan coords del sitio"}.` +
       (hasCoords ? " Si aún no aparece, revisar Directions API + key en Vercel." : ""),
   )
+
+  // Reubicar destino lejano: el ETA sale 0 min cuando técnico y cliente están en el
+  // mismo lugar (demo desde un equipo). Mover el destino del cliente lejos hace que
+  // un "Voy en camino" desde tu ubicación dé un ETA > 0 y el contador corra.
+  if (RELOCATE) {
+    console.log(`\n📍 Reubicando el destino del cliente a "${RELOCATE}"…`)
+    const g = await geocode(RELOCATE)
+    if (g?.lat) {
+      await patch(`cases?id=eq.${c.id}`, {
+        service_lat: g.lat,
+        service_lng: g.lng,
+        location_source: "geocoded",
+        service_address: g.formatted || RELOCATE,
+      })
+      console.log(`  ✓ Nuevo destino: ${g.lat},${g.lng} (${g.formatted})`)
+      console.log(`  → Ahora un "Voy en camino" NUEVO (lejos de ahí) dará ETA > 0 y el contador correrá.`)
+    } else if (g?.error) {
+      console.log(`  ✗ Geocoding status=${g.error} (revisa la dirección o la API).`)
+    } else {
+      console.log(`  ✗ No se pudo geocodificar esa dirección.`)
+    }
+    return
+  }
 
   // Último aviso "voy en camino" en auditoría: ¿guardó ETA?
   const events = await get(

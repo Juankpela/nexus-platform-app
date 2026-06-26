@@ -95,6 +95,9 @@ class FakeAudit {
   async listRecentByEventType() {
     return []
   }
+  async listByTenantWindow() {
+    return []
+  }
 }
 
 function deps(repo: OverdueScanRepository, audit: FakeAudit): ScanDeps {

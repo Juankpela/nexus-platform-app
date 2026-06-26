@@ -9,7 +9,8 @@ import { NexusLogo } from "@/components/layout/nexus-logo"
 import { cn } from "@/lib/utils"
 import { hasPermission } from "@/modules/authorization/domain/permission"
 import {
-  NAVIGATION_GROUP_ORDER,
+  CAPABILITIES,
+  isCapabilityEntitled,
   workspaceNavigation,
   type NavigationItem,
 } from "@/modules/platform/presentation/navigation"
@@ -18,16 +19,24 @@ export function AppSidebar({
   tenantName,
   tenantSlug,
   permissions,
+  enabledFeatures,
 }: {
   tenantName: string
   tenantSlug: string
   permissions: readonly string[]
+  enabledFeatures: readonly string[]
 }) {
   const pathname = usePathname()
-  const items = workspaceNavigation.filter((item) =>
-    hasPermission(permissions, item.permission),
-  )
-  const ungrouped = items.filter((item) => !item.group)
+
+  // Un ítem se ve si: el usuario tiene el permiso Y compró la capacidad.
+  const visible = workspaceNavigation.filter((item) => {
+    if (!hasPermission(permissions, item.permission)) return false
+    if (item.capability === "home") return true
+    const capability = CAPABILITIES.find((c) => c.id === item.capability)
+    return capability ? isCapabilityEntitled(capability, enabledFeatures) : false
+  })
+
+  const home = visible.filter((item) => item.capability === "home")
 
   const isActive = (segment: string) => {
     const href = `/app/${tenantSlug}/${segment}`
@@ -80,16 +89,16 @@ export function AppSidebar({
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
-        {ungrouped.map(renderItem)}
+        {home.map(renderItem)}
 
-        {NAVIGATION_GROUP_ORDER.map((group) => {
-          const groupItems = items.filter((i) => i.group === group)
+        {CAPABILITIES.map((capability) => {
+          const groupItems = visible.filter((i) => i.capability === capability.id)
           if (groupItems.length === 0) return null
           const groupActive = groupItems.some((i) => isActive(i.segment))
           return (
             <NavGroup
-              key={group}
-              title={group}
+              key={capability.id}
+              title={capability.label}
               defaultOpen={groupActive}
               hasActive={groupActive}
             >

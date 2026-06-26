@@ -112,7 +112,7 @@ export default async function TechniciansPage({
     <>
       <PageHeader
         title="Técnicos"
-        description="Fuerza de trabajo de Field Service — base para asignación y agenda."
+        description="Tu equipo de técnicos de campo, base para asignar y agendar el trabajo."
       />
       <div className="space-y-4 px-5 py-6 sm:px-8">
         {/* Tabs + create */}
@@ -122,7 +122,7 @@ export default async function TechniciansPage({
               <Users className="size-3.5" /> Lista
             </Link>
             <Link href={tabHref("stats")} className={tabClass("stats")}>
-              Stats
+              Métricas
             </Link>
           </div>
 

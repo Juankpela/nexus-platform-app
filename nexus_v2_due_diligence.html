@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>N-LABS · Strategic Due Diligence — NEXUS v2</title>
+<style>
+  :root{
+    --bg:#0b0e0e; --panel:#121717; --panel2:#171d1d; --line:#243030;
+    --ink:#e9efee; --mut:#9fb0ad; --dim:#6f817e;
+    --mag:#C21467; --turq:#35B1AD; --gold:#E39D30; --green:#0D8180; --red:#d6455a;
+    --ok:#35B1AD; --warn:#E39D30; --bad:#d6455a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1040px;margin:0 auto;padding:48px 24px 96px}
+  header.cover{border-bottom:1px solid var(--line);padding-bottom:34px;margin-bottom:40px}
+  .kicker{letter-spacing:.22em;text-transform:uppercase;font-size:12px;color:var(--turq);font-weight:700}
+  h1{font-size:40px;line-height:1.1;margin:14px 0 8px;font-weight:800}
+  h1 span{color:var(--mag)}
+  .sub{color:var(--mut);font-size:18px;max-width:760px}
+  .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+  .pill{font-size:12px;border:1px solid var(--line);background:var(--panel);padding:6px 11px;border-radius:999px;color:var(--mut)}
+  h2{font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--turq);margin:54px 0 6px;font-weight:700}
+  h2 .n{color:var(--dim);margin-right:10px}
+  h3{font-size:22px;margin:8px 0 14px;font-weight:700}
+  p{color:#d4dddb}
+  .lead{font-size:18px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin:16px 0}
+  .verdict{background:linear-gradient(180deg,#171d1d,#10part 0,#11181 0,#101616);border:1px solid var(--gold);border-radius:16px;padding:28px;margin:26px 0}
+  .verdict .tag{display:inline-block;background:var(--gold);color:#1a1200;font-weight:800;letter-spacing:.04em;padding:8px 16px;border-radius:8px;font-size:18px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  @media(max-width:760px){.grid2,.grid3{grid-template-columns:1fr}}
+  .card{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:18px}
+  .card h4{margin:0 0 8px;font-size:15px}
+  .small{font-size:14px;color:var(--mut)}
+  .tiny{font-size:12.5px;color:var(--dim)}
+  table{width:100%;border-collapse:collapse;margin:8px 0;font-size:14.5px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--turq);font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:700}
+  td.num{font-variant-numeric:tabular-nums}
+  .score{display:flex;align-items:center;gap:12px;margin:9px 0}
+  .score .lab{width:230px;font-size:14px;color:#cdd8d6}
+  .bar{flex:1;height:9px;background:#0c1010;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:999px}
+  .score .v{width:48px;text-align:right;font-variant-numeric:tabular-nums;font-weight:700;font-size:14px}
+  .b-ok{background:var(--turq)} .b-mid{background:var(--gold)} .b-bad{background:var(--red)} .b-grn{background:var(--green)}
+  ul{margin:8px 0;padding-left:20px} li{margin:5px 0;color:#d4dddb}
+  .kill{border-left:3px solid var(--red);padding-left:16px;margin:14px 0}
+  .kill .res{font-size:13px;color:var(--mut);margin-top:4px}
+  .tagline{display:inline-block;font-size:11.5px;font-weight:700;padding:3px 8px;border-radius:6px;letter-spacing:.04em}
+  .t-sur{background:rgba(53,177,173,.14);color:var(--turq);border:1px solid rgba(53,177,173,.3)}
+  .t-die{background:rgba(214,69,90,.14);color:var(--red);border:1px solid rgba(214,69,90,.3)}
+  .t-part{background:rgba(227,157,48,.14);color:var(--gold);border:1px solid rgba(227,157,48,.3)}
+  .quote{border-left:3px solid var(--turq);padding:4px 0 4px 16px;color:var(--mut);font-style:italic;margin:14px 0}
+  .src{font-size:12px;color:var(--dim)}
+  a{color:var(--turq)}
+  .nv{color:var(--gold);font-size:11px;font-weight:700;letter-spacing:.05em}
+  hr{border:0;border-top:1px solid var(--line);margin:40px 0}
+  .road{display:grid;grid-template-columns:90px 1fr;gap:0}
+  .road .ph{border-right:2px solid var(--line);padding:14px 16px 14px 0;text-align:right;color:var(--turq);font-weight:700;font-size:13px}
+  .road .bd{padding:14px 0 14px 18px;border-left:2px solid var(--line);margin-left:-2px}
+  .road .bd h4{margin:0 0 6px}
+  .do{color:var(--turq)} .dont{color:var(--red)}
+  code{background:#0c1010;border:1px solid var(--line);padding:1px 6px;border-radius:5px;font-size:13px;color:var(--gold)}
+  .foot{margin-top:60px;padding-top:22px;border-top:1px solid var(--line);color:var(--dim);font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="cover">
+  <div class="kicker">N-LABS · Comité de Inversión Permanente</div>
+  <h1>Strategic Due Diligence<br><span>NEXUS v2</span> — Operational Blueprint</h1>
+  <p class="sub">Mandato: no validar la tesis, destruirla. Asumimos que esta empresa NO debería existir y dejamos que la evidencia decida. El cariño hacia el fundador se demuestra protegiendo su capital y su tiempo.</p>
+  <div class="meta">
+    <span class="pill">Fecha: 25 jun 2026</span>
+    <span class="pill">Protocolo: 8 fases</span>
+    <span class="pill">Scoring: 11 dimensiones</span>
+    <span class="pill">Búsquedas web: 4 clusters · 40 fuentes</span>
+    <span class="pill">Fundador: Juan Carlos Peláez</span>
+  </div>
+</header>
+
+<!-- VERDICT FIRST -->
+<h2><span class="n">00</span>Veredicto</h2>
+<div class="verdict">
+  <span class="tag">PIVOTAR → CONTINUAR CON CAMBIOS MAYORES</span>
+  <h3 style="margin-top:18px">La tesis v2 sigue siendo demasiado amplia. El problema es real y el fundador es capaz, pero el "triple producto" (Blueprint + NEXUS + Memory OS) no es defendible como se plantea.</h3>
+  <p>La evidencia <strong>no logra matar el problema</strong> (los cuellos de botella operativos en empresas de servicios existen y se pagan) ni <strong>mata al fundador</strong> (Peláez tiene una ventaja injusta real y rara en LATAM). Pero la evidencia <strong>sí mata la arquitectura de negocio propuesta</strong>: "Operational Blueprint" como metodología propietaria es una categoría con dueños establecidos, "NEXUS como plataforma de ejecución" reconstruye el CRM horizontal que dijiste abandonar, y el "Memory OS como moat compuesto" es una hipótesis no probada que casi nadie ha logrado convertir en foso defendible.</p>
+  <p style="margin-bottom:0"><strong>El movimiento correcto no es construir tres cosas. Es vender una sola: un diagnóstico de pago que termina en un agente vertical que cobra por trabajo hecho, en UNA industria donde el fundador ya tiene acceso (field service / utilities / seguros LATAM vía el ecosistema Salesforce).</strong> Todo lo demás se retrasa o se elimina.</p>
+</div>
+
+<!-- 1 TESIS -->
+<h2><span class="n">01</span>La tesis, en una frase falsable</h2>
+<div class="panel">
+  <p class="lead" style="margin-top:0"><strong>Tesis v2 (reconstruida):</strong> "Una firma boutique latinoamericana puede entrar a empresas de servicios mediante un diagnóstico operativo propietario (Operational Blueprint), implementar las soluciones en una plataforma propia (NEXUS), y volverse imbatible porque cada cliente alimenta un knowledge moat (Memory OS) que hace la siguiente implementación mejor."</p>
+  <p><strong>Qué la haría falsa (y por tanto, qué buscamos):</strong></p>
+  <ul>
+    <li>Que el diagnóstico operativo ya sea una categoría con dueños (consultoría OpEx, process mining, Lean/Six Sigma).</li>
+    <li>Que "implementar en plataforma propia" sea exactamente el CRM/Field Service horizontal que la v1 abandonó, ahora con otro nombre.</li>
+    <li>Que el "knowledge moat compuesto" sea una promesa que muy pocos han convertido en foso real, y que los que lo lograron tienen escala de datos que un boutique no alcanza.</li>
+    <li>Que nada de esto sea repetible 100 veces sin clonar al fundador.</li>
+  </ul>
+  <p style="margin-bottom:0">Spoiler de las fases siguientes: <span class="tagline t-die">las cuatro se cumplen, en distinto grado.</span></p>
+</div>
+
+<!-- 2 HIPOTESIS DE MUERTE -->
+<h2><span class="n">02</span>Hipótesis de muerte y veredicto de cada una</h2>
+<div class="panel">
+  <div class="kill">
+    <strong>H1 — "El problema no existe o no se paga."</strong> <span class="tagline t-die">NO MATA LA TESIS</span>
+    <div class="res">Refutada. El problema se paga y crece. El mercado de process mining (la versión softwarizada de "encontrar cuellos de botella") está valorado entre ~0.85 y 5.45 mil millones USD en 2026 según la fuente, con CAGRs de 18–56%. La consultoría OpEx es un mercado maduro de décadas. El problema sobrevive.</div>
+  </div>
+  <div class="kill">
+    <strong>H2 — "La categoría ya tiene dueño."</strong> <span class="tagline t-sur">MATA EL APPROACH, NO EL PROBLEMA</span>
+    <div class="res">Confirmada parcialmente. "Diagnóstico → blueprint → roadmap de mejora" es literalmente el producto de TBM, Emerson, UNITY, Celonis y las Big 4. "Operational Blueprint" no es un concepto nuevo: es el nombre genérico de lo que ya hacen. Esto mata la idea de Blueprint como moat, no la idea de usarlo como gancho.</div>
+  </div>
+  <div class="kill">
+    <strong>H3 — "NEXUS es el CRM horizontal que dijimos abandonar, con otro nombre."</strong> <span class="tagline t-die">MATA NEXUS COMO PLATAFORMA GENERALISTA</span>
+    <div class="res">Confirmada. Si NEXUS es "la plataforma donde se implementan y operan las soluciones", y las soluciones cubren cualquier empresa de servicios, entonces NEXUS es una plataforma operativa horizontal compitiendo con Salesforce/ServiceNow — exactamente lo que la v1 ya rechazó. La tesis se contradice a sí misma.</div>
+  </div>
+  <div class="kill">
+    <strong>H4 — "El Memory OS no es un moat, es una feature."</strong> <span class="tagline t-part">PARCIALMENTE CONFIRMADA</span>
+    <div class="res">El "memory layer" es la nueva baseline de la industria en 2026, no un diferenciador (Anthropic, OpenAI y Google lanzaron memoria enterprise el mismo año). El moat de los ganadores verticales (Avoca, Sierra) NO es la tecnología de memoria: es el volumen de datos operativos acumulados de cientos de clientes en UNA industria. Un boutique con 5–20 clientes no alcanza esa escala. El flywheel es real pero débil al inicio.</div>
+  </div>
+  <div class="kill">
+    <strong>H5 — "No es repetible sin clonar al fundador."</strong> <span class="tagline t-part">PARCIALMENTE CONFIRMADA</span>
+    <div class="res">El diagnóstico de alto valor depende del criterio del fundador (arquitecto + comercial + Salesforce + sector). Eso es lo que lo hace bueno y lo que impide escalarlo a 100. Estandarizable solo si se reduce el alcance a una industria y se codifica el blueprint en un instrumento (assessment) reutilizable.</div>
+  </div>
+</div>
+
+<!-- 3 MERCADO -->
+<h2><span class="n">03</span>Mercado — ¿existe el problema, se compra, quién decide?</h2>
+<div class="grid2">
+  <div class="card">
+    <h4>Tamaño y crecimiento (rango, no número único)</h4>
+    <p class="small">Las fuentes divergen fuertemente — señal de categoría real pero medida con definiciones distintas:</p>
+    <table>
+      <tr><th>Fuente</th><th>Mercado 2026</th><th>CAGR</th></tr>
+      <tr><td>Mordor Intelligence</td><td class="num">~0.85 B USD</td><td class="num">18.6%</td></tr>
+      <tr><td>mybusinessfuture</td><td class="num">~0.85 B USD</td><td class="num">&gt;18%</td></tr>
+      <tr><td>SkyQuest</td><td class="num">1.18 B USD</td><td class="num">51.1%</td></tr>
+      <tr><td>Fortune Bus. Insights</td><td class="num">5.45 B USD</td><td class="num">34.4%</td></tr>
+      <tr><td>Polaris / Boom reports</td><td class="num">&gt;5 B USD</td><td class="num">56.1%</td></tr>
+    </table>
+    <p class="tiny">Divergencia de 0.85 a 5.45 B USD para "process mining software" 2026. Lectura del comité: el problema se compra, pero el TAM directo del software de diagnóstico es modesto comparado con el ruido de marketing. <span class="nv">[Divergencia visible]</span></p>
+  </div>
+  <div class="card">
+    <h4>¿Las empresas compran esto? ¿Cuánto pagan?</h4>
+    <ul class="small">
+      <li>Sí. <span class="src">Licencias cloud de process mining mid-market: cifras de cinco dígitos medios/año.</span> El diagnóstico tiene comprador.</li>
+      <li>Umbral de relevancia: empresas desde <strong>~50 M EUR de ingresos</strong> o con alto volumen de procesos manuales (compras, fulfillment, servicio).</li>
+      <li>Primer caso de uso típico = Purchase-to-Pay, Order-to-Cash, IT service management. <strong>No</strong> producción.</li>
+      <li>Tiempo a primer caso productivo: <strong>12–16 semanas</strong> con datos limpios.</li>
+    </ul>
+  </div>
+</div>
+<div class="grid2">
+  <div class="card">
+    <h4>¿Quién decide?</h4>
+    <p class="small">En process mining / OpEx el setup estable es un <strong>trío</strong>: IT (pipeline de datos), la unidad de negocio (experticia de proceso) y un sponsor ejecutivo. En consultoría OpEx, decide el COO / Director de Operaciones / VP. <strong>Implicación:</strong> no es una venta a un solo C-level; requiere coalición. Esto encarece el ciclo y choca con el principio "entrar siempre por el GM".</p>
+  </div>
+  <div class="card">
+    <h4>¿Con qué frecuencia ocurre la compra?</h4>
+    <p class="small">El diagnóstico es episódico (1 vez, o anual). La operación/automatización es recurrente. <strong>El dinero recurrente NO está en el blueprint</strong> — está en lo que se opera después. Las consultoras lo saben: el modelo Celonis–McKinsey empaqueta plataforma + playbook para asegurar ciclos multianuales y lock-in. Si N-LABS vende solo diagnósticos, vende proyectos, no ARR.</p>
+  </div>
+</div>
+
+<!-- 4 COMPETENCIA -->
+<h2><span class="n">04</span>Competencia — el campo está poblado</h2>
+<p class="lead">El brief pidió mirar más allá de CRM. Lo hicimos. En cada capa de la tesis ya hay jugadores con escala, capital o foso de datos.</p>
+<table>
+  <tr><th>Capa de la tesis</th><th>Quién ya lo hace</th><th>Qué tan ocupado</th></tr>
+  <tr><td><strong>Diagnóstico operativo / Blueprint</strong></td><td>TBM, Emerson, UNITY, Big 4 (Accenture, Deloitte, McKinsey), boutiques OpEx</td><td><span class="tagline t-die">Saturado · décadas</span></td></tr>
+  <tr><td><strong>Process mining (Blueprint softwarizado)</strong></td><td>Celonis, UiPath, SAP Signavio, IBM, Microsoft (Fabric), Apromore, Skan.ai, QPR</td><td><span class="tagline t-die">Concentrado · Celonis+UiPath+IBM &gt;40% revenue</span></td></tr>
+  <tr><td><strong>Automatización / RPA</strong></td><td>UiPath, Power Automate, Zapier Agents, n8n, Lindy</td><td><span class="tagline t-die">Saturado</span></td></tr>
+  <tr><td><strong>Plataforma de ejecución vertical (NEXUS)</strong></td><td>Salesforce/Agentforce, ServiceNow, vertical AI: Avoca (field service), Sierra, Decagon</td><td><span class="tagline t-die">Bien financiado · Avoca $125M, Sierra $4.5B val.</span></td></tr>
+  <tr><td><strong>Memory OS / knowledge layer</strong></td><td>Anthropic, OpenAI, Google (memoria enterprise nativa 2026)</td><td><span class="tagline t-part">Es baseline, no producto</span></td></tr>
+  <tr><td><strong>Salesforce SI / Managed Services LATAM</strong></td><td>Accenture, Cognizant, OSF, VRP, +50 firmas LATAM (Manifest), y el propio ColibriIT</td><td><span class="tagline t-part">Fragmentado · hueco regional real</span></td></tr>
+</table>
+<div class="panel">
+  <p style="margin-top:0"><strong>Lectura competitiva (test "por qué tú / por qué ahora"):</strong></p>
+  <p>La única columna donde un boutique paisa tiene derecho a jugar y ganar es la última cruzada con la penúltima: <strong>un agente vertical de operaciones para una industria específica de servicios en LATAM, distribuido a través del ecosistema Salesforce/Field Service donde el fundador ya tiene credenciales y acceso.</strong> Avoca probó que field service "low-tech" tiene apetito enorme de automatización cuando el ROI es directo y medible — y su moat es <em>los datos operativos de 800+ contratistas + integraciones al stack de su industria</em>, no la tecnología. Esa es la jugada copiable a escala LATAM; no lo es competir con Celonis ni construir otra plataforma horizontal.</p>
+  <p class="quote" style="margin-bottom:6px">La evidencia indica que el primer agente vertical que integra profundamente el software de su industria y acumula datos de workflow a escala tiende a dominar ese nicho durante años.</p>
+  <p class="src" style="margin-bottom:0">Inferencia del comité a partir de 8seneca (vertical AI 2026) y a16z "AI Eats Vertical SaaS".</p>
+</div>
+
+<!-- 5 DIFERENCIACION / MOAT -->
+<h2><span class="n">05</span>Diferenciación — ¿cuál de los cuatro activos es el moat?</h2>
+<div class="grid2">
+  <div class="card"><h4>Operational Blueprint</h4><p class="small">Buen <strong>gancho comercial</strong> y mecanismo de entrada. <strong>Moat: no.</strong> Es la metodología genérica de la consultoría OpEx; cualquiera con un buen analista la replica. Valor real = abrir la puerta y vender el siguiente paso.</p></div>
+  <div class="card"><h4>NEXUS (plataforma)</h4><p class="small">Como plataforma horizontal: <strong>pasivo, no moat</strong> — compite contra gigantes con capital ilimitado. Como app vertical estrecha sobre Salesforce: defendible solo por integración + datos de nicho, no por el software en sí.</p></div>
+  <div class="card"><h4>N-LABS (motor comercial)</h4><p class="small">El motor de descubrimiento/prospección ES un activo real <strong>si y solo si</strong> está acoplado al fundador y a un ICP estrecho. Hoy es <strong>el fundador</strong>, no una máquina. Riesgo de dependencia máxima.</p></div>
+  <div class="card"><h4>Memory OS</h4><p class="small">El candidato a moat <em>teórico</em> más fuerte y el <em>práctico</em> más débil. Foso solo si acumula datos propietarios de UNA industria a escala. Con pocos clientes, es una feature, no un foso. <span class="nv">[NO VERIFICADO que exista data a escala hoy]</span></p></div>
+</div>
+<div class="panel">
+  <p style="margin:0"><strong>¿Qué sería extremadamente difícil de copiar?</strong> No NEXUS (software). No Blueprint (método público). Lo difícil de copiar sería: <strong>(1)</strong> la combinación fundador = arquitecto Salesforce certificado + comercial C-level + constructor que entrega, en un mercado (Colombia/LATAM) donde esa trinidad es rara; y <strong>(2)</strong> un corpus propietario de procesos resueltos en UNA vertical de servicios, capturado vía implementaciones reales. El moat es <strong>datos verticales + acceso del fundador</strong>, no la arquitectura de tres capas.</p>
+</div>
+
+<!-- 6 MODELO DE NEGOCIO -->
+<h2><span class="n">06</span>Modelo de negocio — qué vender, regalar, no vender</h2>
+<table>
+  <tr><th>Decisión</th><th>Qué</th><th>Por qué</th></tr>
+  <tr><td><strong>Vender primero</strong></td><td>Operational Blueprint como <em>diagnóstico de pago</em> de 3–6 semanas, precio fijo (paid discovery)</td><td>Genera caja inmediata, califica, y posiciona como experto. Las consultoras cobran el diagnóstico; nunca regalarlo entero.</td></tr>
+  <tr><td><strong>Convertir en servicio</strong></td><td>Implementación + Managed Services (los tiers ColibriIT ya existen)</td><td>Recurrencia real. Aquí está el ARR, no en el blueprint.</td></tr>
+  <tr><td><strong>Convertir en software</strong></td><td>UN agente vertical estrecho que automatiza UN cuello de botella repetido (ej. evidencia fotográfica/IDP en field service, lectura/validación de documentos en seguros)</td><td>Outcome-based pricing ("cobramos por trabajo hecho", no por asiento) es el modelo ganador 2026. Empieza por el dolor más repetido.</td></tr>
+  <tr><td><strong>Regalar</strong></td><td>Un "mini-blueprint" / assessment automatizado de 30 min como lead magnet</td><td>Baja la fricción de entrada (process mining bajó la barrera precisamente así). El regalo es el anzuelo, no el pescado.</td></tr>
+  <tr><td><strong>NO vender (todavía)</strong></td><td>NEXUS como plataforma horizontal · Memory OS como producto comercial</td><td>Memory OS es infraestructura interna (correcto en el brief). NEXUS horizontal es competir con Salesforce: suicidio de capital.</td></tr>
+</table>
+
+<!-- 7 REPEATABILITY -->
+<h2><span class="n">07</span>Repeatability — ¿100 veces?</h2>
+<div class="grid2">
+  <div class="card"><h4>Cuellos de botella para escalar</h4><ul class="small">
+    <li><strong>El diagnóstico depende del criterio del fundador</strong> (arquitecto+comercial+sector). No se clona.</li>
+    <li>Venta por coalición (trío IT+negocio+sponsor) → ciclos largos, no replicables en masa por una persona.</li>
+    <li>Cada vertical nueva reinicia el aprendizaje: el flywheel solo compone <em>dentro</em> de una industria.</li>
+  </ul></div>
+  <div class="card"><h4>Qué SÍ se estandariza</h4><ul class="small">
+    <li>El instrumento de diagnóstico (assessment estructurado, plantillas, scoring) — el fundador ya domina esto (instrumentos IPIP, master prompts, skills .md).</li>
+    <li>Los entregables (decks Account Plan en marca, reportes .docx) — ya industrializados.</li>
+    <li>El agente vertical, una vez resuelto un cuello de botella, se revende a la misma industria con marginal bajo.</li>
+  </ul></div>
+</div>
+<p class="panel" style="margin-bottom:0">Veredicto de repetibilidad: <strong>repetible ~100 veces SOLO si se fija una industria y se codifica el blueprint en software.</strong> Repetible ~10 veces si sigue siendo consultoría artesanal multi-industria dependiente del fundador. La diferencia entre las dos es la decisión estratégica central de esta DD.</p>
+
+<!-- 8 FLYWHEEL -->
+<h2><span class="n">08</span>Flywheel — ¿existe el ciclo compuesto?</h2>
+<div class="panel">
+  <p style="margin-top:0">El brief propone: cada cliente mejora Blueprint → N-LABS → Memory OS → NEXUS → siguiente implementación. <strong>¿Existe? Sí, pero es débil y condicional.</strong></p>
+  <ul>
+    <li><span class="do">Compone</span> si los clientes son de la <strong>misma industria</strong>: el cuello de botella #3 de la aseguradora A es el #1 de la aseguradora B. Los datos y el agente se reusan. Fuerza del flywheel: <strong>media-alta (intra-vertical)</strong>.</li>
+    <li><span class="dont">No compone</span> si los clientes son cross-industria (gas, seguros, banca, construcción a la vez): cada uno reinicia el corpus. Fuerza: <strong>casi nula</strong>.</li>
+    <li>El eslabón Memory OS solo aporta ventaja cuando el volumen de datos supera lo que un consultor recuerda. Con &lt;20 clientes, el "OS" no supera a un buen Notion + el cerebro del fundador. <span class="nv">[Inferencia]</span></li>
+  </ul>
+  <p style="margin-bottom:0"><strong>Cuantificación honesta:</strong> el flywheel hoy tiene fuerza ~2/5. Sube a ~4/5 si se concentra en una vertical y se codifica el aprendizaje en un agente reutilizable. La fuente sobre Avoca lo confirma: su foso es el dato acumulado de cientos de clientes <em>en una sola vertical</em>.</p>
+</div>
+
+<!-- 9 FOUNDER FIT -->
+<h2><span class="n">09</span>Founder Fit — ¿ventaja injusta?</h2>
+<p class="lead">"Una mala idea con un gran fundador puede funcionar." Aquí el fundador es la parte más fuerte del expediente.</p>
+<div class="grid3">
+  <div class="card"><h4 class="do">Ventaja injusta real</h4><ul class="small">
+    <li>Stack Salesforce completo (Service, Field Service, Sales, Data Cloud, OmniStudio, AI) — raro en LATAM.</li>
+    <li>Rol dual: arquitecto + Enterprise AE en un partner certificado (ColibriIT). Vende Y construye.</li>
+    <li>Acceso C-level probado: ABM activo, leads cargados, mapa político de cuentas reales.</li>
+    <li>Velocidad: empaqueta skills, instrumentos, prompts, agentes en días.</li>
+    <li>Autofinanciable: ingresos de ColibriIT + Vértice cubren el bootstrap.</li>
+  </ul></div>
+  <div class="card"><h4 class="dont">Banderas amarillas</h4><ul class="small">
+    <li>Demasiados frentes (ColibriIT, Vértice, NEXUS, ColMayor, PropIA, LicitaAI, Admin IA, SENTIR). El foco es el recurso escaso, y está disperso.</li>
+    <li>ADHD canalizado en "venture paralelo" — fuerza para descubrir, riesgo para terminar y escalar UNO.</li>
+    <li>Toda la máquina de descubrimiento ES el fundador: máxima dependencia.</li>
+  </ul></div>
+  <div class="card"><h4>Matriz Idea × Fundador</h4><p class="small">Idea (como está): <strong>media-baja</strong> (demasiado amplia). Fundador: <strong>alto</strong>. Cuadrante: <strong>"Gran fundador, idea por afilar"</strong> → el manual dice: <em>recortar la idea al tamaño de la ventaja del fundador, no agrandar al fundador al tamaño de la idea.</em></p></div>
+</div>
+
+<!-- 10 RIESGOS -->
+<h2><span class="n">10</span>Riesgos — análisis crítico</h2>
+<table>
+  <tr><th>Tipo</th><th>Riesgo</th><th>Severidad</th></tr>
+  <tr><td>Posicionamiento</td><td>"Operational Blueprint" + "plataforma de ejecución" se lee como CRM horizontal genérico → el comprador no entiende qué compra y te mete en el bucket de Salesforce/consultora cualquiera.</td><td><span class="tagline t-die">Alta</span></td></tr>
+  <tr><td>Comercial</td><td>Venta por coalición y ciclos largos chocan con un fundador-orquesta sin equipo comercial que escale.</td><td><span class="tagline t-die">Alta</span></td></tr>
+  <tr><td>Dependencia del fundador</td><td>Diagnóstico, venta y construcción dependen de una persona. Si Juank para, el negocio para.</td><td><span class="tagline t-die">Alta</span></td></tr>
+  <tr><td>Escalabilidad</td><td>El flywheel no compone cross-industria; el modelo artesanal topa en ~10 clientes.</td><td><span class="tagline t-part">Media</span></td></tr>
+  <tr><td>Técnico</td><td>NEXUS como plataforma propia = mantener producto horizontal con recursos de boutique frente a roadmaps de Salesforce/ServiceNow.</td><td><span class="tagline t-part">Media-alta</span></td></tr>
+  <tr><td>Financiero</td><td>Vender diagnósticos = ingresos por proyecto, no ARR. Valuación y caja volátiles sin recurrencia.</td><td><span class="tagline t-part">Media</span></td></tr>
+  <tr><td>Plataforma / dependencia</td><td>Apoyarse en Salesforce y en un modelo LLM (memoria, agentes) = riesgo de pricing y de que el partner se vuelva competidor (Agentforce ya hace esto).</td><td><span class="tagline t-part">Media</span></td></tr>
+</table>
+
+<!-- 11 SCORING -->
+<h2><span class="n">11</span>Scoring — 11 dimensiones</h2>
+<div class="panel">
+  <div class="score"><div class="lab">1. Realidad del problema</div><div class="bar"><i class="b-ok" style="width:85%"></i></div><div class="v">8.5</div></div>
+  <div class="score"><div class="lab">2. Tamaño / crecimiento de mercado</div><div class="bar"><i class="b-mid" style="width:62%"></i></div><div class="v">6.2</div></div>
+  <div class="score"><div class="lab">3. Vacío competitivo (categoría libre)</div><div class="bar"><i class="b-bad" style="width:30%"></i></div><div class="v">3.0</div></div>
+  <div class="score"><div class="lab">4. Defensibilidad / moat</div><div class="bar"><i class="b-bad" style="width:35%"></i></div><div class="v">3.5</div></div>
+  <div class="score"><div class="lab">5. Claridad de posicionamiento</div><div class="bar"><i class="b-bad" style="width:33%"></i></div><div class="v">3.3</div></div>
+  <div class="score"><div class="lab">6. Modelo de negocio / unit economics</div><div class="bar"><i class="b-mid" style="width:55%"></i></div><div class="v">5.5</div></div>
+  <div class="score"><div class="lab">7. Repetibilidad / escalabilidad</div><div class="bar"><i class="b-mid" style="width:45%"></i></div><div class="v">4.5</div></div>
+  <div class="score"><div class="lab">8. Fuerza del flywheel</div><div class="bar"><i class="b-mid" style="width:42%"></i></div><div class="v">4.2</div></div>
+  <div class="score"><div class="lab">9. Founder fit / ventaja injusta</div><div class="bar"><i class="b-ok" style="width:88%"></i></div><div class="v">8.8</div></div>
+  <div class="score"><div class="lab">10. Time-to-first-dollar</div><div class="bar"><i class="b-ok" style="width:80%"></i></div><div class="v">8.0</div></div>
+  <div class="score"><div class="lab">11. Riesgo de dependencia del fundador</div><div class="bar"><i class="b-bad" style="width:28%"></i></div><div class="v">2.8</div></div>
+  <hr>
+  <div class="score"><div class="lab"><strong>PROMEDIO PONDERADO</strong></div><div class="bar"><i class="b-mid" style="width:53%"></i></div><div class="v">5.3</div></div>
+  <p class="tiny" style="margin-bottom:0">Lectura: problema y fundador altísimos; moat, posicionamiento y dependencia bajísimos. Es el perfil clásico de "PIVOTAR/CAMBIOS MAYORES": no se cancela porque el fundador y el problema lo sostienen; no se aprueba tal cual porque la arquitectura fallaría.</p>
+</div>
+
+<!-- 12 QUE ELIMINAR + FIRST DOLLAR -->
+<h2><span class="n">12</span>Si recortaras el 50% — y el First Dollar</h2>
+<div class="grid2">
+  <div class="card">
+    <h4 class="dont">Eliminar primero</h4>
+    <ul class="small">
+      <li>NEXUS como "plataforma de ejecución horizontal". Es el CRM v1 renombrado.</li>
+      <li>Memory OS como producto. Queda como infra interna mínima (un buen sistema de notas estructuradas), no como pilar.</li>
+      <li>El relato de las tres capas. Confunde al comprador.</li>
+    </ul>
+    <h4 class="dont" style="margin-top:14px">Retrasar 2 años</h4>
+    <ul class="small">
+      <li>Multi-industria. Una vertical primero.</li>
+      <li>Producto SaaS de marca propia. Primero agentes sobre el stack existente.</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4 class="do">Construir ya</h4>
+    <ul class="small">
+      <li>El <strong>Operational Blueprint pagado</strong> empaquetado para UNA industria (recomendación: field service / utilities o seguros, donde el fundador ya tiene casos: Calidda, Aguas Andinas, EPM, Sura, Mundial).</li>
+      <li>UN agente vertical que resuelve el cuello #1 de esa industria, con pricing por resultado.</li>
+      <li>El assessment automatizado gratis como lead magnet.</li>
+    </ul>
+  </div>
+</div>
+<div class="verdict" style="border-color:var(--turq)">
+  <span class="tag" style="background:var(--turq);color:#04201f">FIRST DOLLAR (MVP comercial, no técnico)</span>
+  <p style="margin:16px 0 0"><strong>"Diagnóstico Operativo Express para [aseguradoras / field service] LATAM"</strong> — un engagement de precio fijo (3–6 semanas) que entrega: mapa de cuellos de botella, 3 oportunidades de automatización priorizadas por ROI, y una propuesta de implementación. Se vende esta semana a una cuenta ya en el pipeline ABM (Seguros Mundial, Global Seguros, Colgas). No requiere construir NEXUS ni Memory OS. Genera caja, valida disposición a pagar, y produce el primer dato del corpus vertical. El software viene <em>después</em> del primer dólar, no antes.</p>
+</div>
+
+<!-- 13 ROADMAP -->
+<h2><span class="n">13</span>Roadmap 24 meses — qué SÍ / qué NO</h2>
+<div class="road">
+  <div class="ph">0–3 m</div>
+  <div class="bd"><h4>Vender 3 diagnósticos pagados en UNA vertical</h4>
+    <p class="small do">SÍ: empaquetar el Blueprint como paid discovery; cerrar con cuentas del pipeline actual; documentar cada cuello de botella en un formato reutilizable.</p>
+    <p class="small dont">NO: escribir una línea de NEXUS. NO: hablar de "plataforma" ni "Memory OS" al cliente.</p>
+  </div>
+  <div class="ph">3–9 m</div>
+  <div class="bd"><h4>Construir el primer agente vertical sobre el cuello más repetido</h4>
+    <p class="small do">SÍ: identificar el dolor que aparece en 3/3 diagnósticos; construir un agente estrecho (IDP/evidencia fotográfica/validación documental) con pricing por resultado; venderlo a los mismos 3 clientes.</p>
+    <p class="small dont">NO: generalizar a otras industrias. NO: SaaS multi-tenant todavía.</p>
+  </div>
+  <div class="ph">9–18 m</div>
+  <div class="bd"><h4>Repetir el patrón → 10 clientes misma vertical → empieza el corpus</h4>
+    <p class="small do">SÍ: estandarizar diagnóstico + agente como oferta replicable; contratar/formar 1 persona que ejecute el diagnóstico sin el fundador (rompe la dependencia); el "Memory OS" interno empieza a tener sentido al pasar de ~10 clientes.</p>
+    <p class="small dont">NO: abrir segunda vertical hasta dominar la primera.</p>
+  </div>
+  <div class="ph">18–24 m</div>
+  <div class="bd"><h4>Decidir: ¿productizar el agente como SaaS vertical o seguir como servicio premium?</h4>
+    <p class="small do">SÍ: si el corpus y la recurrencia lo justifican, recién aquí NEXUS renace — como <strong>app vertical estrecha</strong>, no plataforma horizontal. Segunda vertical solo con playbook probado.</p>
+    <p class="small dont">NO: levantar capital para "plataforma horizontal". El moat es el dato vertical, no el software genérico.</p>
+  </div>
+</div>
+
+<div class="foot">
+  <p><strong>Nota de integridad de datos:</strong> cifras de mercado citadas de Mordor Intelligence, SkyQuest, Fortune Business Insights, Polaris, mybusinessfuture (process mining 2026); Contrary Research y Wikipedia (Celonis); 8seneca, a16z/ACTGSYS, L40, BetterCloud (vertical AI 2026); Cirra, The Manifest, Noltic (ecosistema Salesforce/LATAM). Divergencia de fuentes mostrada explícitamente. Datos del fundador derivados del contexto provisto, no verificados independientemente <span class="nv">[NO VERIFICADO]</span>. Toda conclusión no respaldada por cita está marcada como inferencia del comité.</p>
+  <p>N-LABS Strategic Due Diligence v1.0 · NEXUS v2 · 25 jun 2026 · El compromiso es con la evidencia, no con la tesis.</p>
+</div>
+
+</div>
+</body>
+</html>

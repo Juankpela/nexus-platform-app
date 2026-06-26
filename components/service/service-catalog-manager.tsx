@@ -21,6 +21,7 @@ import {
   setIssueTypeActiveAction,
 } from "@/modules/service/presentation/issue-type-actions"
 import {
+  archiveSkillAction,
   createSkillAction,
   setSkillAliasesAction,
 } from "@/modules/service/presentation/skill-actions"
@@ -144,6 +145,39 @@ function AliasesEditor({
   )
 }
 
+/** Archiva (retira) una categoría de servicio sin borrarla. Sale del catálogo. */
+function ArchiveSkillButton({
+  tenantSlug,
+  skill,
+}: {
+  tenantSlug: string
+  skill: Skill
+}) {
+  const [state, formAction, pending] = useActionState(archiveSkillAction, initialState)
+  return (
+    <form action={formAction} className="ml-auto">
+      <input type="hidden" name="tenantSlug" value={tenantSlug} />
+      <input type="hidden" name="id" value={skill.id} />
+      <button
+        type="submit"
+        disabled={pending}
+        aria-label="Archivar categoría"
+        title="Archivar categoría"
+        className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+      >
+        {pending ? (
+          <Loader2 className="size-3.5 animate-spin" />
+        ) : (
+          <Archive className="size-3.5" />
+        )}
+      </button>
+      {state.error ? (
+        <p role="alert" className="text-xs text-destructive">{state.error}</p>
+      ) : null}
+    </form>
+  )
+}
+
 function SkillCard({
   skill,
   issueTypes,
@@ -164,6 +198,7 @@ function SkillCard({
         <span className="text-xs text-muted-foreground">
           {activeCount} tipo(s) de daño activo(s)
         </span>
+        {canWrite ? <ArchiveSkillButton tenantSlug={tenantSlug} skill={skill} /> : null}
       </div>
 
       {/* Tipos de daño como entidades (lo que ve el reportante en Paso 2). */}

@@ -1,19 +1,9 @@
 import "server-only"
 
-import Anthropic from "@anthropic-ai/sdk"
+import { createAnthropicClient } from "@/lib/ai/anthropic-client"
 import { createServerSupabaseClient } from "@/lib/supabase/server"
 import type { AiInsight, AiRevenueInsights } from "@/modules/forecasting/domain/ai-insight"
 import type { UUID } from "@/types/shared"
-
-function buildClient(): Anthropic {
-  const apiKey = process.env.ANTHROPIC_API_KEY?.trim()
-  if (!apiKey) {
-    throw new Error(
-      "ANTHROPIC_API_KEY no está disponible en el runtime. Verifica que esté configurada en Vercel (Production) y vuelve a desplegar.",
-    )
-  }
-  return new Anthropic({ apiKey })
-}
 
 export async function getAiRevenueInsights(tenantId: UUID): Promise<AiRevenueInsights> {
   const supabase = await createServerSupabaseClient()
@@ -106,7 +96,7 @@ Genera entre 4 y 7 insights. Prioriza:
 Solo responde con el JSON, sin markdown, sin explicaciones.`
 
   try {
-    const client = buildClient()
+    const client = createAnthropicClient()
     const message = await client.messages.create({
       model: "claude-sonnet-4-20250514",
       max_tokens: 4096,

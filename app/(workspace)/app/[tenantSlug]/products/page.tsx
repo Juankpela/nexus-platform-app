@@ -2,7 +2,8 @@ import { Plus } from "lucide-react"
 import type { Metadata } from "next"
 import Link from "next/link"
 
-import { ProductActiveToggle } from "@/components/crm/product-active-toggle"
+import { ActiveToggle } from "@/components/crm/active-toggle"
+import { setProductActiveAction } from "@/modules/crm/presentation/product-actions"
 import { ProductCsvExport } from "@/components/crm/product-csv-export"
 import { ProductCsvImport } from "@/components/crm/product-csv-import"
 import { ProductFormDialog } from "@/components/crm/product-form-dialog"
@@ -259,7 +260,8 @@ export default async function ProductsPage({
                               </Button>
                             }
                           />
-                          <ProductActiveToggle
+                          <ActiveToggle
+                            action={setProductActiveAction}
                             tenantSlug={tenantSlug}
                             id={product.id}
                             active={product.active}

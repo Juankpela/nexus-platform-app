@@ -82,3 +82,20 @@ follow-up **mecánico y reversible**, ya habilitado por esta estructura
 ## Permisos
 Sin cambios. Cada item de navegación y cada dashboard se filtran por el permiso
 existente del área (`crm.*`, `service.*`, `forecasting.read`, `tenant.*`).
+
+## Enmienda — PRODUCT-004 (Commercial Readiness, 2026-06-25)
+Evolución de la presentación (sigue siendo "solo experiencia", sin dominio):
+- La navegación se organiza ahora por **capacidades del negocio** —`CRM`,
+  `Operaciones`, `Finanzas`, `Inteligencia`, `Administración`— con `Inicio` fijo
+  arriba. Esto realínea el código con la decisión original (organizar por área,
+  no por objeto); reemplaza la estructura intermedia de 3 grupos genéricos.
+- `NAVIGATION_GROUP_ORDER` se sustituye por `CAPABILITIES` (id + label + claves de
+  feature). Lenguaje de negocio: "Tablero"→"Despacho", "Activos"→"Equipos",
+  "Exportaciones"→"Descargas", "Trabajo"→"Órdenes de trabajo".
+- **Entitlements por capacidad:** cada capacidad se habilita con `tenant_features`
+  (vía `enabledFeatures` ya existente; sin tablas nuevas). Un tenant solo ve lo que
+  compró. Fallback de transición: sin features explícitas ⇒ se muestra todo.
+- Nueva capacidad **Inteligencia** con la entrada N-LABS (`/nlabs`, permiso
+  `nlabs.read`).
+Permisos siguen filtrando cada item; el entitlement de capacidad es un filtro
+adicional, no un reemplazo.

@@ -18,6 +18,7 @@ export function WorkspaceChrome({
   tenantName,
   tenantSlug,
   permissions,
+  enabledFeatures,
   userEmail,
   notifications,
   unreadCount,
@@ -26,6 +27,7 @@ export function WorkspaceChrome({
   tenantName: string
   tenantSlug: string
   permissions: readonly string[]
+  enabledFeatures: readonly string[]
   userEmail: string | null
   notifications: Notification[]
   unreadCount: number
@@ -42,6 +44,7 @@ export function WorkspaceChrome({
         tenantName={tenantName}
         tenantSlug={tenantSlug}
         permissions={permissions}
+        enabledFeatures={enabledFeatures}
       />
       <div className="flex min-w-0 flex-1 flex-col">
         <AppHeader

@@ -46,7 +46,7 @@ export default async function MaterialsListPage({
 
   return (
     <>
-      <PageHeader title="Materials" description="Material catalog and stock units." />
+      <PageHeader title="Materiales" description="Catálogo de materiales y unidades de stock." />
       <div className="space-y-4 px-5 py-6 sm:px-8">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <form action={base} className="flex flex-wrap items-center gap-2">
@@ -58,8 +58,8 @@ export default async function MaterialsListPage({
               className="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
               <option value="">Todos los estados</option>
-              <option value="true">Active</option>
-              <option value="false">Inactive</option>
+              <option value="true">Activo</option>
+              <option value="false">Inactivo</option>
             </select>
             <Button type="submit" variant="outline" size="sm">Filtrar</Button>
           </form>
@@ -79,8 +79,8 @@ export default async function MaterialsListPage({
 
         {result.items.length === 0 ? (
           <EmptyState
-            title="No materials"
-            description={search || sku || active !== null ? "No materials match your filters." : "No materials in this workspace yet."}
+            title="Sin materiales"
+            description={search || sku || active !== null ? "Ningún material coincide con los filtros." : "Aún no hay materiales en este espacio de trabajo."}
           />
         ) : (
           <div className="overflow-hidden rounded-xl border bg-card">
@@ -89,7 +89,7 @@ export default async function MaterialsListPage({
                 <tr>
                   <th className="px-4 py-3 font-medium">Material</th>
                   <th className="px-4 py-3 font-medium">SKU</th>
-                  <th className="px-4 py-3 font-medium">UOM</th>
+                  <th className="px-4 py-3 font-medium">Unidad</th>
                   <th className="px-4 py-3 font-medium">Estado</th>
                 </tr>
               </thead>
@@ -111,7 +111,7 @@ export default async function MaterialsListPage({
                             : "bg-muted text-muted-foreground"
                         }`}
                       >
-                        {mat.active ? "Active" : "Inactive"}
+                        {mat.active ? "Activo" : "Inactivo"}
                       </span>
                     </td>
                   </tr>

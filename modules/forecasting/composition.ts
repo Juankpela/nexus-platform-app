@@ -7,6 +7,7 @@ import { getRepPerformance } from "@/modules/forecasting/application/use-cases/g
 import { takeForecastSnapshot } from "@/modules/forecasting/application/use-cases/take-forecast-snapshot"
 import { getAiRevenueInsights } from "@/modules/forecasting/application/use-cases/get-ai-revenue-insights"
 import type { ForecastPeriod } from "@/modules/forecasting/domain/revenue-metrics"
+import type { SalesQuotaInput } from "@/modules/forecasting/domain/sales-quota"
 import type { UUID } from "@/types/shared"
 
 function forecastingRepo() {
@@ -43,4 +44,8 @@ export function getTenantAiInsights(tenantId: UUID) {
 
 export function getTenantQuota(tenantId: UUID, periodType: string, periodLabel: string, ownerId?: UUID | null) {
   return forecastingRepo().getQuota(tenantId, periodType, periodLabel, ownerId)
+}
+
+export function upsertTenantQuota(tenantId: UUID, input: SalesQuotaInput) {
+  return forecastingRepo().upsertQuota(tenantId, input)
 }

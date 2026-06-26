@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 
+import { ApiKeyManager } from "@/components/settings/api-key-manager"
 import { BusinessProfileForm } from "@/components/settings/business-profile-form"
 import { PageHeader } from "@/components/layout/page-header"
 import {
@@ -36,13 +37,14 @@ export default async function SettingsPage({
         title="Configuración"
         description="Configura tu espacio de trabajo."
       />
-      <div className="max-w-2xl px-5 py-6 sm:px-8">
+      <div className="max-w-2xl space-y-6 px-5 py-6 sm:px-8">
         <BusinessProfileForm
           tenantSlug={tenantSlug}
           tenantName={context.tenant.name}
           profile={profile}
           canWrite={canWrite}
         />
+        {canWrite ? <ApiKeyManager tenantSlug={tenantSlug} /> : null}
       </div>
     </>
   )

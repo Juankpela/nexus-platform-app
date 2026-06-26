@@ -4,6 +4,7 @@ import Link from "next/link"
 import { Pagination } from "@/components/crm/pagination"
 import { ClientOnly } from "@/components/layout/client-only"
 import { EmptyState } from "@/components/layout/empty-state"
+import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
@@ -84,21 +85,23 @@ export default async function LeadsPage({
     .join(" · ")
 
   return (
-    <div className="space-y-6 p-5 sm:p-8">
+    <>
+      <PageHeader
+        title="Prospectos"
+        description="Gestiona y convierte tus prospectos comerciales."
+      />
+      <div className="space-y-6 p-5 sm:p-8">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight">Leads</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {total} lead{total !== 1 ? "s" : ""}
-          </p>
-        </div>
+        <p className="text-sm text-muted-foreground">
+          {total} prospecto{total !== 1 ? "s" : ""}
+        </p>
         {canWrite && <LeadCreateButton tenantSlug={tenantSlug} />}
       </div>
 
       {/* Funnel metrics */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Metric label="Leads creados" value={String(metrics.created)} />
+        <Metric label="Prospectos creados" value={String(metrics.created)} />
         <Metric label="Convertidos" value={String(metrics.converted)} />
         <Metric label="Tasa de conversión" value={rate} />
         <Metric label="Top fuentes" value={topSources || "—"} />
@@ -137,8 +140,8 @@ export default async function LeadsPage({
       {/* Table */}
       {items.length === 0 ? (
         <EmptyState
-          title="Sin leads todavía"
-          description="Captura tu primer lead para empezar el embudo comercial."
+          title="Sin prospectos todavía"
+          description="Captura tu primer prospecto para empezar el embudo comercial."
           actions={
             canWrite ? (
               <ClientOnly>
@@ -209,6 +212,7 @@ export default async function LeadsPage({
           />
         </>
       )}
-    </div>
+      </div>
+    </>
   )
 }

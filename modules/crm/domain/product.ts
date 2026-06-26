@@ -12,10 +12,10 @@ export const PRODUCT_TYPES = [
 export type ProductType = (typeof PRODUCT_TYPES)[number]
 
 export const PRODUCT_TYPE_LABELS: Record<ProductType, string> = {
-  physical_product: "Physical Product",
-  service: "Service",
-  machinery: "Machinery",
-  spare_part: "Spare Part",
+  physical_product: "Producto físico",
+  service: "Servicio",
+  machinery: "Maquinaria",
+  spare_part: "Repuesto",
 }
 
 export const PRODUCT_FAMILIES = [
@@ -30,12 +30,12 @@ export const PRODUCT_FAMILIES = [
 export type ProductFamily = (typeof PRODUCT_FAMILIES)[number]
 
 export const PRODUCT_FAMILY_LABELS: Record<ProductFamily, string> = {
-  flexography: "Flexography",
-  inks: "Inks",
-  consumables: "Consumables",
-  machinery: "Machinery",
-  technical_services: "Technical Services",
-  consulting: "Consulting",
+  flexography: "Flexografía",
+  inks: "Tintas",
+  consumables: "Consumibles",
+  machinery: "Maquinaria",
+  technical_services: "Servicios técnicos",
+  consulting: "Consultoría",
 }
 
 // ── Domain types ─────────────────────────────────────────────────────────────

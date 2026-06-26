@@ -3,6 +3,7 @@ import Link from "next/link"
 
 import { Pagination } from "@/components/crm/pagination"
 import { EmptyState } from "@/components/layout/empty-state"
+import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
 import { formatDateNumeric } from "@/lib/format/datetime"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
@@ -46,14 +47,12 @@ export default async function PaymentsPage({
   })
 
   return (
-    <div className="space-y-6 p-5 sm:p-8">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight">Payments</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {total} payment{total !== 1 ? "s" : ""}
-        </p>
-      </div>
-
+    <>
+      <PageHeader
+        title="Pagos"
+        description={`${total} ${total !== 1 ? "pagos" : "pago"}`}
+      />
+      <div className="space-y-6 px-5 py-6 sm:px-8">
       <form className="flex flex-wrap gap-3">
         <select
           name="status"
@@ -68,7 +67,7 @@ export default async function PaymentsPage({
           ))}
         </select>
         <Button type="submit" size="sm" variant="secondary">
-          Filter
+          Filtrar
         </Button>
         {sp.status && sp.status !== "_all" && (
           <Button asChild size="sm" variant="ghost">
@@ -79,8 +78,13 @@ export default async function PaymentsPage({
 
       {items.length === 0 ? (
         <EmptyState
-          title="No payments yet"
-          description="Payments are recorded against issued invoices."
+          title="Aún no tienes pagos"
+          description="Los pagos se registran sobre facturas emitidas."
+          actions={
+            <Button asChild size="sm" variant="secondary">
+              <Link href={`/app/${tenantSlug}/invoices`}>Ir a facturas</Link>
+            </Button>
+          }
         />
       ) : (
         <>
@@ -88,12 +92,12 @@ export default async function PaymentsPage({
             <table className="w-full text-sm">
               <thead className="border-b bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Payment #</th>
-                  <th className="px-4 py-3 font-medium">Company</th>
-                  <th className="px-4 py-3 font-medium">Method</th>
+                  <th className="px-4 py-3 font-medium">N.º de pago</th>
+                  <th className="px-4 py-3 font-medium">Empresa</th>
+                  <th className="px-4 py-3 font-medium">Método</th>
                   <th className="px-4 py-3 font-medium">Estado</th>
-                  <th className="px-4 py-3 font-medium text-right">Amount</th>
-                  <th className="px-4 py-3 font-medium">Date</th>
+                  <th className="px-4 py-3 font-medium text-right">Monto</th>
+                  <th className="px-4 py-3 font-medium">Fecha</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -137,6 +141,7 @@ export default async function PaymentsPage({
           />
         </>
       )}
-    </div>
+      </div>
+    </>
   )
 }

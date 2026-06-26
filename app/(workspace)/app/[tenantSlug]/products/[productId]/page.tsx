@@ -3,7 +3,8 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 
-import { ProductActiveToggle } from "@/components/crm/product-active-toggle"
+import { ActiveToggle } from "@/components/crm/active-toggle"
+import { setProductActiveAction } from "@/modules/crm/presentation/product-actions"
 import { ProductFormDialog } from "@/components/crm/product-form-dialog"
 import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
@@ -79,7 +80,8 @@ export default async function ProductDetailPage({
                 product={product}
                 trigger={<Button variant="outline">Editar producto</Button>}
               />
-              <ProductActiveToggle
+              <ActiveToggle
+                action={setProductActiveAction}
                 tenantSlug={tenantSlug}
                 id={product.id}
                 active={product.active}

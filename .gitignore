@@ -24,6 +24,9 @@
 .DS_Store
 *.pem
 
+# archivos comprimidos sueltos (material de investigación, no código)
+*.zip
+
 # debug
 npm-debug.log*
 yarn-debug.log*

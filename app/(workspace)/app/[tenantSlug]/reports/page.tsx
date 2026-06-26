@@ -21,7 +21,7 @@ export default async function ReportsPage({
 
   return (
     <>
-      <PageHeader title="Reports" description="Reportes personalizados de Nexus." />
+      <PageHeader title="Reportes" description="Reportes personalizados de Nexus." />
       <div className="px-5 py-6 sm:px-8">
         <div className="mx-auto max-w-lg rounded-xl border border-dashed bg-card p-10 text-center">
           <span className="mx-auto grid size-12 place-items-center rounded-xl bg-primary/10 text-primary">

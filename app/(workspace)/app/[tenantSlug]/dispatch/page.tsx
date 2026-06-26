@@ -13,6 +13,8 @@ import { AssignTechnicianDialog } from "@/components/dispatch/assign-technician-
 import { AssignmentActions } from "@/components/dispatch/assignment-actions"
 import { QuickAssignButton } from "@/components/dispatch/quick-assign-button"
 import { AssignmentFormDialog } from "@/components/scheduling/assignment-form-dialog"
+import { RescheduleProposalsCard } from "@/components/scheduling/reschedule-proposals-card"
+import { SlaAlertsCard } from "@/components/dispatch/sla-alerts-card"
 import { KpiCard } from "@/components/dashboard/kpi-card"
 import { RefreshBoardButton } from "@/components/dispatch/refresh-board-button"
 import { EmptyState } from "@/components/layout/empty-state"
@@ -22,6 +24,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
 import {
+  FOUNDATION_PERMISSIONS,
   SERVICE_PERMISSIONS,
   hasPermission,
 } from "@/modules/authorization/domain/permission"
@@ -37,6 +40,8 @@ import {
 import {
   findEligibleTechnicians,
   getActiveAssignmentsByWorkOrder,
+  getTenantSlaAlerts,
+  listRecentRescheduleProposals,
 } from "@/modules/scheduling/composition"
 import {
   ASSIGNMENT_STATUS_LABELS,
@@ -102,20 +107,30 @@ export default async function DispatchPage({
 
   const canSchedule = hasPermission(context.effectivePermissions, SERVICE_PERMISSIONS.schedulingWrite)
   const canWoWrite = hasPermission(context.effectivePermissions, SERVICE_PERMISSIONS.workOrdersWrite)
+  // Las propuestas de reagendamiento se leen del audit trail (RLS: tenant.audit.read)
+  // y se accionan con scheduling.write. Gateamos el fetch a ambos para no romper la
+  // página con un error de RLS en despachadores de solo lectura; el tablero de SLA
+  // solo lee las órdenes que la página ya consulta.
+  const canAudit = hasPermission(context.effectivePermissions, FOUNDATION_PERMISSIONS.auditRead)
 
-  const [board, stats, allWos, technicianPage] = await Promise.all([
-    getTenantDispatchBoard(context.tenantId, date),
-    getTenantDispatchStats(context.tenantId, date),
-    listTenantWorkOrders(
-      context.tenantId,
-      { search: null, status: null, priority: null, technicianId: null, companyId: null, assetId: null, dateFrom: null, dateTo: null },
-      1,
-      500,
-    ),
-    canSchedule
-      ? listTenantTechnicians(context.tenantId, { search: null, status: "active" }, "name", 1, 200)
-      : Promise.resolve(null),
-  ])
+  const [board, stats, allWos, technicianPage, slaBoard, rescheduleProposals] =
+    await Promise.all([
+      getTenantDispatchBoard(context.tenantId, date),
+      getTenantDispatchStats(context.tenantId, date),
+      listTenantWorkOrders(
+        context.tenantId,
+        { search: null, status: null, priority: null, technicianId: null, companyId: null, assetId: null, dateFrom: null, dateTo: null },
+        1,
+        500,
+      ),
+      canSchedule
+        ? listTenantTechnicians(context.tenantId, { search: null, status: "active" }, "name", 1, 200)
+        : Promise.resolve(null),
+      getTenantSlaAlerts(context.tenantId),
+      canSchedule && canAudit
+        ? listRecentRescheduleProposals(context.tenantId)
+        : Promise.resolve([]),
+    ])
 
   const technicians = (technicianPage?.items ?? []).map((t) => ({
     id: t.id,
@@ -208,6 +223,17 @@ export default async function DispatchPage({
           </div>
         ) : (
           <>
+            {/* SLA: qué se está venciendo (lo primero que el despachador debe ver) */}
+            <SlaAlertsCard board={slaBoard} tenantSlug={tenantSlug} />
+
+            {/* Propuestas de reagendamiento (dry-run del motor; solo si puede accionar) */}
+            {canSchedule && rescheduleProposals.length > 0 ? (
+              <RescheduleProposalsCard
+                proposals={rescheduleProposals}
+                tenantSlug={tenantSlug}
+              />
+            ) : null}
+
             {/* Pendientes de asignar — prioridad visual */}
             <div className="rounded-xl border bg-card p-4">
               <div className="flex items-center justify-between gap-2">

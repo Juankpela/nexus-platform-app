@@ -46,21 +46,21 @@ export default async function ExportsPage({
 
   return (
     <>
-      <PageHeader title="Exports" description="Your async export jobs and downloads." />
+      <PageHeader title="Exportaciones" description="Tus exportaciones y descargas." />
       <div className="space-y-4 px-5 py-6 sm:px-8">
         {result.items.length === 0 ? (
-          <EmptyState title="No exports" description="Queued exports will appear here." />
+          <EmptyState title="Sin exportaciones" description="Las exportaciones en cola aparecerán aquí." />
         ) : (
           <div className="overflow-hidden rounded-xl border bg-card">
             <table className="w-full text-sm">
               <thead className="border-b bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Object</th>
-                  <th className="px-4 py-3 font-medium">Format</th>
+                  <th className="px-4 py-3 font-medium">Objeto</th>
+                  <th className="px-4 py-3 font-medium">Formato</th>
                   <th className="px-4 py-3 font-medium">Estado</th>
-                  <th className="px-4 py-3 text-right font-medium">Rows</th>
-                  <th className="px-4 py-3 font-medium">Requested</th>
-                  <th className="px-4 py-3 text-right font-medium">Action</th>
+                  <th className="px-4 py-3 text-right font-medium">Filas</th>
+                  <th className="px-4 py-3 font-medium">Solicitada</th>
+                  <th className="px-4 py-3 text-right font-medium">Acción</th>
                 </tr>
               </thead>
               <tbody className="divide-y">

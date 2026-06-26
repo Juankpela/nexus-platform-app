@@ -70,6 +70,12 @@ export const INVENTORY_PERMISSIONS = {
   consume:        "inventory.consume",
 } as const
 
+// N-LABS Operational Intelligence read access (20260625001_nlabs_permissions.sql).
+// Read-only: the engine observes; it never mutates tenant operational data.
+export const NLABS_PERMISSIONS = {
+  read: "nlabs.read",
+} as const
+
 export type FoundationPermission =
   (typeof FOUNDATION_PERMISSIONS)[keyof typeof FOUNDATION_PERMISSIONS]
 

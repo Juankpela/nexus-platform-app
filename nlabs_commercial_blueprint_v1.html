@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>N-LABS Commercial Blueprint v1.0</title>
+<style>
+  :root{
+    --bg:#0b0e0e; --panel:#121717; --panel2:#171d1d; --line:#243030;
+    --ink:#e9efee; --mut:#9fb0ad; --dim:#6f817e;
+    --mag:#C21467; --turq:#35B1AD; --gold:#E39D30; --green:#0D8180; --red:#d6455a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.62 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1040px;margin:0 auto;padding:48px 24px 96px}
+  header.cover{border-bottom:1px solid var(--line);padding-bottom:34px;margin-bottom:18px}
+  .kicker{letter-spacing:.22em;text-transform:uppercase;font-size:12px;color:var(--turq);font-weight:700}
+  h1{font-size:42px;line-height:1.08;margin:14px 0 8px;font-weight:800}
+  h1 span{color:var(--mag)}
+  .sub{color:var(--mut);font-size:18px;max-width:780px}
+  .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+  .pill{font-size:12px;border:1px solid var(--line);background:var(--panel);padding:6px 11px;border-radius:999px;color:var(--mut)}
+  h2{font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--turq);margin:56px 0 4px;font-weight:700}
+  h2 .n{color:var(--dim);margin-right:10px}
+  .gapref{font-size:12px;color:var(--gold);font-weight:700;letter-spacing:.04em;margin-bottom:10px}
+  h3{font-size:23px;margin:8px 0 14px;font-weight:700}
+  p{color:#d4dddb}
+  .lead{font-size:18px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin:16px 0}
+  .hero{background:linear-gradient(180deg,#161d1d,#101616);border:1px solid var(--mag);border-radius:16px;padding:28px;margin:22px 0}
+  .hero .tag{display:inline-block;background:var(--mag);color:#fff;font-weight:800;letter-spacing:.03em;padding:7px 14px;border-radius:8px;font-size:13px}
+  .posit{font-size:26px;line-height:1.32;font-weight:700;margin:16px 0 0;color:#fff}
+  .posit em{color:var(--turq);font-style:normal}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  @media(max-width:760px){.grid2,.grid3{grid-template-columns:1fr}}
+  .card{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:18px}
+  .card h4{margin:0 0 8px;font-size:15px}
+  .small{font-size:14px;color:var(--mut)}
+  .tiny{font-size:12.5px;color:var(--dim)}
+  table{width:100%;border-collapse:collapse;margin:8px 0;font-size:14.5px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--turq);font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:700}
+  td.num{font-variant-numeric:tabular-nums}
+  ul{margin:8px 0;padding-left:20px} li{margin:5px 0;color:#d4dddb}
+  .tagline{display:inline-block;font-size:11.5px;font-weight:700;padding:3px 8px;border-radius:6px;letter-spacing:.04em}
+  .t-in{background:rgba(53,177,173,.14);color:var(--turq);border:1px solid rgba(53,177,173,.3)}
+  .t-out{background:rgba(214,69,90,.14);color:var(--red);border:1px solid rgba(214,69,90,.3)}
+  .t-mid{background:rgba(227,157,48,.14);color:var(--gold);border:1px solid rgba(227,157,48,.3)}
+  .do{color:var(--turq)} .dont{color:var(--red)}
+  .road{display:grid;grid-template-columns:96px 1fr;gap:0}
+  .road .ph{border-right:2px solid var(--line);padding:16px 16px 16px 0;text-align:right;color:var(--turq);font-weight:700;font-size:13px}
+  .road .bd{padding:16px 0 22px 18px;border-left:2px solid var(--line);margin-left:-2px}
+  .road .bd h4{margin:0 0 6px;font-size:17px}
+  .gate{display:inline-block;margin-top:8px;font-size:13px;background:rgba(13,129,128,.18);border:1px solid var(--green);color:#7fddd8;padding:6px 11px;border-radius:8px}
+  code{background:#0c1010;border:1px solid var(--line);padding:1px 6px;border-radius:5px;font-size:13px;color:var(--gold)}
+  .foot{margin-top:60px;padding-top:22px;border-top:1px solid var(--line);color:var(--dim);font-size:13px}
+  .scope{border-radius:12px;border:1px solid var(--line);overflow:hidden;margin:14px 0}
+  .scope .row{display:grid;grid-template-columns:140px 1fr;border-bottom:1px solid var(--line)}
+  .scope .row:last-child{border-bottom:0}
+  .scope .h{padding:12px 14px;font-weight:700;font-size:13px;letter-spacing:.04em}
+  .scope .h.in{background:rgba(53,177,173,.10);color:var(--turq)}
+  .scope .h.out{background:rgba(214,69,90,.10);color:var(--red)}
+  .scope .c{padding:12px 14px;font-size:14px;color:#d4dddb}
+  .num-big{font-size:30px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="cover">
+  <div class="kicker">N-LABS · Documento Oficial · Guía 12 meses</div>
+  <h1><span>N-LABS</span> Commercial Blueprint<br>v1.0</h1>
+  <p class="sub">Convierte las conclusiones de la Strategic Due Diligence v2 en un plan ejecutable. No es un documento inspirador: cada decisión cierra una brecha del comité. Empieza por el primer dólar, no por el desarrollo.</p>
+  <div class="meta">
+    <span class="pill">Fecha: 25 jun 2026</span>
+    <span class="pill">Entrada: DD v2 (PIVOTAR / CAMBIOS MAYORES)</span>
+    <span class="pill">ICP: Field Service · Utilities Gas LATAM</span>
+    <span class="pill">Horizonte: 12 meses</span>
+    <span class="pill">Disciplina NEXUS: enmienda del fundador</span>
+  </div>
+</header>
+
+<div class="panel" style="border-color:var(--gold)">
+  <p style="margin:0"><strong style="color:var(--gold)">Enmienda del fundador (aceptada e integrada):</strong> No se abandona NEXUS. Se prohíbe construir cualquier funcionalidad de NEXUS que no esté <strong>directamente atada</strong> al primer producto comercial o al primer agente vertical. Cada línea de código de NEXUS debe justificarse contra una necesidad comercial ya demostrada con un cliente que pagó. Esa es la regla que gobierna todo el roadmap.</p>
+</div>
+
+<!-- BRECHA 1 -->
+<h2><span class="n">B1</span>Posicionamiento único</h2>
+<div class="gapref">Cierra: brecha de posicionamiento (DD score 3.3/10) — "el comprador no entiende qué compra"</div>
+<div class="hero">
+  <span class="tag">LA FRASE — 30 segundos para un CEO</span>
+  <p class="posit">Ayudamos a las empresas de <em>gas y servicios de campo</em> en Latinoamérica a <em>eliminar el desperdicio operativo en terreno</em>: primero lo medimos con un diagnóstico, luego lo automatizamos con agentes que <em>cobran por trabajo hecho</em>, no por licencias.</p>
+</div>
+<div class="grid2">
+  <div class="card">
+    <h4 class="do">Qué SE dice</h4>
+    <ul class="small">
+      <li>"Desperdicio operativo en terreno" — dolor concreto, no jerga.</li>
+      <li>"Primero medimos, luego automatizamos" — secuencia clara: diagnóstico pagado → agente.</li>
+      <li>"Cobramos por trabajo hecho" — outcome-based, el modelo que el comprador entiende y prefiere en 2026.</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4 class="dont">Qué se ELIMINA del discurso al cliente</h4>
+    <ul class="small">
+      <li>"Plataforma", "CRM", "horizontal", "Operational Blueprint" como nombre de producto.</li>
+      <li>"Memory OS", "motor de descubrimiento", "tres capas" — confunden y nos meten en el bucket de consultora genérica.</li>
+      <li>Cualquier mención a NEXUS antes de que el cliente haya pagado el diagnóstico.</li>
+    </ul>
+  </div>
+</div>
+<p class="tiny">Regla de claridad: si una palabra no ayuda a un Director de Operaciones de una gasera a entender en 30s qué compra y por qué le conviene, se borra.</p>
+
+<!-- BRECHA 2 -->
+<h2><span class="n">B2</span>ICP único — y por qué se descartan las otras</h2>
+<div class="gapref">Cierra: brecha de foco / repetibilidad (DD 4.5/10) y flywheel (4.2/10) — "el flywheel solo compone intra-vertical"</div>
+<div class="hero" style="border-color:var(--turq)">
+  <span class="tag" style="background:var(--turq);color:#04201f">ICP ELEGIDO</span>
+  <p class="posit" style="font-size:23px"><em>Empresas de gas natural y de servicios de campo (field service)</em> en Colombia y Andes/LATAM, con cuadrillas en terreno, lecturas/inspecciones manuales y volumen alto de visitas técnicas. Tamaño objetivo: medianas-grandes reguladas (≥ ~50 M USD ingresos) con operación de campo intensiva.</p>
+</div>
+<table>
+  <tr><th>Vertical</th><th>Decisión</th><th>Justificación basada en evidencia</th></tr>
+  <tr>
+    <td><strong>Field Service / Utilities Gas</strong><br><span class="tiny">Colgas, Calidda, EPM, Efigas, ENSA, Aguas Andinas</span></td>
+    <td><span class="tagline t-in">ELEGIDA</span></td>
+    <td class="small">El fundador tiene certificación Field Service Lightning + casos de referencia reales en gas/utilities (Calidda Perú, Aguas Andinas, EPM). La DD mostró que field service "low-tech" tiene el mayor apetito de automatización cuando el ROI es directo y medible (caso Avoca). El dolor en terreno (evidencia fotográfica, lecturas, inspecciones) es repetitivo, medible en pesos y se repite cliente a cliente → el flywheel compone. Pipeline activo: Colgas (mapa político, 7 contactos).</td>
+  </tr>
+  <tr>
+    <td><strong>Seguros LATAM</strong><br><span class="tiny">Mundial, Global Seguros, Skandia</span></td>
+    <td><span class="tagline t-out">DESCARTADA (fase 1)</span></td>
+    <td class="small">Pipeline fuerte, pero el dolor (validación documental, suscripción) es menos "en terreno" y más document-heavy, donde compiten IDP maduros y la venta es regulatoria/lenta (gatekeepers de IT Governance). El flywheel de datos es más difícil de capturar para un boutique. Se retoma como segunda vertical en mes 18–24 solo con playbook probado.</td>
+  </tr>
+  <tr>
+    <td><strong>Banca / CPG / Construcción</strong></td>
+    <td><span class="tagline t-out">DESCARTADA</span></td>
+    <td class="small">Sin la trinidad de ventaja del fundador (acceso + certificación + caso). Diluye el foco. Viola la regla "una sola vertical".</td>
+  </tr>
+</table>
+<p class="panel small" style="margin-bottom:0"><strong>Nota operativa de la memoria:</strong> Efigas usa medidores mecánicos de lectura manual sin IoT — la oportunidad OCR/IoT se reserva para el equipo técnico, no para el CFO. Esto refuerza que el dolor de "captura manual en terreno" es real y generalizado en el ICP elegido.</p>
+
+<!-- BRECHA 3 -->
+<h2><span class="n">B3</span>Primer producto comercial (no el software)</h2>
+<div class="gapref">Cierra: brecha de modelo de negocio (5.5/10) y time-to-first-dollar — "el First Dollar es comercial, no técnico"</div>
+<div class="panel">
+  <h3 style="margin-top:0">Radiografía Operativa de Campo <span class="tiny" style="color:var(--dim)">(nombre comercial; internamente: el Blueprint aplicado)</span></h3>
+  <table>
+    <tr><th>Atributo</th><th>Definición</th></tr>
+    <tr><td><strong>Objetivo</strong></td><td>Cuantificar en pesos el desperdicio operativo de la operación de campo del cliente y entregar 3 oportunidades de automatización priorizadas por ROI, con una propuesta de implementación lista para firmar.</td></tr>
+    <tr><td><strong>Entregables</strong></td><td>(1) Mapa de cuellos de botella de la operación de campo con impacto en $/tiempo. (2) Top 3 oportunidades de automatización priorizadas por ROI y facilidad. (3) Caso de negocio de la oportunidad #1 (la candidata a primer agente). (4) Propuesta de implementación con alcance, precio y SLA (tiers Managed Services existentes).</td></tr>
+    <tr><td><strong>Duración</strong></td><td>3 a 5 semanas. Fijo. Si los datos están sucios, se cobra una fase de preparación aparte (la DD mostró que datos sucios añaden 6–8 semanas — no se absorbe).</td></tr>
+    <tr><td><strong>Precio recomendado</strong></td><td><span class="num-big">USD 8.000 – 15.000</span><br><span class="small">Precio fijo, pagado. Coherente con que las licencias mid-market de process mining son de cinco dígitos medios/año: el diagnóstico se ancla por debajo del costo de una herramienta, por encima de cero. <span class="tiny">[Rango recomendado; validar con primeras 2 ventas — NO VERIFICADO contra disposición real a pagar]</span></span></td></tr>
+    <tr><td><strong>Metodología</strong></td><td>Reusa lo que el fundador ya domina: instrumento de assessment estructurado (como los instrumentos IPIP / master prompts ya construidos) aplicado a la operación de campo. Entrar a C-Level/GM (principio existente), entrevistar al trío IT + operaciones + sponsor, extraer datos reales (OCR/evidencia), cuantificar, priorizar. Cero figuras fabricadas (regla heredada de los reportes ColMayor).</td></tr>
+    <tr><td><strong>Criterios de éxito</strong></td><td>(a) El cliente reconoce y firma el número de desperdicio. (b) Acepta al menos 1 de las 3 oportunidades. (c) Convierte a propuesta de implementación. <strong>Meta dura: ≥ 50% de diagnósticos convierten a implementación.</strong></td></tr>
+    <tr><td><strong>Transición a implementación</strong></td><td>El diagnóstico termina SIEMPRE con la propuesta de la oportunidad #1 como engagement de implementación + Managed Services. El diagnóstico es la cuña; la implementación es el ARR. Nunca se entrega el diagnóstico sin el siguiente paso costeado.</td></tr>
+  </table>
+</div>
+
+<!-- BRECHA 4 -->
+<h2><span class="n">B4</span>Primer agente vertical — uno solo</h2>
+<div class="gapref">Cierra: brecha de moat/defensibilidad (3.5/10) — "el moat es dato vertical + integración, no el software"</div>
+<div class="hero" style="border-color:var(--gold)">
+  <span class="tag" style="background:var(--gold);color:#1a1200">EL AGENTE</span>
+  <p class="posit" style="font-size:24px">Agente de <em>Validación de Evidencia Fotográfica de Campo</em>: recibe las fotos que el técnico sube tras cada visita (medidor, instalación, sello, fuga), las lee y valida automáticamente contra el procedimiento, marca trabajos incompletos o no conformes <em>antes</em> de cerrar la orden, y escribe el resultado en Salesforce/Field Service.</p>
+</div>
+<table>
+  <tr><th>Criterio exigido</th><th>Cómo lo cumple</th></tr>
+  <tr><td><strong>Dolor repetitivo</strong></td><td>Cada visita técnica genera evidencia fotográfica que hoy se revisa a mano o no se revisa. Ocurre miles de veces al mes por gasera. Es el cuello de botella que aparece en toda operación de campo.</td></tr>
+  <tr><td><strong>Alto ROI</strong></td><td>Reduce revisitas (cada revisita es costo directo de cuadrilla), evita cierres de orden no conformes (riesgo regulatorio en gas), y acelera la facturación. ROI medible en pesos → encaja con pricing por resultado.</td></tr>
+  <tr><td><strong>Fácil implementación</strong></td><td>Se monta sobre el stack que el cliente probablemente ya tiene (Salesforce Field Service) y sobre capacidades que el fundador ya construyó (computer vision + field — ej. ATP Port Analyzer). No requiere reemplazar sistemas.</td></tr>
+  <tr><td><strong>Reutilizable</strong></td><td>La misma lógica (foto → validación contra procedimiento → escritura en CRM) se revende a la siguiente gasera cambiando solo el catálogo de procedimientos. Marginal decreciente. Aquí nace el corpus vertical.</td></tr>
+  <tr><td><strong>Defendible</strong></td><td>El moat no es el modelo de visión (commodity): es el <strong>corpus propietario de procedimientos de campo validados + integraciones a Field Service</strong> que se acumula cliente a cliente en UNA industria. Exactamente el patrón Avoca confirmado por la DD.</td></tr>
+</table>
+<p class="tiny">Descartado explícitamente para fase 1: agentes de scheduling, de call/voz, de suscripción de seguros, de documentos. Uno solo. El resto no se nombra en el roadmap.</p>
+
+<!-- BRECHA 5 -->
+<h2><span class="n">B5</span>NEXUS redefinido — responsabilidad mínima 12 meses</h2>
+<div class="gapref">Cierra: brecha de posicionamiento + riesgo técnico (NEXUS como plataforma horizontal = competir con Salesforce)</div>
+<div class="panel">
+  <p class="lead" style="margin-top:0"><strong>Responsabilidad mínima de NEXUS (y única) durante 12 meses:</strong> ser la <strong>capa delgada que opera el agente de validación fotográfica</strong> — recibe la evidencia, corre la validación, registra el resultado de cada trabajo y mide el desperdicio evitado para sustentar el pricing por resultado. Nada más.</p>
+  <div class="scope">
+    <div class="row"><div class="h in">DENTRO</div><div class="c">Ingesta de evidencia fotográfica · ejecución de la validación del agente · registro del resultado por orden de trabajo · medición del outcome (revisitas evitadas, no conformidades detectadas) para facturar por resultado · integración de lectura/escritura con Salesforce Field Service del cliente.</div></div>
+    <div class="row"><div class="h out">FUERA (roadmap explícitamente vetado)</div><div class="c">Cualquier funcionalidad de CRM. Plataforma multi-industria u horizontal. Módulos para verticales distintas a gas/field service. Memory OS como producto (queda como infra interna SIN modificar). Nueva ontología, nuevas capas, nuevos conceptos. Scheduling, voz, portales, dashboards genéricos. Todo lo que no sea operar el agente #1 para el ICP #1.</div></div>
+  </div>
+  <p style="margin-bottom:0"><strong>Regla de oro (enmienda del fundador):</strong> ninguna línea de NEXUS se escribe sin un cliente que ya pagó un diagnóstico y aceptó la implementación del agente. La necesidad comercial precede al código, siempre.</p>
+</div>
+
+<!-- ROADMAP -->
+<h2><span class="n">RM</span>Roadmap 12 meses — empieza por el primer dólar</h2>
+<div class="road">
+  <div class="ph">Mes 0–1<br><span class="tiny" style="color:var(--dim)">FIRST DOLLAR</span></div>
+  <div class="bd">
+    <h4>Vender el primer diagnóstico — sin construir nada</h4>
+    <p class="small">Empaquetar "Radiografía Operativa de Campo" (B3). Llevarlo a una cuenta del pipeline activo: arrancar por Colgas (mapa político ya hecho) o la gasera más cálida. Cerrar 1 diagnóstico pagado.</p>
+    <p class="small dont">NO se escribe código. NO se nombra NEXUS al cliente.</p>
+    <span class="gate">✓ Evidencia para avanzar: 1 contrato de diagnóstico FIRMADO y pagado (o anticipo).</span>
+  </div>
+  <div class="ph">Mes 1–3</div>
+  <div class="bd">
+    <h4>Entregar el diagnóstico y convertir a implementación</h4>
+    <p class="small">Ejecutar la Radiografía con el instrumento de assessment. Cuantificar el desperdicio. Entregar las 3 oportunidades. Confirmar que la #1 es el agente de validación fotográfica (B4). Cerrar la propuesta de implementación.</p>
+    <span class="gate">✓ Evidencia: el cliente firma el número de desperdicio Y acepta la implementación del agente #1.</span>
+  </div>
+  <div class="ph">Mes 3–6</div>
+  <div class="bd">
+    <h4>Construir el agente #1 — NEXUS al mínimo (B5)</h4>
+    <p class="small">Recién aquí se escribe código, y solo el de la capa mínima de NEXUS que opera el agente para ESTE cliente. Pricing por resultado. Medir revisitas/no conformidades evitadas.</p>
+    <p class="small dont">NO funcionalidad fuera del scope DENTRO de B5.</p>
+    <span class="gate">✓ Evidencia: agente en producción en 1 cliente + primer cobro por resultado + métrica de desperdicio evitado real.</span>
+  </div>
+  <div class="ph">Mes 6–9</div>
+  <div class="bd">
+    <h4>Repetir: vender el mismo paquete a la 2ª y 3ª gasera</h4>
+    <p class="small">Diagnóstico → agente, idéntico, cambiando solo el catálogo de procedimientos. El corpus vertical empieza a acumularse. Estandarizar entregables y el instrumento.</p>
+    <span class="gate">✓ Evidencia: 3 clientes del MISMO ICP con el mismo agente; coste marginal del 3º menor que el del 1º.</span>
+  </div>
+  <div class="ph">Mes 9–12</div>
+  <div class="bd">
+    <h4>Romper la dependencia del fundador + decidir el siguiente paso</h4>
+    <p class="small">Formar a 1 persona que ejecute el diagnóstico sin el fundador (ataca el riesgo de dependencia, DD 2.8/10). Evaluar con datos si el agente se productiza como oferta repetible o se mantiene como servicio premium. Recién aquí tiene sentido empezar a usar el Memory OS interno (≥~10 implementaciones).</p>
+    <p class="small dont">NO abrir segunda vertical (seguros) hasta tener el playbook de gas probado y documentado.</p>
+    <span class="gate">✓ Evidencia: un diagnóstico ejecutado de punta a punta por alguien que NO es el fundador + decisión documentada (productizar vs. servicio) basada en datos de los 3 clientes.</span>
+  </div>
+</div>
+
+<!-- RESTRICCIONES -->
+<h2><span class="n">XX</span>Restricciones vigentes (no negociables)</h2>
+<div class="grid2">
+  <div class="card"><h4 class="dont">Lo que este Blueprint NO toca</h4><ul class="small">
+    <li>Memory OS: no se modifica. Queda como infraestructura interna mínima.</li>
+    <li>Arquitectura: no se altera.</li>
+    <li>No se crean nuevas capas, ni se amplía la ontología, ni se inventan conceptos nuevos.</li>
+  </ul></div>
+  <div class="card"><h4 class="do">La única disciplina añadida</h4><ul class="small">
+    <li>Cada decisión de este documento reduce una brecha nombrada por la DD (B1–B5 + dependencia del fundador).</li>
+    <li>El roadmap empieza por venta, no por desarrollo.</li>
+    <li>Cada fase cierra con una evidencia objetiva (gate) antes de avanzar.</li>
+    <li>Ninguna línea de NEXUS sin necesidad comercial demostrada (enmienda del fundador).</li>
+  </ul></div>
+</div>
+
+<div class="foot">
+  <p>Trazabilidad: B1→posicionamiento (DD 3.3), B2→foco/flywheel (DD 4.5/4.2), B3→modelo/first dollar (DD 5.5), B4→moat (DD 3.5), B5→posicionamiento+riesgo técnico, Roadmap→dependencia del fundador (DD 2.8). Datos de mercado heredados de la DD v2 (process mining 2026; vertical AI / patrón Avoca). Rangos de precio marcados como recomendación a validar — NO VERIFICADO contra disposición real a pagar del ICP.</p>
+  <p>N-LABS Commercial Blueprint v1.0 · 25 jun 2026 · Guía oficial de los próximos 12 meses · Ejecutable, no inspirador.</p>
+</div>
+
+</div>
+</body>
+</html>

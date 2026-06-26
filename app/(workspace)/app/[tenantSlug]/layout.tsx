@@ -35,6 +35,7 @@ export default async function WorkspaceLayout({
       tenantName={context.tenant.name}
       tenantSlug={context.tenant.slug}
       permissions={context.effectivePermissions}
+      enabledFeatures={context.enabledFeatures}
       userEmail={user?.email ?? null}
       notifications={notifications}
       unreadCount={unreadCount}

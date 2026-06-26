@@ -90,6 +90,9 @@ class FakeAudit {
   async listRecentByEventType() {
     return []
   }
+  async listByTenantWindow() {
+    return []
+  }
 }
 
 describe("skill flow (integration over use-cases)", () => {

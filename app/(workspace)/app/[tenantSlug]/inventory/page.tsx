@@ -57,15 +57,15 @@ export default async function InventoryOverviewPage({
   return (
     <>
       <PageHeader
-        title="Inventory"
-        description="Stock levels and recent movements across this workspace."
+        title="Inventario"
+        description="Niveles de stock y movimientos recientes de tu espacio de trabajo."
       />
       <div className="space-y-6 px-5 py-6 sm:px-8">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <Kpi label="Materials" value={overview.totalMaterials} icon={PackageSearch} />
-          <Kpi label="Stocked items" value={overview.totalItems} icon={Boxes} />
+          <Kpi label="Materiales" value={overview.totalMaterials} icon={PackageSearch} />
+          <Kpi label="Items en stock" value={overview.totalItems} icon={Boxes} />
           <Kpi
-            label="Low / out of stock"
+            label="Bajo / agotado"
             value={overview.lowStockCount}
             icon={AlertTriangle}
             tone="warning"
@@ -79,14 +79,14 @@ export default async function InventoryOverviewPage({
               href={`${base}/transactions`}
               className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
             >
-              View all <ArrowRight className="size-3.5" />
+              Ver todos <ArrowRight className="size-3.5" />
             </Link>
           </div>
           {overview.recentMovements.length === 0 ? (
             <div className="p-6">
               <EmptyState
-                title="No movements yet"
-                description="Stock movements will appear here as they happen."
+                title="Aún no hay movimientos"
+                description="Los movimientos de stock aparecerán aquí a medida que ocurran."
               />
             </div>
           ) : (

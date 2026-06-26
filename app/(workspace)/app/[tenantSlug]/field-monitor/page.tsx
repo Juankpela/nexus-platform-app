@@ -11,6 +11,10 @@ import {
   type ExecutionStatus,
 } from "@/modules/field-execution/domain/execution"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
+import {
+  WORK_ORDER_PRIORITY_LABELS,
+  type WorkOrderPriority,
+} from "@/modules/service/domain/work-order"
 
 export const metadata: Metadata = { title: "Monitor de Campo" }
 
@@ -73,8 +77,15 @@ export default async function FieldMonitorPage({
         <div className="rounded-xl border border-dashed bg-card p-10 text-center">
           <p className="text-sm font-medium">Sin técnicos</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Aún no hay técnicos registrados en esta organización.
+            Aún no hay técnicos registrados en esta organización. Registra tu
+            primer técnico para empezar a monitorear el trabajo en campo.
           </p>
+          <Link
+            href={`/app/${tenantSlug}/technicians`}
+            className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            <Wrench className="size-3.5" /> Registrar técnico
+          </Link>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -110,7 +121,8 @@ export default async function FieldMonitorPage({
                         <span
                           className={`ml-auto text-xs ${PRIORITY_STYLES[job.priority] ?? "text-muted-foreground"}`}
                         >
-                          {job.priority}
+                          {WORK_ORDER_PRIORITY_LABELS[job.priority as WorkOrderPriority] ??
+                            job.priority}
                         </span>
                       ) : null}
                     </div>

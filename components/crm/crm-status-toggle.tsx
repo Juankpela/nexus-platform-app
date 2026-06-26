@@ -37,7 +37,7 @@ export function CrmStatusToggle({
         disabled={pending}
       >
         {pending ? <Loader2 className="animate-spin" /> : null}
-        {status === "active" ? "Deactivate" : "Activate"}
+        {status === "active" ? "Desactivar" : "Activar"}
       </Button>
       {state.error ? (
         <span role="alert" className="text-xs text-destructive">

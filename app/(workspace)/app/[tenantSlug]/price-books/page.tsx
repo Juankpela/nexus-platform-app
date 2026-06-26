@@ -2,7 +2,8 @@ import { Plus } from "lucide-react"
 import type { Metadata } from "next"
 import Link from "next/link"
 
-import { PriceBookActiveToggle } from "@/components/crm/price-book-active-toggle"
+import { ActiveToggle } from "@/components/crm/active-toggle"
+import { setPriceBookActiveAction } from "@/modules/crm/presentation/price-book-actions"
 import { PriceBookFormDialog } from "@/components/crm/price-book-form-dialog"
 import { Pagination } from "@/components/crm/pagination"
 import { ClientOnly } from "@/components/layout/client-only"
@@ -56,8 +57,8 @@ export default async function PriceBooksPage({
   return (
     <>
       <PageHeader
-        title="Price Books"
-        description="Manage pricing for different customer segments."
+        title="Listas de precios"
+        description="Gestiona los precios para distintos segmentos de clientes."
       />
       <div className="space-y-4 px-5 py-6 sm:px-8">
         <div className="flex items-center justify-between gap-3">
@@ -75,7 +76,7 @@ export default async function PriceBooksPage({
               trigger={
                 <Button>
                   <Plus />
-                  New price book
+                  Nueva lista de precios
                 </Button>
               }
             />
@@ -84,11 +85,11 @@ export default async function PriceBooksPage({
 
         {result.items.length === 0 ? (
           <EmptyState
-            title="No price books"
+            title="Sin listas de precios"
             description={
               search
-                ? "No price books match your search."
-                : "Create your first price book to get started."
+                ? "Ninguna lista de precios coincide con tu búsqueda."
+                : "Crea tu primera lista de precios para empezar."
             }
             actions={
               canWrite ? (
@@ -112,11 +113,11 @@ export default async function PriceBooksPage({
               <thead className="border-b bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3 font-medium">Nombre</th>
-                  <th className="px-4 py-3 font-medium">Description</th>
+                  <th className="px-4 py-3 font-medium">Descripción</th>
                   <th className="px-4 py-3 font-medium">Estado</th>
                   {canWrite ? (
                     <th className="px-4 py-3 text-right font-medium">
-                      Actions
+                      Acciones
                     </th>
                   ) : null}
                 </tr>
@@ -143,7 +144,7 @@ export default async function PriceBooksPage({
                             : "bg-muted text-muted-foreground"
                         }`}
                       >
-                        {book.active ? "Active" : "Inactive"}
+                        {book.active ? "Activa" : "Inactiva"}
                       </span>
                     </td>
                     {canWrite ? (
@@ -154,11 +155,12 @@ export default async function PriceBooksPage({
                             priceBook={book}
                             trigger={
                               <Button variant="outline" size="sm">
-                                Edit
+                                Editar
                               </Button>
                             }
                           />
-                          <PriceBookActiveToggle
+                          <ActiveToggle
+                            action={setPriceBookActiveAction}
                             tenantSlug={tenantSlug}
                             id={book.id}
                             active={book.active}

@@ -4,6 +4,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 
 import { ActivityTimeline } from "@/components/crm/activity-timeline"
+import { RevenueTimeline } from "@/components/billing/revenue-timeline"
 import { MissionMetricCard } from "@/components/dashboard/mission/mission-metric-card"
 import { NextStepBanner } from "@/components/layout/next-step-banner"
 import { PageHeader } from "@/components/layout/page-header"
@@ -325,6 +326,11 @@ export default async function CompanyDetailPage({
               </ul>
             )}
           </section>
+        ) : null}
+
+        {/* Relación económica — línea de tiempo cotización → OT → factura → pago */}
+        {canInvoices && revenue ? (
+          <RevenueTimeline tenantSlug={tenantSlug} timeline={revenue} />
         ) : null}
 
         {/* 4 — Contactos relacionados */}

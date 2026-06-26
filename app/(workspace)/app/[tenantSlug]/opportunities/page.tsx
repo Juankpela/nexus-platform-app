@@ -16,6 +16,7 @@ import {
   hasPermission,
 } from "@/modules/authorization/domain/permission"
 import { listTenantOpportunities } from "@/modules/crm/composition"
+import { formatCOP } from "@/lib/format/money"
 import {
   OPPORTUNITY_BUSINESS_TYPE_LABELS,
   OPPORTUNITY_STATUSES,
@@ -287,7 +288,7 @@ export default async function OpportunitiesPage({
                         </td>
                         <td className="px-4 py-4 text-muted-foreground">
                           {opportunity.estimatedValue != null
-                            ? `$${opportunity.estimatedValue.toLocaleString()}`
+                            ? formatCOP(opportunity.estimatedValue)
                             : "—"}
                         </td>
                         <td className="px-4 py-4">
