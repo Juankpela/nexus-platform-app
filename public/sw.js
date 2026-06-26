@@ -11,7 +11,13 @@ self.addEventListener("activate", (event) => {
 })
 
 self.addEventListener("fetch", (event) => {
-  // Pass through to the network. Presence of a fetch handler is what makes the
-  // app installable; we deliberately do not cache responses here.
-  event.respondWith(fetch(event.request))
+  // El SW existe solo para instalabilidad PWA (sin caché). Para no poder romper
+  // nada, NO interceptamos navegaciones, POST ni autenticación ni cross-origin:
+  // esas las maneja el navegador de forma nativa. Solo dejamos pasar GET de
+  // assets del mismo origen (con catch, para que un fallo de red nunca rechace
+  // el FetchEvent). [Fix: respondWith(fetch(POST /login)) rompía el inicio de sesión.]
+  const req = event.request
+  if (req.method !== "GET" || req.mode === "navigate") return
+  if (new URL(req.url).origin !== self.location.origin) return
+  event.respondWith(fetch(req).catch(() => Response.error()))
 })
