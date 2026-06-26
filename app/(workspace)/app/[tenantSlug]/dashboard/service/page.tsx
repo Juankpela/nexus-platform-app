@@ -1,5 +1,6 @@
 import { AlertTriangle, CheckCircle2, Cpu, Flame, LifeBuoy } from "lucide-react"
 import type { Metadata } from "next"
+import Link from "next/link"
 
 import { DashboardTabs } from "@/components/dashboard/dashboard-tabs"
 import { InsightBanner } from "@/components/dashboard/insight-banner"
@@ -85,7 +86,11 @@ export default async function ServiceDashboardPage({
               : "SLA saludable"
           }
           detail={`Cumplimiento ${caseStats.slaCompliancePct ?? "—"}%${caseStats.breachedCount > 0 ? `, ${caseStats.breachedCount} caso(s) incumplido(s)` : ""} · ${caseStats.openCount} casos abiertos${caseStats.byStatus.escalated > 0 ? `, ${caseStats.byStatus.escalated} escalado(s)` : ""}.`}
-          action={{ label: "Ver casos", href: `/app/${tenantSlug}/cases` }}
+          action={
+            caseStats.breachedCount > 0
+              ? { label: "Resolver SLA vencidos", href: `/app/${tenantSlug}/cases?sla=overdue` }
+              : { label: "Ver casos", href: `/app/${tenantSlug}/cases` }
+          }
         />
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -93,7 +98,9 @@ export default async function ServiceDashboardPage({
           <KpiCard label="Resueltos" value={caseStats.byStatus.resolved} icon={CheckCircle2} accent="emerald" />
           <KpiCard label="Cerrados" value={caseStats.byStatus.closed} icon={CheckCircle2} accent="silver" />
           <KpiCard label="Escalados" value={caseStats.byStatus.escalated} icon={Flame} accent="orange" />
-          <KpiCard label="SLA incumplidos" value={caseStats.breachedCount} icon={AlertTriangle} accent="orange" />
+          <Link href={`/app/${tenantSlug}/cases?sla=overdue`} className="block">
+            <KpiCard label="SLA incumplidos" value={caseStats.breachedCount} icon={AlertTriangle} accent="orange" hint="Click para resolver" />
+          </Link>
           <KpiCard label="Activos" value={canReadAssets ? assetResult.total : "—"} icon={Cpu} accent="blue" />
         </div>
 

@@ -126,4 +126,6 @@ export type CaseFilters = {
   ownerId: UUID | null
   /** Optional: restrict to one company (used by the customer page). */
   companyId?: UUID | null
+  /** "overdue": casos abiertos con SLA vencido (accionables para resolver). */
+  sla?: "overdue" | null
 }

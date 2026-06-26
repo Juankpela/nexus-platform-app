@@ -237,7 +237,7 @@ export async function OperationalCenter({
   // Alertas críticas (contexto de decisión): todo derivado de datos ya cargados.
   const alerts: { tone: "critical" | "attention"; icon: typeof AlertTriangle; title: string; detail: string; href: string }[] = []
   if (caseStats && caseStats.breachedCount > 0)
-    alerts.push({ tone: "critical", icon: ShieldCheck, title: `${caseStats.breachedCount} SLA incumplidos`, detail: "Requieren atención inmediata", href: `/app/${tenantSlug}/cases` })
+    alerts.push({ tone: "critical", icon: ShieldCheck, title: `${caseStats.breachedCount} SLA incumplidos`, detail: "Click para resolverlos", href: `/app/${tenantSlug}/cases?sla=overdue` })
   if (exceptions.length > 0)
     alerts.push({ tone: "attention", icon: AlertTriangle, title: `${exceptions.length} sin coordinar`, detail: "El motor no pudo asignarlas solo", href: `/app/${tenantSlug}/dispatch` })
   if (stats && stats.overloadedTechnicians > 0)

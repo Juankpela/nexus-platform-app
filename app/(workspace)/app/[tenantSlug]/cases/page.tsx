@@ -71,6 +71,7 @@ export default async function CasesPage({
     owner?: string
     page?: string
     view?: string
+    sla?: string
   }>
 }) {
   const { tenantSlug } = await params
@@ -88,6 +89,7 @@ export default async function CasesPage({
   const status = isKanban ? null : parseStatus(sp.status)
   const priority = parsePriority(sp.priority)
   const ownerId = sp.owner?.trim() ? sp.owner.trim() : null
+  const sla = sp.sla === "overdue" ? ("overdue" as const) : null
   const pageRaw = sp.page ? Number.parseInt(sp.page, 10) : 1
   const page = Number.isFinite(pageRaw) && pageRaw > 0 ? pageRaw : 1
   const basePath = `/app/${tenantSlug}/cases`
@@ -96,7 +98,7 @@ export default async function CasesPage({
     await Promise.all([
       listTenantCases(
         context.tenantId,
-        { search, status, priority, ownerId },
+        { search, status, priority, ownerId, sla },
         isKanban ? 1 : page,
         isKanban ? KANBAN_PAGE_SIZE : PAGE_SIZE,
       ),
@@ -237,12 +239,24 @@ export default async function CasesPage({
           ) : null}
         </div>
 
+        {/* Filtro activo desde un dashboard (drill-down accionable) */}
+        {sla === "overdue" ? (
+          <div>
+            <span className="inline-flex items-center gap-2 rounded-full border border-orange-200/70 bg-orange-50/50 px-3 py-1 text-xs font-medium text-orange-700 dark:border-orange-900/40 dark:bg-orange-950/20 dark:text-orange-300">
+              SLA vencido · casos abiertos por resolver
+              <Link href={basePath} className="text-orange-700/70 hover:text-orange-700 dark:text-orange-300/70" aria-label="Quitar filtro">
+                ✕
+              </Link>
+            </span>
+          </div>
+        ) : null}
+
         {/* Content */}
         {result.items.length === 0 ? (
           <EmptyState
             title="Sin casos"
             description={
-              search || status || priority || ownerId
+              search || status || priority || ownerId || sla
                 ? "Ningún caso coincide con los filtros."
                 : "Crea tu primer caso de servicio."
             }
@@ -349,7 +363,7 @@ export default async function CasesPage({
               page={page}
               pageSize={PAGE_SIZE}
               total={result.total}
-              extraParams={{ status, priority, owner: ownerId }}
+              extraParams={{ status, priority, owner: ownerId, sla }}
             />
           </>
         )}
