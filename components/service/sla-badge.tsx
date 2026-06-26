@@ -6,9 +6,9 @@ import {
 } from "@/modules/service/domain/sla"
 
 const STATUS_STYLES: Record<SlaStatus, string> = {
-  on_track: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-  at_risk: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  breached: "bg-red-500/10 text-red-600 dark:text-red-400",
+  on_track: "bg-status-success/10 text-status-success",
+  at_risk: "bg-status-attention/10 text-status-attention",
+  breached: "bg-status-critical/10 text-status-critical",
   met: "bg-muted text-muted-foreground",
 }
 

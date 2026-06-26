@@ -15,14 +15,17 @@ export function NextStepBanner({
 }: {
   title: string
   description: string
-  /** "action" = pending next step (emerald). "success" = chain complete. */
-  tone?: "action" | "success"
+  /** "action"/"success" = paso del lazo de dinero (emerald). "attention" = paso de riesgo (orange). */
+  tone?: "action" | "success" | "attention"
   children?: ReactNode
 }) {
-  const accent =
-    tone === "success"
-      ? "border-emerald-300 bg-emerald-50 dark:border-emerald-900/40 dark:bg-emerald-950/20"
-      : "border-emerald-300 bg-emerald-50 dark:border-emerald-900/40 dark:bg-emerald-950/20"
+  const isAttention = tone === "attention"
+  const accent = isAttention
+    ? "border-status-attention/30 bg-status-attention/[0.06]"
+    : "border-status-success/30 bg-status-success/[0.06]"
+  const iconWrap = isAttention
+    ? "bg-status-attention/15 text-status-attention"
+    : "bg-status-success/15 text-status-success"
   const Icon = tone === "success" ? CheckCircle2 : ArrowRight
 
   return (
@@ -30,7 +33,9 @@ export function NextStepBanner({
       className={`flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4 ${accent}`}
     >
       <div className="flex items-start gap-3">
-        <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
+        <span
+          className={`mt-0.5 grid size-8 shrink-0 place-items-center rounded-full ${iconWrap}`}
+        >
           <Icon className="size-4" />
         </span>
         <div>

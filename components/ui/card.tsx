@@ -1,19 +1,28 @@
 import type { ComponentProps } from "react"
 
 import { cn } from "@/lib/utils"
+import { STATUS_ACCENT_BORDER } from "@/components/ui/status-pill"
+import type { StatusTone } from "@/modules/service/domain/status-tone"
 
 /**
  * Enterprise card surface: 20px radius, soft shadow, optional hover elevation.
- * The single source of truth for elevated surfaces across Nexus.
+ * The single source of truth for elevated surfaces across Nexus. `accent` añade
+ * una barra de marca a la izquierda para resaltar la tarjeta operacional clave.
  */
 export function Card({
   className,
   interactive = false,
+  accent,
   ...props
-}: ComponentProps<"div"> & { interactive?: boolean }) {
+}: ComponentProps<"div"> & { interactive?: boolean; accent?: StatusTone }) {
   return (
     <div
-      className={cn("card-surface", interactive && "card-surface-hover", className)}
+      className={cn(
+        "card-surface",
+        interactive && "card-surface-hover",
+        accent && STATUS_ACCENT_BORDER[accent],
+        className,
+      )}
       {...props}
     />
   )

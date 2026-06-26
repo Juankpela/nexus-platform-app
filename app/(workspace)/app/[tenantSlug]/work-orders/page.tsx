@@ -33,6 +33,8 @@ import {
   type WorkOrderPriority,
   type WorkOrderStatus,
 } from "@/modules/service/domain/work-order"
+import { WORK_ORDER_STATUS_TONE } from "@/modules/service/domain/status-tone"
+import { StatusPill } from "@/components/ui/status-pill"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 import { cn } from "@/lib/utils"
 
@@ -40,16 +42,6 @@ export const metadata: Metadata = { title: "Órdenes de trabajo" }
 
 const PAGE_SIZE = 10
 const KANBAN_PAGE_SIZE = 200
-
-const statusStyles: Record<WorkOrderStatus, string> = {
-  new: "bg-muted text-muted-foreground",
-  scheduled: "bg-sky-500/10 text-sky-600 dark:text-sky-400",
-  dispatched: "bg-violet-500/10 text-violet-600 dark:text-violet-400",
-  in_progress: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  on_hold: "bg-orange-500/10 text-orange-600 dark:text-orange-400",
-  completed: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-  cancelled: "bg-red-500/10 text-red-600 dark:text-red-400",
-}
 
 const priorityStyles: Record<WorkOrderPriority, string> = {
   low: "bg-muted text-muted-foreground",
@@ -319,7 +311,7 @@ export default async function WorkOrdersPage({
           <>
             <div className="overflow-hidden rounded-xl border bg-card">
               <table className="w-full text-sm">
-                <thead className="border-b bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
+                <thead className="thead-brand border-b text-left text-xs uppercase tracking-wider text-muted-foreground">
                   <tr>
                     <th className="px-4 py-3 font-medium">Número</th>
                     <th className="px-4 py-3 font-medium">Asunto</th>
@@ -365,9 +357,10 @@ export default async function WorkOrdersPage({
                         </span>
                       </td>
                       <td className="px-4 py-4">
-                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${statusStyles[wo.status]}`}>
-                          {WORK_ORDER_STATUS_LABELS[wo.status]}
-                        </span>
+                        <StatusPill
+                          tone={WORK_ORDER_STATUS_TONE[wo.status]}
+                          label={WORK_ORDER_STATUS_LABELS[wo.status]}
+                        />
                       </td>
                       <td className="px-4 py-4 text-muted-foreground">
                         {wo.scheduledStart

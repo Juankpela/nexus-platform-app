@@ -29,6 +29,8 @@ import {
   type CasePriority,
   type CaseStatus,
 } from "@/modules/service/domain/case"
+import { CASE_STATUS_TONE } from "@/modules/service/domain/status-tone"
+import { StatusPill } from "@/components/ui/status-pill"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 import { listCachedTenantMembers } from "@/modules/tenancy/composition"
 import { cn } from "@/lib/utils"
@@ -37,15 +39,6 @@ export const metadata: Metadata = { title: "Solicitudes" }
 
 const PAGE_SIZE = 10
 const KANBAN_PAGE_SIZE = 200
-
-const statusStyles: Record<CaseStatus, string> = {
-  new: "bg-muted text-muted-foreground",
-  working: "bg-sky-500/10 text-sky-600 dark:text-sky-400",
-  waiting_customer: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400",
-  escalated: "bg-orange-500/10 text-orange-600 dark:text-orange-400",
-  resolved: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-  closed: "bg-muted text-muted-foreground",
-}
 
 const priorityStyles: Record<CasePriority, string> = {
   low: "bg-muted text-muted-foreground",
@@ -284,7 +277,7 @@ export default async function CasesPage({
           <>
             <div className="overflow-hidden rounded-xl border bg-card">
               <table className="w-full text-sm">
-                <thead className="border-b bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
+                <thead className="thead-brand border-b text-left text-xs uppercase tracking-wider text-muted-foreground">
                   <tr>
                     <th className="px-4 py-3 font-medium">Número</th>
                     <th className="px-4 py-3 font-medium">Asunto</th>
@@ -329,11 +322,10 @@ export default async function CasesPage({
                         </span>
                       </td>
                       <td className="px-4 py-4">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${statusStyles[c.status]}`}
-                        >
-                          {CASE_STATUS_LABELS[c.status]}
-                        </span>
+                        <StatusPill
+                          tone={CASE_STATUS_TONE[c.status]}
+                          label={CASE_STATUS_LABELS[c.status]}
+                        />
                       </td>
                       <td className="px-4 py-4 text-muted-foreground">
                         {c.ownerId ? (ownerLabels.get(c.ownerId) ?? "—") : "Sin asignar"}

@@ -29,7 +29,7 @@ export function LifecycleTimeline({
                 aria-hidden
                 className={cn(
                   "absolute left-[11px] top-6 h-[calc(100%-1rem)] w-px",
-                  m.state === "done" ? "bg-emerald-500/40" : "bg-border",
+                  m.state === "done" ? "bg-status-success/40" : "bg-border",
                 )}
               />
             ) : null}
@@ -37,11 +37,11 @@ export function LifecycleTimeline({
               className={cn(
                 "relative z-10 mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border",
                 m.state === "done" &&
-                  "border-emerald-500/40 bg-emerald-500/15 text-emerald-500 dark:text-emerald-400",
+                  "border-status-success/40 bg-status-success/15 text-status-success",
                 m.state === "current" &&
-                  "border-blue-500/40 bg-blue-500/15 text-blue-500 dark:text-blue-400",
+                  "border-status-active/40 bg-status-active/15 text-status-active",
                 m.state === "blocked" &&
-                  "border-amber-500/40 bg-amber-500/15 text-amber-600 dark:text-amber-400",
+                  "border-status-attention/40 bg-status-attention/15 text-status-attention",
                 m.state === "pending" && "border-border bg-muted text-muted-foreground/50",
               )}
             >
@@ -50,7 +50,7 @@ export function LifecycleTimeline({
               ) : m.state === "blocked" ? (
                 <AlertTriangle className="size-3.5" />
               ) : m.state === "current" ? (
-                <span className="size-2 animate-pulse rounded-full bg-blue-500 dark:bg-blue-400" />
+                <span className="size-2 animate-pulse rounded-full bg-status-active" />
               ) : (
                 <span className="size-1.5 rounded-full bg-muted-foreground/40" />
               )}
@@ -63,13 +63,13 @@ export function LifecycleTimeline({
                   className={cn(
                     "text-sm font-medium",
                     m.state === "pending" ? "text-muted-foreground/70" : "text-foreground",
-                    m.state === "current" && "text-blue-600 dark:text-blue-400",
-                    m.state === "blocked" && "text-amber-700 dark:text-amber-400",
+                    m.state === "current" && "text-status-active",
+                    m.state === "blocked" && "text-status-attention",
                   )}
                 >
                   {m.label}
                   {m.state === "current" ? (
-                    <span className="ml-2 text-xs font-normal text-blue-500 dark:text-blue-400">
+                    <span className="ml-2 text-xs font-normal text-status-active">
                       en curso
                     </span>
                   ) : null}
@@ -85,7 +85,7 @@ export function LifecycleTimeline({
                   className={cn(
                     "mt-0.5 text-xs",
                     m.state === "blocked"
-                      ? "text-amber-700 dark:text-amber-400"
+                      ? "text-status-attention"
                       : "text-muted-foreground",
                   )}
                 >

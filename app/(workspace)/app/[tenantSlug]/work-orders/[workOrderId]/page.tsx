@@ -58,6 +58,8 @@ import {
   WORK_ORDER_STATUS_LABELS,
   isWorkOrderInvoiceable,
 } from "@/modules/service/domain/work-order"
+import { WORK_ORDER_STATUS_TONE } from "@/modules/service/domain/status-tone"
+import { StatusPill, STATUS_ACCENT_BORDER } from "@/components/ui/status-pill"
 import { technicianFullName } from "@/modules/service/domain/technician"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 import { WorkOrderBillingControls } from "./_components/work-order-billing-controls"
@@ -291,12 +293,12 @@ export default async function WorkOrderDetailPage({
               href={`/app/${tenantSlug}/companies/${workOrder.companyId}`}
               className="inline-flex items-center gap-1.5 font-medium text-foreground hover:underline"
             >
-              <Building2 className="size-4" />
+              <Building2 className="size-4 text-status-neutral" />
               {workOrder.companyName ?? "—"}
             </Link>
           ) : (
             <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-              <Building2 className="size-4" />
+              <Building2 className="size-4 text-status-neutral" />
               {workOrder.companyName ?? "—"}
             </span>
           )}
@@ -306,12 +308,12 @@ export default async function WorkOrderDetailPage({
               href={`/app/${tenantSlug}/assets/${workOrder.assetId}`}
               className="inline-flex items-center gap-1.5 font-medium text-foreground hover:underline"
             >
-              <Cpu className="size-4" />
+              <Cpu className="size-4 text-status-neutral" />
               {workOrder.assetName}
             </Link>
           ) : (
             <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-              <Cpu className="size-4" />
+              <Cpu className="size-4 text-status-neutral" />
               Sin activo
             </span>
           )}
@@ -321,18 +323,18 @@ export default async function WorkOrderDetailPage({
               href={`/app/${tenantSlug}/cases/${workOrder.caseId}`}
               className="inline-flex items-center gap-1.5 font-medium text-foreground hover:underline"
             >
-              <LifeBuoy className="size-4" />
+              <LifeBuoy className="size-4 text-status-active" />
               {workOrder.caseNumber}
             </Link>
           ) : (
             <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-              <LifeBuoy className="size-4" />
+              <LifeBuoy className="size-4 text-status-active" />
               Sin caso
             </span>
           )}
           <ArrowRight className="size-4 text-muted-foreground/50" />
           <span className="inline-flex items-center gap-1.5 font-semibold text-foreground">
-            <Wrench className="size-4" />
+            <Wrench className="size-4 text-status-attention" />
             {workOrder.workOrderNumber}
           </span>
         </div>
@@ -348,12 +350,15 @@ export default async function WorkOrderDetailPage({
         {/* Mensajes del cliente desde el seguimiento (con acción "Marcar atendida"). */}
         <CustomerMessages messages={customerMessages} tenantSlug={tenantSlug} />
 
-        <div className="rounded-xl border bg-card p-5">
+        <div
+          className={`rounded-xl border bg-card p-5 ${STATUS_ACCENT_BORDER[WORK_ORDER_STATUS_TONE[workOrder.status]]}`}
+        >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <span className="text-sm font-semibold">
-                {WORK_ORDER_STATUS_LABELS[workOrder.status]}
-              </span>
+              <StatusPill
+                tone={WORK_ORDER_STATUS_TONE[workOrder.status]}
+                label={WORK_ORDER_STATUS_LABELS[workOrder.status]}
+              />
               {/* En vivo: refresca el estado cuando el técnico avanza desde campo
                   (acepta / va en camino / llega / cierra). Reusa el canal del Monitor. */}
               <FieldMonitorLive

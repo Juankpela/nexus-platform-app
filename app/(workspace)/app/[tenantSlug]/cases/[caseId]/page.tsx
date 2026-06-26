@@ -46,6 +46,11 @@ import {
   CASE_PRIORITY_LABELS,
   CASE_STATUS_LABELS,
 } from "@/modules/service/domain/case"
+import {
+  CASE_STATUS_TONE,
+  WORK_ORDER_STATUS_TONE,
+} from "@/modules/service/domain/status-tone"
+import { StatusPill, STATUS_ACCENT_BORDER } from "@/components/ui/status-pill"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 import { listCachedTenantMembers } from "@/modules/tenancy/composition"
 
@@ -219,12 +224,15 @@ export default async function CaseDetailPage({
           ) : null}
         </div>
 
-        <div className="rounded-xl border bg-card p-5">
+        <div
+          className={`rounded-xl border bg-card p-5 ${STATUS_ACCENT_BORDER[CASE_STATUS_TONE[serviceCase.status]]}`}
+        >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <span className="text-sm font-semibold">
-                {CASE_STATUS_LABELS[serviceCase.status]}
-              </span>
+              <StatusPill
+                tone={CASE_STATUS_TONE[serviceCase.status]}
+                label={CASE_STATUS_LABELS[serviceCase.status]}
+              />
               <SlaBadge
                 slaDueAt={serviceCase.slaDueAt}
                 priority={serviceCase.priority}
@@ -347,7 +355,7 @@ export default async function CaseDetailPage({
             ) : (
               <div className="overflow-hidden rounded-xl border bg-card">
                 <table className="w-full text-sm">
-                  <thead className="border-b bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
+                  <thead className="thead-brand border-b text-left text-xs uppercase tracking-wider text-muted-foreground">
                     <tr>
                       <th className="px-4 py-3 font-medium">Número</th>
                       <th className="px-4 py-3 font-medium">Asunto</th>
@@ -367,8 +375,11 @@ export default async function CaseDetailPage({
                           </Link>
                         </td>
                         <td className="px-4 py-3">{wo.subject}</td>
-                        <td className="px-4 py-3 text-muted-foreground">
-                          {WORK_ORDER_STATUS_LABELS[wo.status]}
+                        <td className="px-4 py-3">
+                          <StatusPill
+                            tone={WORK_ORDER_STATUS_TONE[wo.status]}
+                            label={WORK_ORDER_STATUS_LABELS[wo.status]}
+                          />
                         </td>
                         <td className="px-4 py-3 text-muted-foreground">
                           {new Date(wo.updatedAt).toLocaleDateString("es-CO", { timeZone: "America/Bogota" })}
@@ -400,7 +411,7 @@ export default async function CaseDetailPage({
             <h2 className="text-sm font-semibold">Historial de auditoría</h2>
             <div className="overflow-hidden rounded-xl border bg-card">
               <table className="w-full text-sm">
-                <thead className="border-b bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
+                <thead className="thead-brand border-b text-left text-xs uppercase tracking-wider text-muted-foreground">
                   <tr>
                     <th className="px-4 py-3 font-medium">Evento</th>
                     <th className="px-4 py-3 font-medium">Cuándo</th>
