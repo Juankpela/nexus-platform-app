@@ -4,13 +4,14 @@
 // Idempotente. Lee .env.prod (creds de PROD). Uso: node scripts/create-demo-tech-logins.mjs
 import { readFileSync } from "node:fs"
 
-const SLUG = "demo-hvac"
+const SLUG = (process.argv[2] ?? "demo-hvac").toLowerCase()
+const ENVFILE = process.argv[3] ?? ".env.prod"
 const PASSWORD = "12345678"
 
 let env
 try {
-  env = Object.fromEntries(readFileSync(".env.prod", "utf8").split(/\r?\n/).filter((l) => l && !l.startsWith("#") && l.includes("=")).map((l) => { const i = l.indexOf("="); return [l.slice(0, i).trim(), l.slice(i + 1).trim().replace(/^['"]|['"]$/g, "")] }))
-} catch { console.error("✗ Falta nexus-platform/.env.prod (creds de PROD)."); process.exit(1) }
+  env = Object.fromEntries(readFileSync(ENVFILE, "utf8").split(/\r?\n/).filter((l) => l && !l.startsWith("#") && l.includes("=")).map((l) => { const i = l.indexOf("="); return [l.slice(0, i).trim(), l.slice(i + 1).trim().replace(/^['"]|['"]$/g, "")] }))
+} catch { console.error(`✗ Falta nexus-platform/${ENVFILE}.`); process.exit(1) }
 const BASE = env.NEXT_PUBLIC_SUPABASE_URL, KEY = env.SUPABASE_SERVICE_ROLE_KEY
 if (!BASE || !KEY) { console.error("✗ .env.prod incompleto"); process.exit(1) }
 const H = { apikey: KEY, Authorization: `Bearer ${KEY}`, "Content-Type": "application/json" }
