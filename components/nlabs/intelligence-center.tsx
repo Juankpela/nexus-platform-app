@@ -19,6 +19,7 @@ import {
 import { listTenantInvoices } from "@/modules/billing/composition"
 import { getTenantDispatchStats } from "@/modules/dispatch/composition"
 import { listDispatchInbox } from "@/modules/scheduling/composition"
+import { getTenantCaseStats } from "@/modules/service/composition"
 import { todayInAppZone } from "@/lib/format/datetime"
 import { formatCOP } from "@/lib/format/money"
 import type { UUID } from "@/types/shared"
@@ -76,9 +77,10 @@ export async function IntelligenceCenter({
   const can = (p: string) => hasPermission(permissions, p)
   const canInvoices = can(BILLING_PERMISSIONS.invoicesRead)
   const canDispatch = can(SERVICE_PERMISSIONS.dispatchRead)
+  const canCases = can(SERVICE_PERMISSIONS.casesRead)
   const today = todayInAppZone()
 
-  const [inbox, invoicesPage, stats] = await Promise.all([
+  const [inbox, invoicesPage, stats, caseStats] = await Promise.all([
     listDispatchInbox(tenantId),
     canInvoices
       ? listTenantInvoices(tenantId, {
@@ -90,6 +92,7 @@ export async function IntelligenceCenter({
         })
       : Promise.resolve(null),
     canDispatch ? getTenantDispatchStats(tenantId, today) : Promise.resolve(null),
+    canCases ? getTenantCaseStats(tenantId) : Promise.resolve(null),
   ])
 
   // ── Señales reales, derivadas de datos ya disponibles ──────────────────────
@@ -98,8 +101,22 @@ export async function IntelligenceCenter({
   const openInvoices = invoices.filter((i) => i.balance > 0.01)
   const porCobrar = openInvoices.reduce((s, i) => s + i.balance, 0)
   const overloaded = stats?.overloadedTechnicians ?? 0
+  const overdueSla = caseStats?.openBreachedCount ?? 0
 
   const signals: Signal[] = []
+  if (overdueSla > 0) {
+    signals.push({
+      id: "sla",
+      icon: ShieldCheck,
+      tone: "critical",
+      value: String(overdueSla),
+      label: overdueSla === 1 ? "SLA vencido" : "SLA vencidos",
+      insight:
+        "Compromiso de servicio vencido y sin resolver. Cada uno erosiona la confianza del cliente.",
+      actionLabel: "Resolver SLA",
+      href: `/app/${tenantSlug}/cases?sla=overdue`,
+    })
+  }
   if (stuck > 0) {
     signals.push({
       id: "stuck",
@@ -192,7 +209,7 @@ export async function IntelligenceCenter({
             <ShieldCheck className="size-5 shrink-0" />
             <p>
               Sin problemas operativos detectados. Tu operación está al día: nada
-              detenido, sin sobrecarga y la cobranza al corriente.
+              detenido, sin SLA vencidos, sin sobrecarga y la cobranza al corriente.
             </p>
           </div>
         ) : (

@@ -85,9 +85,9 @@ export default async function ServiceDashboardPage({
               ? "SLA requiere atención"
               : "SLA saludable"
           }
-          detail={`Cumplimiento ${caseStats.slaCompliancePct ?? "—"}%${caseStats.breachedCount > 0 ? `, ${caseStats.breachedCount} caso(s) incumplido(s)` : ""} · ${caseStats.openCount} casos abiertos${caseStats.byStatus.escalated > 0 ? `, ${caseStats.byStatus.escalated} escalado(s)` : ""}.`}
+          detail={`Cumplimiento ${caseStats.slaCompliancePct ?? "—"}%${caseStats.openBreachedCount > 0 ? `, ${caseStats.openBreachedCount} vencido(s) por resolver` : ""} · ${caseStats.openCount} casos abiertos${caseStats.byStatus.escalated > 0 ? `, ${caseStats.byStatus.escalated} escalado(s)` : ""}.`}
           action={
-            caseStats.breachedCount > 0
+            caseStats.openBreachedCount > 0
               ? { label: "Resolver SLA vencidos", href: `/app/${tenantSlug}/cases?sla=overdue` }
               : { label: "Ver casos", href: `/app/${tenantSlug}/cases` }
           }
@@ -99,7 +99,7 @@ export default async function ServiceDashboardPage({
           <KpiCard label="Cerrados" value={caseStats.byStatus.closed} icon={CheckCircle2} accent="silver" />
           <KpiCard label="Escalados" value={caseStats.byStatus.escalated} icon={Flame} accent="orange" />
           <Link href={`/app/${tenantSlug}/cases?sla=overdue`} className="block">
-            <KpiCard label="SLA incumplidos" value={caseStats.breachedCount} icon={AlertTriangle} accent="orange" hint="Click para resolver" />
+            <KpiCard label="SLA vencidos" value={caseStats.openBreachedCount} icon={AlertTriangle} accent="orange" hint="Click para resolver" />
           </Link>
           <KpiCard label="Activos" value={canReadAssets ? assetResult.total : "—"} icon={Cpu} accent="blue" />
         </div>

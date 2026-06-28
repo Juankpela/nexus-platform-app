@@ -241,13 +241,18 @@ export default async function CasesPage({
 
         {/* Filtro activo desde un dashboard (drill-down accionable) */}
         {sla === "overdue" ? (
-          <div>
+          <div className="space-y-1.5">
             <span className="inline-flex items-center gap-2 rounded-full border border-orange-200/70 bg-orange-50/50 px-3 py-1 text-xs font-medium text-orange-700 dark:border-orange-900/40 dark:bg-orange-950/20 dark:text-orange-300">
               SLA vencido · casos abiertos por resolver
               <Link href={basePath} className="text-orange-700/70 hover:text-orange-700 dark:text-orange-300/70" aria-label="Quitar filtro">
                 ✕
               </Link>
             </span>
+            <p className="text-xs text-muted-foreground">
+              Abre cada caso y cámbialo a{" "}
+              <span className="font-medium text-foreground">Resuelto</span> (o Cerrado)
+              para sacarlo de esta lista.
+            </p>
           </div>
         ) : null}
 

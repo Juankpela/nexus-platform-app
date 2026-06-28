@@ -6,5 +6,8 @@ export type CaseStats = {
   byStatus: Record<CaseStatus, number>
   byPriority: Record<CasePriority, number>
   slaCompliancePct: number | null
+  /** Histórico: todo caso incumplido, incluidos los cerrados tarde. Alimenta el % de cumplimiento. */
   breachedCount: number
+  /** Accionable: vencidos ACTIVOS (abiertos cuyo SLA ya pasó). Coincide EXACTO con el filtro ?sla=overdue. */
+  openBreachedCount: number
 }

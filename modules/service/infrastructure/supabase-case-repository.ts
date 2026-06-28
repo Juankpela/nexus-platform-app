@@ -301,6 +301,7 @@ export class SupabaseCaseRepository implements CaseRepository {
     const now = new Date()
     let openCount = 0
     let breachedCount = 0
+    let openBreachedCount = 0
     let slaTracked = 0
     let slaOk = 0
 
@@ -324,6 +325,13 @@ export class SupabaseCaseRepository implements CaseRepository {
           if (slaStatus === "breached") breachedCount += 1
           else slaOk += 1
         }
+        // Vencido ACTIVO: coincide EXACTO con el filtro ?sla=overdue (abierto y deadline pasado).
+        if (
+          !row.resolved_at &&
+          !row.closed_at &&
+          new Date(row.sla_due_at).getTime() < now.getTime()
+        )
+          openBreachedCount += 1
       }
     }
 
@@ -333,6 +341,7 @@ export class SupabaseCaseRepository implements CaseRepository {
       byStatus,
       byPriority,
       breachedCount,
+      openBreachedCount,
       slaCompliancePct:
         slaTracked > 0 ? Math.round((slaOk / slaTracked) * 100) : null,
     }

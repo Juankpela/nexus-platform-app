@@ -233,11 +233,13 @@ export async function OperationalCenter({
 
   const invoices = invoicesPage?.items ?? []
   const porCobrar = invoices.reduce((s, i) => s + (i.balance > 0 ? i.balance : 0), 0)
+  // Vencidos ACTIVOS (lo accionable): coincide con la lista a la que llevamos al usuario.
+  const openBreached = caseStats?.openBreachedCount ?? 0
 
   // Alertas críticas (contexto de decisión): todo derivado de datos ya cargados.
   const alerts: { tone: "critical" | "attention"; icon: typeof AlertTriangle; title: string; detail: string; href: string }[] = []
-  if (caseStats && caseStats.breachedCount > 0)
-    alerts.push({ tone: "critical", icon: ShieldCheck, title: `${caseStats.breachedCount} SLA incumplidos`, detail: "Click para resolverlos", href: `/app/${tenantSlug}/cases?sla=overdue` })
+  if (openBreached > 0)
+    alerts.push({ tone: "critical", icon: ShieldCheck, title: `${openBreached} ${openBreached === 1 ? "SLA vencido" : "SLA vencidos"}`, detail: "Ábrelos y márcalos como Resuelto", href: `/app/${tenantSlug}/cases?sla=overdue` })
   if (exceptions.length > 0)
     alerts.push({ tone: "attention", icon: AlertTriangle, title: `${exceptions.length} sin coordinar`, detail: "El motor no pudo asignarlas solo", href: `/app/${tenantSlug}/dispatch` })
   if (stats && stats.overloadedTechnicians > 0)
@@ -245,23 +247,25 @@ export async function OperationalCenter({
 
   // ── Insight ejecutivo: interpreta el estado en una frase (datos ya calculados) ──
   const overloaded = stats?.overloadedTechnicians ?? 0
-  const breached = caseStats?.breachedCount ?? 0
   const slaPct = caseStats?.slaCompliancePct ?? null
   const issues: string[] = []
   if (overloaded > 0) issues.push(`${overloaded} ${overloaded === 1 ? "técnico sobrecargado" : "técnicos sobrecargados"}`)
   if (exceptions.length > 0) issues.push(`${exceptions.length} ${exceptions.length === 1 ? "solicitud sin coordinar" : "solicitudes sin coordinar"}`)
-  if (breached > 0) issues.push(`${breached} ${breached === 1 ? "SLA incumplido" : "SLA incumplidos"}`)
+  if (openBreached > 0) issues.push(`${openBreached} ${openBreached === 1 ? "SLA vencido" : "SLA vencidos"}`)
   const insightLevel: InsightLevel = issues.length === 0 ? "healthy" : "attention"
   const insightDetail =
     issues.length === 0
       ? `SLA en ${slaPct ?? "—"}%${stats ? `, ${stats.availableTechnicians} técnicos disponibles` : ""}. Nada requiere tu decisión ahora.`
       : `${issues.join(" · ")}.${porCobrar > 0 && canInvoices ? ` Hay ${formatCOP(porCobrar)} por cobrar.` : ""}`
+  // El botón único prioriza el SLA vencido (lo más urgente para el cliente), luego despacho, luego carga.
   const insightAction =
-    exceptions.length > 0
-      ? { label: "Resolver", href: `/app/${tenantSlug}/dispatch` }
-      : overloaded > 0
-        ? { label: "Ver fuerza de campo", href: `/app/${tenantSlug}/field-monitor` }
-        : undefined
+    openBreached > 0
+      ? { label: "Resolver SLA vencidos", href: `/app/${tenantSlug}/cases?sla=overdue` }
+      : exceptions.length > 0
+        ? { label: "Resolver", href: `/app/${tenantSlug}/dispatch` }
+        : overloaded > 0
+          ? { label: "Ver fuerza de campo", href: `/app/${tenantSlug}/field-monitor` }
+          : undefined
 
   return (
     <div className="space-y-6">
@@ -289,15 +293,32 @@ export async function OperationalCenter({
               Ver inteligencia <ArrowRight className="size-3.5" />
             </Link>
           </div>
-          {proposals.length === 0 ? (
-            <div className="rounded-2xl border border-emerald-200/60 bg-emerald-50/40 p-5 text-sm text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-300">
-              N-LABS tiene la operación al día. Nada requiere tu decisión en este momento.
-            </div>
-          ) : (
+          {proposals.length > 0 ? (
             <div className="space-y-3">
               {proposals.map((p) => (
                 <AssistedProposalCard key={p.caseId} tenantSlug={tenantSlug} proposal={p} />
               ))}
+            </div>
+          ) : issues.length === 0 ? (
+            <div className="rounded-2xl border border-emerald-200/60 bg-emerald-50/40 p-5 text-sm text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-300">
+              N-LABS tiene la operación al día. Nada requiere tu decisión en este momento.
+            </div>
+          ) : (
+            // No hay propuestas auto-despachables, pero SÍ hay asuntos que requieren criterio
+            // humano (SLA vencido, sin coordinar, sobrecarga). El héroe es honesto y dirige.
+            <div className="rounded-2xl border border-orange-200/70 bg-orange-50/40 p-5 text-sm text-orange-800 dark:border-orange-900/40 dark:bg-orange-950/20 dark:text-orange-300">
+              <p>
+                N-LABS ya coordinó todo lo automatizable. Lo que ves marcado abajo
+                requiere tu decisión.
+              </p>
+              {insightAction ? (
+                <Link
+                  href={insightAction.href}
+                  className="mt-3 inline-flex items-center gap-1 font-medium text-orange-900 hover:underline dark:text-orange-200"
+                >
+                  {insightAction.label} <ArrowRight className="size-3.5" />
+                </Link>
+              ) : null}
             </div>
           )}
         </section>
