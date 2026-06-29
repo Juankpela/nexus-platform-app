@@ -5,6 +5,8 @@
 ## La identidad en una frase
 NEXUS no es una herramienta que consultas — es **un jefe de operaciones brillante que vela tu operación de forma continua, habla solo cuando importa, siempre con evidencia, y nunca te hace escarbar.** El usuario consulta un entendimiento que ya ocurrió; no le enseña al Cerebro qué pensar.
 
+> **Objetivo único que gobierna todo lo de abajo:** **reducir continuamente la carga cognitiva del gerente** — devolverle tiempo y cabeza, no darle más información. Si una decisión de producto añade carga en vez de quitarla, está equivocada. El fin no es informar; es liberar al gerente de ser el cerebro de su propia operación (ver `THE_NEXUS_EXPERIENCE.md`).
+
 ---
 
 ## 1. Cómo se comporta
@@ -43,15 +45,15 @@ NEXUS no es una herramienta que consultas — es **un jefe de operaciones brilla
 
 ## 5. Principios del Producto (gobiernan toda UX — si una pantalla viola uno, está mal)
 1. **El Cerebro habla primero.** El usuario nunca empieza investigando; abre y ya está informado.
-2. **El silencio es una afirmación.** Cuando NEXUS calla, dice "estás sano". No fabrica ruido para parecer vivo.
+2. **El trabajo invisible se hace visible.** No vende tranquilidad ("todo verde") — vende el trabajo que hizo: *"anoche vigilé 418 compromisos, marqué 7, descarté 6, escalé 1, tu operación sigue sana."* El silencio nunca es vacío; es trabajo que rinde cuenta. (El Cerebro piensa aunque nadie mire — y lo demuestra.)
 3. **Conclusión antes que dato.** Nunca un gráfico para que interpretes; el qué-significa y el qué-hacer. El dato es respaldo, no el mensaje.
-4. **Nada se afirma sin evidencia presente.** Cada aviso porta el hecho que lo funda. Sin evidencia, no habla; nunca adivina ni predice.
-5. **Precisión sobre cobertura.** Mejor 3 riesgos reales que 30 posibles. El Cerebro que grita lobo muere.
-6. **Habla en compromisos, no en métricas.** "La orden #1423 va a incumplir", no "SLA 87%".
-7. **El Cerebro recomienda; el humano decide.** Nunca actúa solo sobre lo crítico.
-8. **Anticipa, no reporta.** Habla del futuro cercano que aún se puede cambiar; si ya pasó, llegó tarde.
-9. **Declara su confianza, siempre.** Nunca suena más seguro de lo que la evidencia permite.
-10. **Piensa aunque nadie mire.** El valor vive entre sesiones; el usuario consulta un entendimiento que ya ocurrió, no lo dispara.
+4. **El Cerebro devuelve tiempo, no información.** Cada interacción debe *quitar* carga cognitiva, no añadirla. Si te deja más trabajo mental del que tenías, falló.
+5. **Nada se afirma sin evidencia presente; y declara su confianza siempre.** Cada aviso porta el hecho que lo funda y su grado de certeza. Sin evidencia no habla; nunca adivina, predice ni suena más seguro de lo que la evidencia permite.
+6. **Precisión sobre cobertura.** Mejor 3 riesgos reales que 30 posibles. El Cerebro que grita lobo muere.
+7. **Habla en compromisos, no en métricas.** "La orden #1423 va a incumplir", no "SLA 87%".
+8. **El Cerebro recomienda; el humano decide.** Nunca actúa solo sobre lo crítico; amplifica el juicio del dueño, no lo reemplaza.
+9. **Anticipa, no reporta.** Habla del futuro cercano que aún se puede cambiar; si ya pasó, llegó tarde.
+10. **Cada semana entiende mejor tu operación.** El producto está vivo: aprende de cada compromiso y resultado. El gerente lo *siente* mejorar — esa mejora visible es parte del valor.
 
 ## 6. Flujo natural de interacción (comportamiento, sin pantallas)
 - **Al entrar:** lo recibe el estado actual de la salud operacional — un briefing corto y rankeado de qué necesita atención (o "todo en orden, y por qué"). Sin estado vacío, sin configurar.
@@ -69,7 +71,7 @@ NEXUS no es una herramienta que consultas — es **un jefe de operaciones brilla
 
 ## 8. Crítica (CEO + inversor) — la tensión que hay que resolver
 - **"Habla primero / push":** *fortalece* la diferenciación y crea el momento mágico. *Riesgo:* si la precisión es baja, el push es spam y la confianza muere al instante (riesgo de producto #1). *Copia del competidor:* cualquiera agrega "alertas proactivas" (ServiceTitan podría). *Mitigación:* el foso no es el push, es la **calidad de lo que se empuja** (precisión del modelo operacional) + la relación de nicho.
-- **⚠️ TENSIÓN CRÍTICA CON LA VISIÓN — el silencio vs. el valor visible.** El producto quiere ser silencioso (principio 2); pero el valor vive en **no-eventos** (pérdidas evitadas) — invisibles. Un Cerebro mayormente callado es difícil de percibir como digno de pago → riesgo de churn por "valor invisible" (problema tipo seguro). **Resolución propuesta (no contradice la visión, la fortalece):** hacer el silencio **legible** — un recap periódico de "esto vigilé, esto atrapé, por esto estuvo tranquilo". El silencio sigue siendo la conducta; pero su valor se vuelve visible. Este es el punto que las primeras conversaciones deben validar.
+- **⚠️ TENSIÓN CRÍTICA — el valor invisible (problema tipo seguro).** El valor vive en **no-eventos** (pérdidas evitadas), que son invisibles → riesgo de churn ("¿para qué pago si todo está verde?"). **Resolución (corrección del founder — más fuerte que "hacer el silencio legible"): NO vender tranquilidad, vender el TRABAJO INVISIBLE.** No *"todo está bien"* sino *"anoche supervisé 418 compromisos, encontré 7 anomalías, descarté 6, escalé 1"*. Eso hace visible **el valor**, no el silencio (principio 2). Y el valor último no es ni siquiera la pérdida evitada: es **el tiempo y la carga cognitiva devueltos** (principio 4) — eso sí se siente todos los días, verde o no. Las primeras conversaciones deben validar cuál de los dos (trabajo invisible / tiempo devuelto) resuena más.
 - **"Cerebro vs Agentes / no es chat":** *fortalece* la identidad y evita la trampa del chatbot. *Riesgo:* el usuario *quiere* chatear (es la UI familiar); un Cerebro push-only puede sentirse ajeno. *Mitigación:* permitir **consultar** al Cerebro sobre su entendimiento, sin dejar que el usuario dirija su pensamiento.
 
 ## 9. Ancla de visión (inviolable)
