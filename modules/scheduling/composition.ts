@@ -30,6 +30,15 @@ import { listAssignments } from "@/modules/scheduling/application/use-cases/list
 import { scanOverdueWorkOrders } from "@/modules/scheduling/application/use-cases/scan-overdue-work-orders"
 import { projectSlaAlertBoard } from "@/modules/scheduling/domain/sla-alert-board"
 import {
+  linkDecisionsToOutcomes,
+  type DecisionOutcome,
+  type DecisionRecord,
+  type DispatchVerdict,
+  type ExecutionRecord,
+  type OutcomeSummary,
+} from "@/modules/scheduling/domain/outcome-linkage"
+import type { CasePriority } from "@/modules/service/domain/case"
+import {
   DISPATCH_BLOCKER_ACTIONS,
   DISPATCH_BLOCKER_LABELS,
 } from "@/modules/scheduling/domain/dispatch-confidence"
@@ -1421,4 +1430,88 @@ export async function listRecentRescheduleProposals(
     })
   }
   return views
+}
+
+type DecisionOutcomeExecRow = {
+  work_order_id: string
+  technician_id: string | null
+  status: string
+  completed_at: string | null
+  work_orders: { sla_due_at: string | null; priority: string | null } | null
+}
+
+export type DispatchOutcomesView = {
+  rows: DecisionOutcome[]
+  summary: OutcomeSummary
+}
+
+/**
+ * Outcome Linkage (Capability C4) read: ties each autonomous dispatch DECISION
+ * (`autonomous_dispatch.assigned`) back to the real OUTCOME of the work order it
+ * produced (execution status + SLA), and reports how well NEXUS's decisions
+ * turned out. Read-only over `audit_events` + `work_order_executions`; no
+ * migration, no mutation. This is the seam that lets the platform answer "my
+ * decisions resulted well N% of the time" — the loop the architecture rests on.
+ */
+export async function getDispatchDecisionOutcomes(
+  tenantId: UUID,
+): Promise<DispatchOutcomesView> {
+  // 1. The DECISIONS, read back from the audit trail (C4 reads, never mutates).
+  const entries = await new SupabaseAuditRepository().listRecentByEventType(
+    tenantId,
+    AUTONOMOUS_DISPATCH_EVENT,
+    500,
+  )
+  const decisions: DecisionRecord[] = entries
+    .filter((e) => e.subjectId)
+    .map((e) => {
+      const m = (e.metadata ?? {}) as Record<string, unknown>
+      const chosen = (m.chosen ?? null) as { technicianId?: string | null } | null
+      return {
+        caseId: e.subjectId as string,
+        decidedAt: e.occurredAt,
+        verdict: (m.verdict as DispatchVerdict) ?? "ESCALATE",
+        forced: m.forced === true,
+        recommendedTechnicianId: chosen?.technicianId ?? null,
+        workOrderId: (m.workOrderId as string | null) ?? null,
+      }
+    })
+
+  // 2. The OUTCOMES of the work orders those decisions produced.
+  const workOrderIds = [
+    ...new Set(
+      decisions.map((d) => d.workOrderId).filter((id): id is string => id != null),
+    ),
+  ]
+  const executionsByWorkOrder = new Map<string, ExecutionRecord>()
+  if (workOrderIds.length > 0) {
+    const client = await createServerSupabaseClient()
+    const { data, error } = await client
+      .from("work_order_executions")
+      .select(
+        "work_order_id, technician_id, status, completed_at, work_orders(sla_due_at, priority)",
+      )
+      .eq("tenant_id", tenantId)
+      .in("work_order_id", workOrderIds)
+    if (error) {
+      throw new ApplicationError(
+        "Unable to load decision outcomes.",
+        "OUTCOME_LINKAGE_FAILED",
+        error,
+      )
+    }
+    for (const row of (data ?? []) as unknown as DecisionOutcomeExecRow[]) {
+      executionsByWorkOrder.set(row.work_order_id, {
+        workOrderId: row.work_order_id,
+        technicianId: row.technician_id,
+        status: row.status,
+        completedAt: row.completed_at,
+        slaDueAt: row.work_orders?.sla_due_at ?? null,
+        priority: (row.work_orders?.priority as CasePriority | null) ?? null,
+      })
+    }
+  }
+
+  // 3. Close the loop (pure, deterministic, model-agnostic).
+  return linkDecisionsToOutcomes(decisions, executionsByWorkOrder, new Date())
 }
