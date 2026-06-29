@@ -5,7 +5,6 @@ import { createServerSupabaseClient } from "@/lib/supabase/server"
 import type { PaymentRepository } from "@/modules/billing/application/ports/payment-repository"
 import { computeBalance } from "@/modules/billing/domain/invoice"
 import {
-  totalAllocated,
   type OpenInvoiceOption,
   type Payment,
   type PaymentAllocation,
@@ -17,6 +16,31 @@ import {
 } from "@/modules/billing/domain/payment"
 import type { Paginated } from "@/modules/crm/domain/pagination"
 import type { UUID } from "@/types/shared"
+
+// ── Error mapping (RPC → ApplicationError) ───────────────────────────────────
+// Las RPCs atómicas lanzan RAISE EXCEPTION con un token; PostgREST lo entrega en
+// error.message. Lo traducimos al mismo ApplicationError code que usaba el flujo
+// secuencial para no cambiar el comportamiento visible (UI / use-cases).
+const PAYMENT_RPC_ERROR_CODES = [
+  "PAYMENT_OVER_ALLOCATION",
+  "INVOICE_NOT_PAYABLE",
+  "INVOICE_NOT_FOUND",
+  "PAYMENT_NO_ALLOCATIONS",
+  "PAYMENT_INVALID_AMOUNT",
+  "PAYMENT_FORBIDDEN",
+  "PAYMENT_NOT_FOUND",
+  "PAYMENT_NOT_REVERSIBLE",
+] as const
+
+function mapPaymentRpcError(error: unknown, fallbackCode: string): ApplicationError {
+  const message =
+    typeof error === "object" && error !== null && "message" in error
+      ? String((error as { message?: unknown }).message ?? "")
+      : ""
+  const known = PAYMENT_RPC_ERROR_CODES.find((code) => message.includes(code))
+  if (known) return new ApplicationError(message, known)
+  return new ApplicationError("Unable to process payment.", fallbackCode, error)
+}
 
 // ── Mapping ────────────────────────────────────────────────────────────────────
 
@@ -190,118 +214,29 @@ export class SupabasePaymentRepository implements PaymentRepository {
 
   async record(tenantId: UUID, input: RecordPaymentInput): Promise<Payment> {
     const client = await createServerSupabaseClient()
-    const invoiceIds = input.allocations.map((a) => a.invoiceId)
 
-    // Validate target invoices and balances before writing anything.
-    const { data: invoices, error: invErr } = await client
-      .from("invoices")
-      .select("id, total_amount, amount_paid, status")
-      .eq("tenant_id", tenantId)
-      .in("id", invoiceIds)
-
-    if (invErr) {
-      throw new ApplicationError(
-        "Unable to load invoices for payment.",
-        "PAYMENT_INVOICES_LOAD_FAILED",
-        invErr,
-      )
-    }
-
-    const byId = new Map((invoices ?? []).map((i) => [i.id as string, i]))
-    for (const alloc of input.allocations) {
-      const inv = byId.get(alloc.invoiceId)
-      if (!inv) {
-        throw new ApplicationError("Invoice not found.", "INVOICE_NOT_FOUND")
-      }
-      if (inv.status !== "issued" && inv.status !== "partially_paid") {
-        throw new ApplicationError(
-          "Only issued invoices can receive payments.",
-          "INVOICE_NOT_PAYABLE",
-        )
-      }
-      const balance = computeBalance(
-        Number(inv.total_amount),
-        Number(inv.amount_paid),
-      )
-      if (alloc.amount > balance + 0.0001) {
-        throw new ApplicationError(
-          "Allocation exceeds the invoice balance.",
-          "PAYMENT_OVER_ALLOCATION",
-        )
-      }
-    }
-
-    // Generate the consecutive payment number.
+    // P0-3 — todo el flujo (validar saldos con FOR UPDATE, generar consecutivo,
+    // insertar pago + asignaciones, aplicar incremento relativo a cada factura)
+    // ocurre atómicamente dentro de la RPC. Un fallo revierte TODO; dos pagos
+    // concurrentes se serializan (no se pisan ni sobre-asignan).
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: paymentNumber, error: seqError } = await (client.rpc as any)(
-      "next_payment_number",
-      { p_tenant_id: tenantId },
-    )
-    if (seqError || !paymentNumber) {
-      throw new ApplicationError(
-        "Unable to generate payment number.",
-        "PAYMENT_NUMBER_FAILED",
-        seqError,
-      )
-    }
-
-    const amount = totalAllocated(input.allocations)
-    const { data: paymentRow, error: payErr } = await client
-      .from("payments")
-      .insert({
-        tenant_id: tenantId,
-        payment_number: paymentNumber as string,
-        company_id: input.companyId,
-        payment_date: input.paymentDate,
-        method: input.method,
-        reference: input.reference,
-        note: input.note,
-        amount,
-        status: "recorded",
-      })
-      .select("*")
-      .single()
-
-    if (payErr || !paymentRow) {
-      throw new ApplicationError(
-        "Unable to record payment.",
-        "PAYMENT_RECORD_FAILED",
-        payErr,
-      )
-    }
-
-    const payment = toPayment(paymentRow as unknown as Record<string, unknown>)
-
-    const { error: allocErr } = await client.from("payment_allocations").insert(
-      input.allocations.map((a) => ({
-        tenant_id: tenantId,
-        payment_id: payment.id,
+    const { data, error } = await (client.rpc as any)("record_payment", {
+      p_tenant_id: tenantId,
+      p_company_id: input.companyId,
+      p_payment_date: input.paymentDate,
+      p_method: input.method,
+      p_reference: input.reference,
+      p_note: input.note,
+      p_allocations: input.allocations.map((a) => ({
         invoice_id: a.invoiceId,
         amount: a.amount,
       })),
-    )
-    if (allocErr) {
-      throw new ApplicationError(
-        "Unable to allocate payment.",
-        "PAYMENT_ALLOCATE_FAILED",
-        allocErr,
-      )
-    }
+    })
 
-    // Apply each allocation to its invoice balance/status.
-    for (const alloc of input.allocations) {
-      const inv = byId.get(alloc.invoiceId)!
-      const total = Number(inv.total_amount)
-      const newPaid = Number(inv.amount_paid) + alloc.amount
-      const newStatus = newPaid >= total - 0.0001 ? "paid" : "partially_paid"
-      await client
-        .from("invoices")
-        .update({ amount_paid: newPaid, status: newStatus })
-        .eq("tenant_id", tenantId)
-        .eq("id", alloc.invoiceId)
+    if (error || !data) {
+      throw mapPaymentRpcError(error, "PAYMENT_RECORD_FAILED")
     }
-
-    return payment
+    return toPayment(data as unknown as Record<string, unknown>)
   }
 
   async reverse(
@@ -313,62 +248,20 @@ export class SupabasePaymentRepository implements PaymentRepository {
   ): Promise<void> {
     const client = await createServerSupabaseClient()
 
-    const { data: allocations, error: allocErr } = await client
-      .from("payment_allocations")
-      .select("invoice_id, amount")
-      .eq("tenant_id", tenantId)
-      .eq("payment_id", id)
-
-    if (allocErr) {
-      throw new ApplicationError(
-        "Unable to load payment allocations.",
-        "PAYMENT_ALLOCATIONS_LOAD_FAILED",
-        allocErr,
-      )
-    }
-
-    // Recompute each affected invoice's balance/status.
-    for (const alloc of allocations ?? []) {
-      const { data: inv } = await client
-        .from("invoices")
-        .select("total_amount, amount_paid")
-        .eq("tenant_id", tenantId)
-        .eq("id", alloc.invoice_id as string)
-        .maybeSingle()
-      if (!inv) continue
-
-      const total = Number(inv.total_amount)
-      const newPaid = Math.max(0, Number(inv.amount_paid) - Number(alloc.amount))
-      const newStatus =
-        newPaid <= 0.0001
-          ? "issued"
-          : newPaid >= total - 0.0001
-            ? "paid"
-            : "partially_paid"
-      await client
-        .from("invoices")
-        .update({ amount_paid: newPaid, status: newStatus })
-        .eq("tenant_id", tenantId)
-        .eq("id", alloc.invoice_id as string)
-    }
-
-    const { error } = await client
-      .from("payments")
-      .update({
-        status: "reversed",
-        reversed_at: reversedAt,
-        reversed_by: reversedBy,
-        reverse_reason: reason,
-      })
-      .eq("tenant_id", tenantId)
-      .eq("id", id)
+    // P0-3 — reversa atómica: bloquea el pago (idempotencia: no se reversa dos
+    // veces), revierte el saldo de cada factura y marca el pago, todo en una
+    // transacción.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (client.rpc as any)("reverse_payment", {
+      p_tenant_id: tenantId,
+      p_payment_id: id,
+      p_reversed_by: reversedBy,
+      p_reversed_at: reversedAt,
+      p_reason: reason,
+    })
 
     if (error) {
-      throw new ApplicationError(
-        "Unable to reverse payment.",
-        "PAYMENT_REVERSE_FAILED",
-        error,
-      )
+      throw mapPaymentRpcError(error, "PAYMENT_REVERSE_FAILED")
     }
   }
 }
