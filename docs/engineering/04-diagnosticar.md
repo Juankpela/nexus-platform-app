@@ -1,5 +1,25 @@
 # Componente 4 — DIAGNOSTICAR (Especificación de Ingeniería)
 
+## Ficha de cierre
+
+| Campo | Valor |
+|---|---|
+| **Estado** | ✅ **CERRADO** |
+| **Fecha de cierre** | 2026-06-29 |
+| **Falsification Gate** | **SURVIVED** (tras *targeted rework*) |
+| **Refutadores** | 5 (independientes; presupuesto = el de construir) |
+| **Claims auditados** | ≈80 (contra C1 · C3 · ARQUITECTURA · MOTOR · CONSTITUCION · MOV · código real) |
+| **Claims refutados/ajustados** | 4 NEEDS_ADJUSTMENT (citas + pseudocódigo); **0 de lógica, 0 estructurales** |
+| **APIs inventadas** | 0 |
+| **Conceptos/actos nuevos** | 0 |
+| **Invariantes rotos** | 0 |
+| **AQ abiertas** | 25 (4 operativamente bloqueantes para la implementación) |
+| **Ready for** | **C5 — JUZGAR** |
+
+> Detalle del veredicto y de las 4 correcciones: ver bloque **Veredicto de Falsación (Gate, 2026-06-29)** al final del preámbulo. Panel comparativo: `docs/engineering/ENGINEERING_STATUS.md`.
+
+---
+
 > **Naturaleza.** SPEC DE INGENIERÍA implementable, NO arquitectura. Convierte el acto **DIAGNOSTICAR** del diseño cognitivo CONGELADO en software sobre el stack real (Supabase/PostgreSQL + TypeScript + Next.js, hexagonal). **No introduce ni un concepto, acto, tipo ni invariante cognitivo nuevo.** Se apoya en **C1** (`engineering/01-mov-data-model.md`, CERRADO) y recibe su foco de **C3/ATENDER** (`engineering/03-atender.md`, CERRADO) y **no los redefine**: DIAGNOSTICAR **recibe** la `brecha` ATENDIDA (el FOCO de C3, G4→G5) y **LEE** el grafo causal de C1 (`relacion_causal` C1 vía `mov_explicacion`; aristas `causal` vía `mov_arista`) recorriéndolo **HACIA ATRÁS** con `CausalGraphRepository.traverseUpstream`. Todo se traza al canon **por nombre** (ver §Tabla de trazabilidad). Donde el canon calla, se registra **Architectural Question** y **no se resuelve por intuición**.
 >
 > **Decisiones de unificación (resuelven las contradicciones internas señaladas por los refutadores; este documento es la versión gobernante única — misma disciplina que C3, `03-atender.md` L5-12):**
@@ -20,7 +40,7 @@
 >
 > **Precondición de construcción (honestidad, regla dura 6).** Verificado en disco: `nexus-platform/modules/` contiene `api, audit, authorization, billing, calendar, crm, dispatch, field-execution, forecasting, identity, integrations, inventory, notifications, organizations, platform, request-context, scheduling, service, tenancy` — **NO existen** `mov`/`ose`/`atender`/`diagnosticar`. Ningún `import "@/modules/mov/..."` resuelve hoy; los puertos de C1 existen como **firmas en el .md de C1**, no como código. La ejecutabilidad de DIAGNOSTICAR (incluso mockeando puertos) depende de que C1/C3 existan como TypeScript importable → `AQ-DIAG-PRECONDICION-C1C3`.
 >
-> **Veredicto de Falsación (Gate, 2026-06-29) — `SURVIVED` (tras *targeted rework*).** Cinco refutadores independientes (presupuesto = el de construir) atacaron por separado cada API, cita y claim de esta spec contra C1, C3, ARQUITECTURA, MOTOR, CONSTITUCION, MOV y el código real. **Núcleo intacto:** las citas a MOTOR/ARQUITECTURA (G5 L115-116, G4 L113, G6 L118, invariante (a) L146, memoria Punto 1, Regla F §6.2, "cuatro cosas, solo cuatro" §10.4 con creación-de-enlace excluida, Frenos 1/3, blindaje §9) y a CONSTITUCION/MOV (§0.3/I-3, §0.7, §2.1 R1/R4/R5, §2.2, §2.3, §2.4/§2.5, §5.2, B2=`inferencia` `attrs.forma='atribucion_causal'`, I-1/I-4/I-6/I-7) se verificaron **verbatim**; la API de C1 (`traverseUpstream`/`traverseDownstream`, `mov_c1_no_hecho`, `nivel_causal` columna, `applyWeakLink`, grant de escritura C/D solo a RECONCILIAR) y el contrato de C3 (`FocusOrigin`/`AttentionRanking`/`RoleContext`) son correctos; `audit.append` compila (`subjectType` string libre). **0 APIs inventadas, 0 conceptos nuevos, 0 invariantes rotos, 0 problemas estructurales.** **Clasificación: NEEDS TARGETED REWORK → corregido en este pase** (defectos localizados, ninguno de lógica): (a) 4 citas a líneas de C3 desfasadas por la edición de C3 → convertidas a **citas por nombre de símbolo** (anti-recurrencia); (b) `getById` citado en C1 L194 (es `getTrajectory`) → corregido a C1 L156; (c) pseudocódigo leía `rel.attrs.nivel_causal` contra su propia prosa (es **columna**) → accesor `nivelCausalDe(rel)` marcado AQ-gated; (d) `relacionCausalIdDe`/`esAccionablePorRol`/`nivelCausalDe` se presentaban como resueltas → declaradas **placeholders AQ-gated** (TODO, no integraciones). Las **24 Architectural Questions** (4 operativamente bloqueantes para la implementación: `AUTORIA-BRECHA`, `POBLADO-GRAFO`, `NODO-CAUSAL`, `LECTURA-ENLACE-CAUSAL`) siguen **no resueltas** y bloquean la operación end-to-end, no esta spec.
+> **Veredicto de Falsación (Gate, 2026-06-29) — `SURVIVED` (tras *targeted rework*).** Cinco refutadores independientes (presupuesto = el de construir) atacaron por separado cada API, cita y claim de esta spec contra C1, C3, ARQUITECTURA, MOTOR, CONSTITUCION, MOV y el código real. **Núcleo intacto:** las citas a MOTOR/ARQUITECTURA (G5 L115-116, G4 L113, G6 L118, invariante (a) L146, memoria Punto 1, Regla F §6.2, "cuatro cosas, solo cuatro" §10.4 con creación-de-enlace excluida, Frenos 1/3, blindaje §9) y a CONSTITUCION/MOV (§0.3/I-3, §0.7, §2.1 R1/R4/R5, §2.2, §2.3, §2.4/§2.5, §5.2, B2=`inferencia` `attrs.forma='atribucion_causal'`, I-1/I-4/I-6/I-7) se verificaron **verbatim**; la API de C1 (`traverseUpstream`/`traverseDownstream`, `mov_c1_no_hecho`, `nivel_causal` columna, `applyWeakLink`, grant de escritura C/D solo a RECONCILIAR) y el contrato de C3 (`FocusOrigin`/`AttentionRanking`/`RoleContext`) son correctos; `audit.append` compila (`subjectType` string libre). **0 APIs inventadas, 0 conceptos nuevos, 0 invariantes rotos, 0 problemas estructurales.** **Clasificación: NEEDS TARGETED REWORK → corregido en este pase** (defectos localizados, ninguno de lógica): (a) 4 citas a líneas de C3 desfasadas por la edición de C3 → convertidas a **citas por nombre de símbolo** (anti-recurrencia); (b) `getById` citado en C1 L194 (es `getTrajectory`) → corregido a C1 L156; (c) pseudocódigo leía `rel.attrs.nivel_causal` contra su propia prosa (es **columna**) → accesor `nivelCausalDe(rel)` marcado AQ-gated; (d) `relacionCausalIdDe`/`esAccionablePorRol`/`nivelCausalDe` se presentaban como resueltas → declaradas **placeholders AQ-gated** (TODO, no integraciones). Las **25 Architectural Questions** (4 operativamente bloqueantes para la implementación: `AUTORIA-BRECHA`, `POBLADO-GRAFO`, `NODO-CAUSAL`, `LECTURA-ENLACE-CAUSAL`) siguen **no resueltas** y bloquean la operación end-to-end, no esta spec.
 
 ---
 
