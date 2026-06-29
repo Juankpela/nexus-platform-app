@@ -21,6 +21,20 @@ _Última actualización: 2026-06-29._
 **Leyenda.** ✅ cerrado/cumplido · 🟡 en curso · ⏳ no iniciado · — no aplica todavía.
 "Falsación" = el componente fue atacado adversarialmente y el estado prohibido resultó inalcanzable; "Congelado" = cerrado, ya no se modifica salvo que una AQ aguas arriba se resuelva y lo obligue.
 
+## Revisión de Milestone (C1–C4) — APROBADA (2026-06-29)
+
+Revisión transversal del sistema tras congelar C1–C4. Veredicto: **el Motor sigue siendo consistente como sistema** — grafo **acíclico** (`Canon → C1 → C2 → C3 → C4`, sin ciclos), fronteras de responsabilidad aisladas, 0 conceptos nuevos, citas al canon verbatim. Hallazgo rector: C1–C4 son un **núcleo de razonamiento completo pero un bucle operativo abierto** — 4 responsabilidades huérfanas no asignadas por el canon (crear brecha · poblar `relacion_causal` · encender el Motor · binding a tablas operacionales), registradas como AQ. Mayor riesgo: atomicidad de escritura de C2/C1 + las 4 huérfanas.
+
+| Documento | Contenido |
+|---|---|
+| [`ARCHITECTURE_MILESTONE_REVIEW.md`](ARCHITECTURE_MILESTONE_REVIEW.md) | Grafo de dependencias + chequeo de ciclos, fronteras, mapa de interfaces, complejidad/riesgo, AQ clasificadas A/B/C/D, trazabilidad |
+| [`ROADMAP_TO_CODE.md`](ROADMAP_TO_CODE.md) | Fases A–G (specs→dominio→infra→integración→UI→calibración→producción) con criterios entrada/salida/riesgos y mapa AQ→fase |
+| [`C5_PREPARATION.md`](C5_PREPARATION.md) | Auditoría conceptual de la frontera DIAGNOSTICAR↔JUZGAR (no es la spec de C5) |
+
+**AQ a nivel de sistema (nuevas):**
+- `AQ-SYS-ROLECONTEXT-HOME` — `RoleContext` (concepto del canon, CONSTITUCION §8) vive físicamente en C3; C4/C5/C6/C7 lo importan de C3. ¿Debería vivir en un módulo kernel compartido? No bloqueante. Resolver en Fase B o si C3 se reabre.
+- `AQ-SYS-CITAS-FRAGILES` — política: las referencias entre componentes deben ser por **nombre estable** (símbolo/puerto/tipo/invariante/§), nunca por número de línea (las citas C4→C3 por línea se rompieron al editar C3). No se editan congelados; aplica a C5+ y a cualquier reapertura.
+
 ## Orden obligatorio (cadena del Motor)
 
 `C1 datos MOV` → `C2 OSE` → `C3 ATENDER` → `C4 DIAGNOSTICAR` → **`C5 JUZGAR`** → `C6 ARTICULAR` → `C7 RECONCILIAR`.
@@ -29,7 +43,7 @@ No se abre un componente mientras el anterior no esté CERRADO. Cada componente 
 
 ## Siguiente componente autorizado
 
-> **C5 — JUZGAR.** Único componente habilitado para trabajo de redacción/falsación. Aún no iniciado. Recoge el `Diagnostico` derrotable que produce C4 (G7: proyectar la palanca **hacia adelante** contra la CAUSA, recorrer el grafo `traverseDownstream`, generar `intervencion`, decidir/abstenerse/escalar en G8) — el sentido del recorrido que C4 tiene **estructuralmente prohibido** (`DiagnoseDeps` no inyecta `traverseDownstream`). El gate de suficiencia por consecuencia **G6 = DIAGNOSTICAR→JUZGAR** es la primera responsabilidad de C5 (ver C4 `AQ-DIAG-UMBRAL-ABSTENCION`).
+> **C5 — JUZGAR.** Preparación conceptual **COMPLETA** ([`C5_PREPARATION.md`](C5_PREPARATION.md)); redacción de la spec **NO iniciada** (espera autorización explícita del founder). Frontera con C4 confirmada nítida. Recoge el `Diagnostico` derrotable que produce C4 (G7: proyectar la palanca **hacia adelante** contra la CAUSA, recorrer el grafo `traverseDownstream`, generar `intervencion`, decidir/abstenerse/escalar en G8) — el sentido del recorrido que C4 tiene **estructuralmente prohibido** (`DiagnoseDeps` no inyecta `traverseDownstream`). El gate de suficiencia por consecuencia **G6 = DIAGNOSTICAR→JUZGAR** es la primera responsabilidad de C5 (ver C4 `AQ-DIAG-UMBRAL-ABSTENCION`).
 
 ## Forma de cada componente (contrato de la spec)
 
