@@ -126,6 +126,15 @@
 
 ---
 
+### AQ-SYS-017 — Outcome Feedback Loop
+- **Descripción:** el Motor Cognitivo debe definir el **mecanismo arquitectónico** mediante el cual las expectativas (`expectativa`, B3) sembradas por C5 (JUZGAR) son posteriormente observadas, contrastadas y reconciliadas. Este mecanismo es el cierre del bucle de aprendizaje — núcleo de la Constitución Cognitiva — y afecta simultáneamente a tres componentes que no tienen dueño único de esta responsabilidad: C5 siembra la expectativa; C2 potencialmente la observa al procesar nuevas señales; C7 calibra con base en la comparación outcome vs. expectativa.
+- **Componentes afectados:** C2 (OSE), C5 (JUZGAR), C7 (RECONCILIAR).
+- **Estado:** OPEN · **Categoría B** (bloquea la operación completa del bucle de aprendizaje; no bloquea la spec de C5 ni la de C6).
+- **Restricciones de registro:** no presupone modificaciones en C2; no presupone nuevas APIs; no presupone la solución técnica. El vacío se registra aquí para que cada componente afectado (C5, C6, C7) lo herede en su spec y declare su contrato de interfaz en ese contexto.
+- **AQ relacionadas:** `AQ-C5-EXPECTATIVA-OUTCOME` (C5_PREPARATION.md §8).
+
+---
+
 ## Resumen
 
 | ID | Título | Componentes | Categoría | Estado |
@@ -146,5 +155,6 @@
 | AQ-SYS-014 | Hogar de `RoleContext` | C3·C4 | B | OPEN |
 | AQ-SYS-015 | Citas estables | todos | — | POLICY |
 | AQ-SYS-016 | Persistencia de dos niveles | todos | — | POLICY |
+| AQ-SYS-017 | Outcome Feedback Loop | C2·C5·C7 | B | OPEN |
 
 **Ninguna AQ-SYS está resuelta.** Las Categoría A (001, 002, 009, 010, 011 + 005/013 parciales) son la cola crítica hacia la implementación (ver `ROADMAP_TO_CODE.md`, Fases B–D). Su resolución es de **binding/gobierno/evidencia**, no de razonamiento, y varias podrían requerir reabrir el canon — lo que exige autorización explícita del founder.

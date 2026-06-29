@@ -19,7 +19,7 @@ _Última actualización: 2026-06-29._
 | C2 | Operational State Engine (OSE) | ✅ CERRADO | ✅ pruebas de falsación internas | ✅ | 17 | [`02-operational-state-engine.md`](02-operational-state-engine.md) |
 | C3 | ATENDER | ✅ CERRADO | ✅ **SURVIVED** — Gate 5 refutadores (2026-06-29) | ✅ | 17 | [`03-atender.md`](03-atender.md) |
 | C4 | DIAGNOSTICAR | ✅ CERRADO | ✅ **SURVIVED** — Gate 5 refutadores + targeted rework (2026-06-29) | ✅ | 25 | [`04-diagnosticar.md`](04-diagnosticar.md) |
-| C5 | JUZGAR | ⏳ PENDIENTE (siguiente autorizado) | — | — | — | — |
+| C5 | JUZGAR | 🟡 PENDIENTE DE FALSIFICACIÓN | — (Gate pendiente) | — | 14 | [`05-juzgar.md`](05-juzgar.md) |
 | C6 | ARTICULAR | ⏳ PENDIENTE | — | — | — | — |
 | C7 | RECONCILIAR | ⏳ PENDIENTE | — | — | — | — |
 
@@ -48,7 +48,7 @@ No se abre un componente mientras el anterior no esté CERRADO. Cada componente 
 
 ## Siguiente componente autorizado
 
-> **C5 — JUZGAR.** **PHASE II (Engineering→Product) activa.** Preparación conceptual COMPLETA ([`C5_PREPARATION.md`](C5_PREPARATION.md)); **contrato BORRADOR** ([`C5_CONTRACT.md`](C5_CONTRACT.md)) pendiente de aprobación. La **Engineering Spec NO se inicia** hasta que el contrato sea aprobado. Frontera con C4 nítida (corte en G6; primer acto escritor tras OSE). Recoge el `Diagnostico` derrotable que produce C4 (G7: proyectar la palanca **hacia adelante** contra la CAUSA, recorrer el grafo `traverseDownstream`, generar `intervencion`, decidir/abstenerse/escalar en G8) — el sentido del recorrido que C4 tiene **estructuralmente prohibido** (`DiagnoseDeps` no inyecta `traverseDownstream`). El gate de suficiencia por consecuencia **G6 = DIAGNOSTICAR→JUZGAR** es la primera responsabilidad de C5 (ver C4 `AQ-DIAG-UMBRAL-ABSTENCION`).
+> **C5 — JUZGAR.** **Engineering Specification COMPLETA** ([`05-juzgar.md`](05-juzgar.md)) — **PENDIENTE DE FALSIFICACIÓN**. Contrato **APROBADO** (2026-06-29) ([`C5_CONTRACT.md`](C5_CONTRACT.md)). `AQ-SYS-017` (Outcome Feedback Loop) registrada en [`SYSTEM_DECISIONS.md`](../architecture/SYSTEM_DECISIONS.md). 14 AQ abiertas; 3 operativamente bloqueantes: `AQ-JUZGAR-NODO-DOWNSTREAM`, `AQ-JUZGAR-SCHEMA-MOV-ESCRITURA`, `AQ-JUZGAR-FALSADOR-PALANCA`. Siguiente paso: **Falsification Gate** (5 refutadores independientes atacan la spec contra C1/C4/canon; presupuesto igual al de construir).
 
 ## Forma de cada componente (contrato de la spec)
 

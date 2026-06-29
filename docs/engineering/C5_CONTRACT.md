@@ -1,6 +1,6 @@
 # C5 — JUZGAR · CONTRATO (autoridad para toda la ingeniería posterior)
 
-> **Naturaleza.** Contrato del componente, NO diseño ni implementación ni pseudocódigo. Define la frontera dura de JUZGAR antes de escribir su Engineering Spec. Toda la ingeniería de C5 debe ser fiel a este contrato. Base: ARQUITECTURA §3 acto 5; MOTOR gates G6/G7/G8 + §6 + §8 Freno 3; frontera de salida de C4 (FROZEN); auditoría conceptual previa en `C5_PREPARATION.md`. No introduce conceptos nuevos; donde el canon calla, se registrará AQ en la spec. Fecha: 2026-06-29. Estado: **BORRADOR — pendiente de aprobación**.
+> **Naturaleza.** Contrato del componente, NO diseño ni implementación ni pseudocódigo. Define la frontera dura de JUZGAR antes de escribir su Engineering Spec. Toda la ingeniería de C5 debe ser fiel a este contrato. Base: ARQUITECTURA §3 acto 5; MOTOR gates G6/G7/G8 + §6 + §8 Freno 3; frontera de salida de C4 (FROZEN); auditoría conceptual previa en `C5_PREPARATION.md`. No introduce conceptos nuevos; donde el canon calla, se registrará AQ en la spec. Fecha: 2026-06-29. Estado: **APROBADO — 2026-06-29**.
 
 ## Qué hace C5
 JUZGAR es el **quinto acto del Motor** y el **acto de decisión**. Dado un `Diagnostico` derrotable (la causa que produjo C4), JUZGAR:
@@ -22,11 +22,11 @@ Es el **primer acto que vuelve a ESCRIBIR sustancia** tras el OSE (C3 y C4 son s
 - El `Diagnostico` de C4 (causas derrotables con su falsador y procedencia, o abstención).
 - `RoleContext` (su `costoDeError` gobierna el umbral de G6).
 - Las `restriccion` (D2) vigentes, para podar la proyección.
-- El grafo causal **hacia adelante** (`CausalGraphRepository.traverseDownstream`, ya existe en C1 — reuso).
+- El grafo causal **hacia adelante** (`CausalGraphRepository.traverseDownstream`, especificado en C1 §CausalGraphRepository L193; pendiente de implementación TypeScript — hereda `AQ-SYS-011`).
 - Políticas de **SOLO LECTURA** para suficiencia (G6) y elección de palanca (G7/G8); cuantificación calibrada por RECONCILIAR.
 
 ## Salidas
-- `intervencion` (E3) · `compromiso` (A2) · `expectativa` (B3) de resultado de palanca — escritas vía el punto de escritura único de C1 (`mov_integrar`, con permiso propio; reuso, no API nueva).
+- `intervencion` (E3) · `compromiso` (A2) · `expectativa` (B3) de resultado de palanca — escritas vía el punto de escritura único de C1 (`mov_integrar`, especificado en C1; pendiente de implementación TypeScript — hereda `AQ-SYS-011`). La decisión de reusar, extender o envolver `mov_integrar` para garantizar la atomicidad de E3+A2+B3 queda diferida a la fase de implementación — hereda `AQ-SYS-005`.
 - O una **abstención/escalada deliberativa** (distinta de la abstención-por-ausencia-de-causa de C4).
 - **Nunca** texto para el rol, ni ranking, ni recálculo de sustancia ajena.
 
@@ -63,4 +63,4 @@ Es el **primer acto que vuelve a ESCRIBIR sustancia** tras el OSE (C3 y C4 son s
 - **Fijar la cuantificación** del umbral o de la palanca en el dominio → viola el blindaje forma/contenido (debe vivir tras puerto R/O).
 
 ## Dependencias sistémicas (de SYSTEM_DECISIONS.md)
-La **spec** de C5 puede cerrarse, pero su **operación** depende de: `AQ-SYS-001` (génesis de brecha), `AQ-SYS-002` (población del grafo causal), `AQ-SYS-005` (atomicidad de escritura — C5 escribe E3+A2+B3), `AQ-SYS-006` (calibración de la política de suficiencia/palanca), `AQ-SYS-012` (recogida de deuda de preempción). Ninguna se resuelve aquí.
+La **spec** de C5 puede cerrarse, pero su **operación** depende de: `AQ-SYS-001` (génesis de brecha), `AQ-SYS-002` (población del grafo causal), `AQ-SYS-005` (atomicidad de escritura — C5 escribe E3+A2+B3), `AQ-SYS-006` (calibración de la política de suficiencia/palanca), `AQ-SYS-012` (recogida de deuda de preempción), `AQ-SYS-017` (Outcome Feedback Loop — el mecanismo arquitectónico mediante el cual las expectativas que C5 siembra son observadas y reconciliadas; afecta C2·C5·C7; bloquea la operación del bucle de aprendizaje, no la spec). Ninguna se resuelve aquí.
