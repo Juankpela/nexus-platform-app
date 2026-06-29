@@ -48,7 +48,7 @@ No se abre un componente mientras el anterior no esté CERRADO. Cada componente 
 
 ## Siguiente componente autorizado
 
-> **C5 — JUZGAR.** Preparación conceptual **COMPLETA** ([`C5_PREPARATION.md`](C5_PREPARATION.md)); redacción de la spec **NO iniciada** (espera autorización explícita del founder). Frontera con C4 confirmada nítida. Recoge el `Diagnostico` derrotable que produce C4 (G7: proyectar la palanca **hacia adelante** contra la CAUSA, recorrer el grafo `traverseDownstream`, generar `intervencion`, decidir/abstenerse/escalar en G8) — el sentido del recorrido que C4 tiene **estructuralmente prohibido** (`DiagnoseDeps` no inyecta `traverseDownstream`). El gate de suficiencia por consecuencia **G6 = DIAGNOSTICAR→JUZGAR** es la primera responsabilidad de C5 (ver C4 `AQ-DIAG-UMBRAL-ABSTENCION`).
+> **C5 — JUZGAR.** **PHASE II (Engineering→Product) activa.** Preparación conceptual COMPLETA ([`C5_PREPARATION.md`](C5_PREPARATION.md)); **contrato BORRADOR** ([`C5_CONTRACT.md`](C5_CONTRACT.md)) pendiente de aprobación. La **Engineering Spec NO se inicia** hasta que el contrato sea aprobado. Frontera con C4 nítida (corte en G6; primer acto escritor tras OSE). Recoge el `Diagnostico` derrotable que produce C4 (G7: proyectar la palanca **hacia adelante** contra la CAUSA, recorrer el grafo `traverseDownstream`, generar `intervencion`, decidir/abstenerse/escalar en G8) — el sentido del recorrido que C4 tiene **estructuralmente prohibido** (`DiagnoseDeps` no inyecta `traverseDownstream`). El gate de suficiencia por consecuencia **G6 = DIAGNOSTICAR→JUZGAR** es la primera responsabilidad de C5 (ver C4 `AQ-DIAG-UMBRAL-ABSTENCION`).
 
 ## Forma de cada componente (contrato de la spec)
 
