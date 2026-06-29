@@ -113,3 +113,57 @@ Nunca construir por intuición. Nunca crear complejidad innecesaria. Nunca vende
 Todo N-LABS existe para responder una sola pregunta: **"¿Qué problema debemos resolver primero para generar el mayor valor posible para el cliente?"** Si una decisión no mejora esa respuesta, no se implementa.
 <!-- END:nlabs-operating-mission -->
 
+<!-- BEGIN:falsification-gate -->
+# FALSIFICATION GATE (regla permanente, 2026-06-28)
+
+> **Por cada idea nueva, dedicar el mismo esfuerzo a destruirla que a construirla.** Adoptada por el fundador. Sobrevivió a su propia aplicación (se construyó, se atacó desde 3 lentes y lo rescatable es esto, recortado). NEXUS evoluciona por evidencia, no por intuición.
+
+## Qué obliga (4 entregables, ligeros — ~1 página, junto al ADR/Goal)
+Para todo CONCEPTO o ABSTRACCIÓN nuevo que se quiera promover a "conocimiento" o a código:
+1. **Predicción de riesgo (pre-registro):** qué observación medible lo confirmaría y cuál lo refutaría. Si **ninguna** observación puede refutarlo → no es científico → se rechaza de entrada (Popper).
+2. **Refutador asignado:** alguien/algo distinto del proponente, con presupuesto igual al de construir, cuyo mandato es matar la idea (rol, no actitud — p.ej. un workflow de asesinos independientes).
+3. **Death test:** el experimento más barato que podría matarla, ejecutado PRIMERO.
+4. **Veredicto registrado:** SURVIVED / REFUTED / INCONCLUSIVE con el dato. **REFUTED es conocimiento valioso** y se archiva (el catálogo de hipótesis muertas es parte del foso). Un programa sano produce REFUTED con regularidad; si nada se refuta nunca, el Gate es teatro.
+
+## A qué SÍ aplica
+Conceptos/disciplinas/ontologías nuevas, abstracciones caras o difíciles de revertir, y toda afirmación de que "esto mejora las decisiones/outcomes". El vocabulario propietario nuevo cuenta como concepto: renombrar no es descubrir — un término solo entra si gana poder predictivo que el término existente no tenía.
+
+## A qué NO aplica (scope guard — anti-parálisis; esto es ley)
+- **NO aplica a trabajo reversible y barato.** Si revertir cuesta menos que falsar → hazlo y observa; la implementación ES el experimento.
+- **NO aplica a producto de "atención al cliente"** (UX, copy, fixes, demo): eso se rige por la constitución comercial (vender / simplicidad / activación).
+- **NUNCA puede ser la razón por la que no hay demo, ni puede bloquear el camino al revenue.** El Gate gobierna la investigación de conceptos, no el envío de producto. La regla de cierre comercial (impacto académico ≠ Goal terminado) tiene prioridad sobre el Gate.
+- **NO se re-litiga lo ya resuelto por la literatura.** Antes de "descubrir", citar el trabajo publicado que ya lo responde (Simon, Klein/NDM, Kahneman, Rasmussen, Endsley, Boyd, Howard, Snowden, etc.). Re-descubrir conocimiento público = conocimiento NO propietario = no es prioridad.
+
+## La secuencia correcta (lección del primer uso del Gate)
+El activo defendible es el **corpus propietario de decisiones↔resultados con contrafactual humano** en el nicho (HVAC PYME, español, WhatsApp) — no una teoría ni un grafo. Ese corpus **se opera para existir, no se teoriza para existir**: primero el producto en uso con clientes reales, luego la teoría que emerge de sus datos. Cualquier "programa de investigación" cuyo método (evidencia falsable) requiera datos operativos que aún no existen es especulación hasta que el producto los genere. La teoría empieza cuando hay filas, no antes.
+
+## Regla compañera — HYPOTHESIS-FIRST / EXPERIMENTO DE PRODUCTO (fundador, 2026-06-28)
+El Gate destruye ideas; esta regla convierte lo que sobrevive en algo medible y atado al cliente. Tres mandatos:
+1. **Toda hipótesis (de investigación o de producto) se convierte en un EXPERIMENTO DE PRODUCTO con criterio de ÉXITO y de FRACASO (kill criteria) definidos ANTES de tocar el core.**
+2. **Ninguna investigación entra al roadmap sin demostrar una ventaja OBSERVABLE PARA EL CLIENTE.** (Ventaja observable = el cliente la nota y la valora; no un hallazgo sobre nuestros propios logs.)
+3. **Ningún desarrollo importante se construye sin una hipótesis previamente definida.**
+
+**Experiment Card (artefacto, ~1 página, antes de modificar el core):**
+```
+EXPERIMENT CARD — E-xxx
+Hipótesis:          [afirmación causal]
+Ventaja al cliente: [qué nota y valora el cliente, observable]
+Métrica:            [número que se mueve]
+Éxito si:           [umbral pre-registrado]
+FRACASO/KILL si:    [umbral que nos obliga a abandonar — obligatorio]
+Death test:         [el experimento más barato que la mata]   Costo: [horas]
+Reversibilidad:     [REVERSIBLE | COSTOSA | IRREVERSIBLE]
+Veredicto:          SUCCESS | KILLED | INCONCLUSIVE   [dato]
+```
+Sin criterio de FRACASO explícito, no es un experimento — es una apuesta disfrazada. KILLED es un resultado válido y barato; mejor matar en la Card que en producción.
+
+## Regla compañera — CAPABILITY FIRST (fundador, 2026-06-28)
+NEXUS se organiza por CAPACIDADES (habilidades reutilizables y duraderas del producto), no por módulos/features. Las 5 capacidades fundamentales (Constitución Técnica): **C1 Situation Framing · C2 Decision Contract · C3 Bounded Autonomy · C4 Outcome Linkage · C5 Operational Memory** — sobre la infraestructura **Decision Ledger** (`audit_events.metadata`, NO es capacidad). Una Capability se distingue de una Feature porque (a) sobrevive a un reemplazo total del LLM/framework/UI, (b) la consume >1 módulo, (c) se nombra con un verbo de habilidad, no un sustantivo de pantalla. Si una "Capability" no se distingue de una Feature, se elimina.
+- **Toda Feature futura debe declarar: "¿qué Capability fortalece?" Si la respuesta es "ninguna", la Feature se rechaza.**
+- No promover infraestructura (Ledger) ni invariantes (Evidence/Grounding = cláusula de C2) a capacidad.
+- Estado honesto (no vender aspiración como inventario): solo C2 está medio construida (L1-2, solo despacho); C1 (L3 monomórfica) y C3 (L1, autonomía implícita en `force`+verdict) son patrones de un módulo; **C4 y C5 — el foso — son ~0 líneas y 0 clientes.** La Constitución es un PLAN, no un inventario.
+
+## Regla compañera — EVIDENCE BEFORE EXPANSION (fundador, 2026-06-28)
+Cerró la etapa de investigación abierta; entramos en EJECUCIÓN. **Ninguna Capability avanza al siguiente nivel mientras la anterior no haya generado evidencia suficiente para confirmar o refutar la hipótesis de su Experiment Card.** El éxito de un Sprint NO es el código construido — es el **primer número real** que demuestra si la arquitectura mejora decisiones en el mundo operativo. No abrir una nueva Capability hasta cerrar el ciclo de la Experiment Card de la actual. La evidencia (de cliente real o experimento previamente definido) es lo único que promueve una Capability de "funcional" a "validada", y lo único que reabre la Constitución congelada — nunca la intuición. Filosofía: medimos decisiones mejoradas, no líneas de código; evolucionamos por evidencia, no por intuición.
+<!-- END:falsification-gate -->
+
