@@ -24,6 +24,16 @@ import type { UUID } from "@/types/shared"
 
 type InvoiceLineInsert = Database["public"]["Tables"]["invoice_lines"]["Insert"]
 
+/** PostgreSQL unique_violation (SQLSTATE 23505) — el candado de unicidad ganó la carrera. */
+export function isUniqueViolation(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: unknown }).code === "23505"
+  )
+}
+
 // ── Mapping helpers ──────────────────────────────────────────────────────────
 
 function toInvoice(row: Record<string, unknown>): Invoice {
@@ -241,6 +251,15 @@ export class SupabaseInvoiceRepository implements InvoiceRepository {
       .single()
 
     if (error || !data) {
+      // El candado único parcial (invoices_one_active_per_work_order) puede ganar
+      // una carrera contra el chequeo de aplicación: lo traducimos al mismo error
+      // semántico que usa el caso de uso, no a un fallo genérico.
+      if (isUniqueViolation(error)) {
+        throw new ApplicationError(
+          "An active invoice already exists for this work order.",
+          "INVOICE_ALREADY_EXISTS",
+        )
+      }
       throw new ApplicationError(
         "Unable to create invoice.",
         "INVOICE_CREATE_FAILED",
@@ -489,6 +508,12 @@ export class SupabaseInvoiceRepository implements InvoiceRepository {
       .single()
 
     if (error || !data) {
+      if (isUniqueViolation(error)) {
+        throw new ApplicationError(
+          "An active invoice already exists for this quote.",
+          "INVOICE_ALREADY_EXISTS",
+        )
+      }
       throw new ApplicationError(
         "Unable to create invoice.",
         "INVOICE_CREATE_FAILED",
