@@ -6,14 +6,14 @@
 |---|---|
 | **Estado** | ✅ **CERRADO** |
 | **Fecha de cierre** | 2026-06-29 |
-| **Falsification Gate** | ✅ **SURVIVED** (tras *targeted rework*) |
-| **Refutadores** | 5 independientes (presupuesto = el de construir) |
-| **Claims auditados** | ≈70 (contra C1 · C4 · C3 · ARQUITECTURA · MOTOR · CONSTITUCION · MOV · código real) |
-| **Claims refutados/ajustados** | 4 NEEDS_ADJUSTMENT (citaciones); **0 de lógica, 0 estructurales** |
+| **Falsification Gate** | ✅ **SURVIVED** (tras *targeted rework sustancial*) — **dos pasadas**: (1) genérico de citas; (2) **especializado para el primer acto deliberativo** |
+| **Refutadores** | 5+5 independientes. Pasada 2 (especializada), responsabilidades exclusivas: R1 fronteras · R2 calidad de la decisión · R3 implementabilidad · R4 casos límite · R5 coherencia del pipeline |
+| **Claims auditados** | ≈140 (las dos pasadas; pasada 2 contra C1 · C4 · C3 · MOTOR · ARQUITECTURA · CONSTITUCION · MOV · código real) |
+| **Claims refutados/ajustados** | Pasada 1: 4 (citaciones). Pasada 2: **3 refutadores REFUTED** → 12 hallazgos corregidos en el mismo pase (1 mecánico triple-confirmado, varios IMPLEMENTATION/ARCHITECTURAL); **0 colapso estructural** |
 | **APIs inventadas** | 0 |
-| **Conceptos/actos nuevos** | 0 |
-| **Invariantes rotos** | 0 |
-| **AQ abiertas** | 14 (3 operativamente bloqueantes para la implementación) |
+| **Conceptos/actos nuevos** | 0 (los motivos de abstención y la rama de escalada son valores/salidas dentro de tipos del canon) |
+| **Invariantes rotos** | 0 (se reforzaron: INV-4 eslabón débil downstream; +INV-13 guard de null; +INV-14 escalada alcanzable) |
+| **AQ abiertas** | 18 (4 nuevas del Gate especializado; operativamente bloqueantes: `NODO-DOWNSTREAM`, `SCHEMA-MOV-ESCRITURA`, `FALSADOR-PALANCA`, `RUTA-LARGA`) |
 | **Ready for** | **C6 — ARTICULAR** |
 
 ---
@@ -39,7 +39,23 @@
 >
 > **Precondición de construcción (honestidad, regla dura 6).** Verificado en disco: `nexus-platform/modules/` contiene `api, audit, authorization, billing, calendar, crm, dispatch, field-execution, forecasting, identity, integrations, inventory, notifications, organizations, platform, request-context, scheduling, service, tenancy` — **NO existen** `mov`/`ose`/`atender`/`diagnosticar`/`juzgar`. Los puertos que `judge` consume existen solo como firmas en los `.md` de C1/C3/C4 (hereda `AQ-SYS-011`).
 >
-> **Veredicto de Falsación (Gate, 2026-06-29) — `SURVIVED` (tras *targeted rework*).** Cinco refutadores independientes (presupuesto = el de construir) atacaron por separado cada API, cita y claim de esta spec contra C1, C4, C3, ARQUITECTURA, MOTOR, CONSTITUCION, MOV y el código real. **Núcleo intacto:** invariante (a) de MOTOR §3.2 verificado verbatim ("el grafo se recorre en dos sentidos opuestos"); `JudgeDeps.causal` excluye `traverseUpstream` por `Pick<>` (JUZGAR.INV-1, estructural); 12 invariantes con guard verificable; APIs de C1 confirmadas por nombre (`traverseDownstream`/`traverseUpstream` C1 §CausalGraphRepository, `listActiveConstraints` C1 §NormativeRepository, `getById`/`integrar` C1 §MovRepository); `SufficiencyPolicyPort`/`LeverPolicyPort` son puertos R/O nuevos válidos (Gate 2: "solo añade puertos R/O para su cuantificación calibrable"); citas a MOTOR (§3.2 inv (a), G6/G7/G8, §8 Freno 3, §9, §10.4, Regla F §6.2), MOV (§0.7, §2.1 R1/R5, §5.2, I-7), ARQUITECTURA (§3 acto 5, §2.1) verificadas; `AQ-SYS-017` y `AQ-JUZGAR-ESCRITURA-ATOMICA` correctamente registradas. **0 APIs inventadas, 0 conceptos nuevos, 0 invariantes rotos, 0 problemas estructurales.** **Clasificación: NEEDS TARGETED REWORK → corregido en este pase** (4 defectos de citación, ninguno de lógica): *(a)* §1 + §8.0 "MOTOR §6" para G6 → corregido a "MOTOR §5" (MOTOR §5 Q5: "Su sede natural es G6 (suficiencia)"; MOTOR §6 es dinámica-de-hipótesis, no suficiencia); "MOTOR §8 G8" para E3/A2/B3 → corregido a "MOTOR G7/G8 §3.2" (G8 está en §3.2, no en §8 que es anti-bucle; E3 la genera G7, no G8); "MOTOR §8: *'cada acto...'*" → corregido a "C1 §5.1 + MOTOR G8 §3.2" (la permisión de escritura viene de C1 §5.1, no de MOTOR §8); *(b)* §7 + §12 guardia JUZGAR.INV-7/F-JZ-3 "`JudgeDeps` no inyecta escritura de familia C" → impreciso (`Pick<MovRepository,"integrar">` puede llamar `integrar` con cualquier familia); corregido a "el pseudocódigo nunca llama `integrar` con `familia:'C'`; RLS DB (AQ-JUZGAR-PERMISOS) lo refuerza"; *(c)* §13 trazabilidad "MOTOR-COGNITIVO.md §6 G8" para E3/A2/B3 → E3 es de G7 §3.2 ("generar `intervencion`(es) E3 que actúan sobre la causa"), A2+B3 de G8 §3.2; fila dividida en dos; "`intervencion` nace HIPÓTESIS" "§6 G8" → G7 §3.2 + MOV §2.1 R1; *(d)* §13 trazabilidad "§6 + G6" para Gate G6 → corregido a "§5 + G6 §3.2". Las **14 Architectural Questions** (3 operativamente bloqueantes: `AQ-JUZGAR-NODO-DOWNSTREAM`, `AQ-JUZGAR-SCHEMA-MOV-ESCRITURA`, `AQ-JUZGAR-FALSADOR-PALANCA`) siguen sin resolver y bloquean la operación end-to-end, no esta spec.
+> **Veredicto de Falsación (Gate, 2026-06-29) — `SURVIVED` (tras *targeted rework*).** Cinco refutadores independientes (presupuesto = el de construir) atacaron por separado cada API, cita y claim de esta spec contra C1, C4, C3, ARQUITECTURA, MOTOR, CONSTITUCION, MOV y el código real. **Núcleo intacto:** invariante (a) de MOTOR §3.2 verificado verbatim ("el grafo se recorre en dos sentidos opuestos"); `JudgeDeps.causal` excluye `traverseUpstream` por `Pick<>` (JUZGAR.INV-1, estructural); 12 invariantes con guard verificable; APIs de C1 confirmadas por nombre (`traverseDownstream`/`traverseUpstream` C1 §CausalGraphRepository, `listActiveConstraints` C1 §NormativeRepository, `getById`/`integrar` C1 §MovRepository); `SufficiencyPolicyPort`/`LeverPolicyPort` son puertos R/O nuevos válidos (Gate 2: "solo añade puertos R/O para su cuantificación calibrable"); citas a MOTOR (§3.2 inv (a), G6/G7/G8, §8 Freno 3, §9, §10.4, Regla F §6.2), MOV (§0.7, §2.1 R1/R5, §5.2, I-7), ARQUITECTURA (§3 acto 5, §2.1) verificadas; `AQ-SYS-017` y `AQ-JUZGAR-ESCRITURA-ATOMICA` correctamente registradas. **0 APIs inventadas, 0 conceptos nuevos, 0 invariantes rotos, 0 problemas estructurales.** **Clasificación: NEEDS TARGETED REWORK → corregido en este pase** (4 defectos de citación, ninguno de lógica): *(a)* §1 + §8.0 "MOTOR §6" para G6 → corregido a "MOTOR §5" (MOTOR §5 Q5: "Su sede natural es G6 (suficiencia)"; MOTOR §6 es dinámica-de-hipótesis, no suficiencia); "MOTOR §8 G8" para E3/A2/B3 → corregido a "MOTOR G7/G8 §3.2" (G8 está en §3.2, no en §8 que es anti-bucle; E3 la genera G7, no G8); "MOTOR §8: *'cada acto...'*" → corregido a "C1 §5.1 + MOTOR G8 §3.2" (la permisión de escritura viene de C1 §5.1, no de MOTOR §8); *(b)* §7 + §12 guardia JUZGAR.INV-7/F-JZ-3 "`JudgeDeps` no inyecta escritura de familia C" → impreciso (`Pick<MovRepository,"integrar">` puede llamar `integrar` con cualquier familia); corregido a "el pseudocódigo nunca llama `integrar` con `familia:'C'`; RLS DB (AQ-JUZGAR-PERMISOS) lo refuerza"; *(c)* §13 trazabilidad "MOTOR-COGNITIVO.md §6 G8" para E3/A2/B3 → E3 es de G7 §3.2 ("generar `intervencion`(es) E3 que actúan sobre la causa"), A2+B3 de G8 §3.2; fila dividida en dos; "`intervencion` nace HIPÓTESIS" "§6 G8" → G7 §3.2 + MOV §2.1 R1; *(d)* §13 trazabilidad "§6 + G6" para Gate G6 → corregido a "§5 + G6 §3.2". Las Architectural Questions siguen sin resolver y bloquean la operación end-to-end, no esta spec.
+>
+> **Veredicto de Falsación — PASADA 2 (Gate ESPECIALIZADO para el primer acto deliberativo, 2026-06-29) — `SURVIVED` tras *targeted rework sustancial*.** A diferencia de la pasada 1 (higiene de citas), esta pasada probó si JUZGAR **cumple la responsabilidad deliberativa exclusiva** que el Motor le asigna. Cinco refutadores con responsabilidades exclusivas, cada uno con lectura mínima dirigida: **R1 fronteras**, **R2 calidad de la decisión**, **R3 implementabilidad**, **R4 casos límite**, **R5 coherencia del pipeline OSE→ATENDER→DIAGNOSTICAR→JUZGAR**. Resultado por refutador: R1 REFUTED, R2 REFUTED, R3 SURVIVED, R4 REFUTED, R5 SURVIVED. **La arquitectura sobrevivió** (nadie rompió G6→G7→G8, la direccionalidad del recorrido, la abstención de primera clase ni los handoffs de tipo — R5 verificó que `Diagnostico`/`CausaCandidata.nodoCausalId`/`RoleContext` existen carácter por carácter); lo refutado fue la **fidelidad del entregable** a esa arquitectura. **12 hallazgos corregidos en el mismo pase** (clasificación NEEDS TARGETED REWORK):
+> - **[MECHANICAL, ALTA, triple-confirmado R2+R3+R4]** `restriccionesAplicadas: [...activeConstraintIds].filter(c => !activeConstraintIds.has(c))` era **tautológicamente `[]`** (la poda de G7 no dejaba traza). → `projectForward` ahora acumula `podadas` durante el barrido y las propaga.
+> - **[IMPLEMENTATION, ALTA, R4]** el motivo `todas_palancas_fuera_de_restriccion` era **inalcanzable** (el `continue` colapsaba "todo podado" en "grafo vacío") → **U-5/CA-4 eran no satisfacibles**. → `projectForward` devuelve `{ candidatas, podadas, huboAristas }`; `judge` discrimina ambos motivos.
+> - **[ARCHITECTURAL, ALTA, R1]** el **Freno de G7 del canon** (foco podado → "reetiquetar como restricción, volver a G5", MOTOR G7) se silenciaba. → la abstención `todas_palancas_fuera_de_restriccion` ahora señaliza el reenvío a G5 (JUZGAR no re-etiqueta, INV-1); nueva `AQ-JUZGAR-FRENO-G7-RECLASIFICA`.
+> - **[ARCHITECTURAL, ALTA, R2]** el **eslabón débil ignoraba el camino G7** (confianza estructuralmente inflable; MOV §0.7 es ley transversal). → INV-4 reformulado a `≤ MIN(C4, eslabón G7 más débil)`; `applyWeakLinkDownstream`; `AQ-JUZGAR-CONFIANZA-DOWNSTREAM` resuelta en FORMA (cuantificación diferida).
+> - **[IMPLEMENTATION, ALTA, R4]** `confianza===null` no lo blindaba el acto (se delegaba al puerto mockeable → no determinista). → guard `[3.0]` en `judge` (FORMA, no contenido); +**JUZGAR.INV-13**; U-13/F-JZ-14.
+> - **[ARCHITECTURAL, MEDIA, R2]** `kind:"escalada"` era **tipo muerto** (G8 implementaba 2 de 3 salidas). → rama `[9.5]` `!esAccionablePorRol` produce escalada; +**JUZGAR.INV-14**; U-14/F-JZ-15; `AQ-JUZGAR-ESCALADA-AUTORIDAD`.
+> - **[IMPLEMENTATION, MEDIA, R2+R4]** palanca sin falsador emitía motivo equivocado (`grafo_downstream_sin_palanca_accionable`). → nuevo motivo `palanca_no_falsable` (Regla F); U-15.
+> - **[ARCHITECTURAL, MEDIA, R2]** la causa disyuntiva colapsaba a `causas[0]` sobre-confiada. → abstención `causa_disyuntiva_sin_resolver` (MOV §5.2: no aplanar); U-16.
+> - **[IMPLEMENTATION, MEDIA, R2+R4]** el ranking ignoraba `null`/`0` (desempate silencioso). → orden estable + desempate registrado en `rationale`; `AQ-JUZGAR-EMPATE-PALANCA`.
+> - **[IMPLEMENTATION, MEDIA, R3]** la llamada a `integrar` usaba literales `"E"/"A"/"B"` (no son del enum `FamiliaMov`) y aridad posicional. → tres llamadas `integrar({tenantId, familia:"E_dinamica"|"A_sustancia"|"B_creencia", entidad})` envueltas en `withMovTransaction`.
+> - **[ARCHITECTURAL, MEDIA, R1]** INV-11 afirmaba "`Juicio` no contiene strings de usuario" — falso (tipo con `faltaParaDecidirSi`, etc.). → reformulado a "no contiene texto FORMATEADO PARA PRESENTACIÓN; los strings son trazabilidad que ARTICULAR re-redacta"; `AQ-JUZGAR-TEXTO-TRAZA-VS-ARTICULAR`.
+> - **[ARCHITECTURAL, informativa, R2]** la proyección de G7 era de un salto (`camino=[arista]`), no proyección real. → `AQ-JUZGAR-RUTA-LARGA` reclasificada a operativamente bloqueante; §1/RD-5 acotan v1 a "palanca de un salto" honestamente.
+>
+> **Hallazgo deliberativo capital (R2, reclasificado del CRÍTICA propuesto a ALTA tras criterio canónico):** en cold-start JUZGAR no se compromete porque ninguna `relacion_causal` porta `condicion_falsacion`. Abstenerse sin falsador es **correcto** por Regla F (MOTOR §6.2); y Regla F / MOV R5 obligan a que **todo** enlace lo porte, así que el compromiso ES alcanzable en un grafo canon-compliant. El defecto real no era la lógica de C5 sino presentar el compromiso como "camino normal" sin declarar su dependencia de la población del grafo (AQ-SYS-002) → corregido en `AQ-JUZGAR-FALSADOR-PALANCA` + CA-14. **0 APIs inventadas, 0 conceptos nuevos, 0 invariantes rotos** (se reforzaron 3), **0 colapso estructural**. Hallazgos en OTROS docs (congelados, no tocados): import con backslashes en C4 `04-diagnosticar.md` y typo "C5,C6,C7" vs "C2·C5·C7" en `SYSTEM_DECISIONS.md` — señalados al operador.
 
 ---
 
@@ -74,13 +90,13 @@ JUZGAR es el **primer acto que vuelve a ESCRIBIR sustancia** tras el OSE: C3 y C
 
 Una sola responsabilidad indivisible — **dado el Diagnostico de C4, decidir la intervención más útil (o abstenerse/escalar deliberativamente), comprometerse y sembrar la expectativa de resultado** (ARQUITECTURA §3 acto 5; MOTOR G6/G7/G8) — descompuesta en obligaciones ancladas al canon:
 
-- **RD-1 — Recibir y anclar el Diagnostico (la causa derrotable).** Aceptar el `Diagnostico` de C4. Si `kind:"abstencion"` → `abstencion_deliberativa` con motivo `diagnostico_abstencion_heredada`; se detiene. Si `kind:"diagnostico"` → tomar la causa de mayor soporte de `causas[0]` (o manejar disyuntiva si `esDisyuntiva`, `AQ-JUZGAR-DISJUNTIVA-CAUSA`). JUZGAR **no recorre hacia atrás, no re-abduce**.
+- **RD-1 — Recibir y anclar el Diagnostico (la causa derrotable).** Aceptar el `Diagnostico` de C4. Si `kind:"abstencion"` → `abstencion_deliberativa` con motivo `diagnostico_abstencion_heredada`; se detiene. Si `esDisyuntiva:true` → `abstencion_deliberativa` `causa_disyuntiva_sin_resolver` (no se aplana la disyunción comprometiendo sobre `causas[0]`; MOV §5.2; `AQ-JUZGAR-DISJUNTIVA-CAUSA`). Si `kind:"diagnostico"` no disyuntivo → tomar la única causa viva `causas[0]`. JUZGAR **no recorre hacia atrás, no re-abduce**.
 - **RD-2 — G6: Gate de suficiencia por consecuencia (MOTOR G6).** Comparar la `confianza` heredada del Diagnostico con el umbral que `SufficiencyPolicyPort.meetsSufficiency(tenantId, confianza, role)` determina dado el `costoDeError`. Si la confianza **no alcanza** → `abstencion_deliberativa` con motivo `confianza_insuficiente_para_el_stake`, declarando `faltaParaDecidirSi`. **JUZGAR no re-diagnostica para compensar**: devuelve el control (degradación honesta).
 - **RD-3 — G7: Recorrer el grafo HACIA ADELANTE desde la causa (MOTOR G7).** Invocar `causal.traverseDownstream(tenantId, causaNodeId, maxDepth)` desde el `nodoCausalId` de la causa diagnosticada. Solo `traverseDownstream`; `traverseUpstream` **no está en `JudgeDeps`** (excluido por `Pick`). La profundidad la provee `LeverPolicyPort.maxDownstreamDepth`.
-- **RD-4 — G7: Podar por restricción vigente (D2).** Para cada nodo aguas abajo, verificar contra `normative.listActiveConstraints`. Un nodo ∈ restricciones activas **no es palanca accionable**: se registra como `restriccionAplicada` y se excluye. *"Tratar una restricción como causa es el error operativo más caro"* (ARQUITECTURA §2.1). Si todas las ramas downstream son restricciones → `abstencion_deliberativa` `todas_palancas_fuera_de_restriccion`.
-- **RD-5 — G7: Generar y ordenar `PalancaCandidata`s (MOTOR G7).** Cada nodo accionable aguas abajo es candidata con su camino de aristas, la confianza heredada (eslabón débil, `AQ-JUZGAR-CONFIANZA-DOWNSTREAM`) y las restricciones podadas. Ordenar por `LeverPolicyPort.rankLevers` (relación de orden, forma canónica; cuantificación calibrable por RECONCILIAR).
+- **RD-4 — G7: Podar por restricción vigente (D2).** Para cada nodo aguas abajo, verificar contra `normative.listActiveConstraints`. Un nodo ∈ restricciones activas **no es palanca accionable**: se **registra** en `podadas` (no se descarta en silencio) y se excluye. *"Tratar una restricción como causa es el error operativo más caro"* (ARQUITECTURA §2.1). Si **había** aristas pero **todas** quedaron podadas → `abstencion_deliberativa` `todas_palancas_fuera_de_restriccion`, cuyo `faltaParaDecidirSi` señaliza el **Freno de G7** del canon (*"el foco se reetiqueta como restricción, vuelve conceptualmente a G5"*, MOTOR G7). JUZGAR **no re-etiqueta** (sería re-diagnosticar, INV-1); deja la reclasificación al orquestador/G5 → `AQ-JUZGAR-FRENO-G7-RECLASIFICA`. Distinto de grafo vacío (`grafo_downstream_sin_palanca_accionable`).
+- **RD-5 — G7: Generar y ordenar `PalancaCandidata`s (MOTOR G7).** Cada nodo accionable aguas abajo es candidata con su camino de aristas, la confianza heredada (eslabón débil **aplicado al camino G7**, MOV §0.7; `applyWeakLinkDownstream`) y las restricciones podadas (registradas, no descartadas en silencio). Ordenar por `LeverPolicyPort.rankLevers` (relación de orden, forma canónica; cuantificación calibrable por RECONCILIAR; incomparables no se ordenan). **Alcance v1 (honesto):** la candidata es de **un salto** (`camino=[arista]` inmediata); la proyección multi-arista (recorrido hasta `maxDepth` con reconstrucción de camino) está **diferida y es operativamente bloqueante** → `AQ-JUZGAR-RUTA-LARGA`. Mientras no se resuelva, JUZGAR proyecta una palanca a un paso de la causa, no una trayectoria larga.
 - **RD-6 — Verificar techo de presupuesto (MOTOR §8 Freno 3).** Antes de comprometerse, consultar `LeverPolicyPort.budgetRemaining(tenantId, role)`. Si el techo se agota → `abstencion_deliberativa` `presupuesto_agotado`. El presupuesto es absoluto e independiente del stake (Freno 3).
-- **RD-7 — G8: Elegir palanca, comprometerse, sembrar expectativa (MOTOR G8).** Elegir la primera `PalancaCandidata` del ranking. Escribir vía `mov_integrar` (hereda `AQ-SYS-005` para atomicidad): (a) **`intervencion` (E3)** en estado `considerada` — nace HIPÓTESIS (JUZGAR.INV-5); (b) **`compromiso` (A2)** que vincula la decisión a la causa; (c) **`expectativa` (B3)** con `refutaSi`/`confirmaSi` — el falsador de la palanca, que el OSE medirá y RECONCILIAR calibrará (→ `AQ-SYS-017`). La confianza de la decisión **no excede** la del Diagnostico (eslabón débil heredado, JUZGAR.INV-4).
+- **RD-7 — G8: Elegir palanca, comprometerse/escalar, sembrar expectativa (MOTOR G8: elegir/abstenerse/escalar).** Elegir la primera `PalancaCandidata` del ranking. **Escalar** (`kind:"escalada"`) si la palanca excede la `esferaDeAccion` del rol (MOV §3.4; `AQ-JUZGAR-ESCALADA-AUTORIDAD`) — es una abstención articulada a otro rol, no un tercer modo. Si no, **comprometerse**: escribir vía `mov_integrar` —tres llamadas envueltas en transacción (hereda `AQ-SYS-005`)—: (a) **`intervencion` (E3)** en estado `considerada` — nace HIPÓTESIS (JUZGAR.INV-5); (b) **`compromiso` (A2)** que vincula la decisión a la causa; (c) **`expectativa` (B3)** con `refutaSi`/`confirmaSi` — el falsador de la palanca, que el OSE medirá y RECONCILIAR calibrará (→ `AQ-SYS-017`). Si la palanca no es falsable → abstención `palanca_no_falsable` (Regla F). La confianza de la decisión **no excede** la del Diagnostico **ni la del eslabón más débil del camino G7** (MOV §0.7, JUZGAR.INV-4).
 - **RD-8 — Abstención deliberativa de primera clase (MOTOR §8 Freno 3; MOTOR G6).** Cuando G6 falla, G7 no produce palancas, todas las palancas se podan, o el presupuesto se agota, JUZGAR declara `abstencion_deliberativa` con el `motivo` exacto y `faltaParaDecidirSi` (qué observación/evidencia cambiaría la decisión). Es una salida de primera clase, no un error. **Nada se escribe al MOV** en una abstención.
 - **RD-9 — Trazar el compromiso en audit.** Emitir `audit.append({ eventType:"juzgar.decision_registrada"|"juzgar.abstencion_deliberativa", ... })` después de escribir (o de abstenerse). **Sin confianza/score en metadata** (la durabilidad es de RECONCILIAR).
 
@@ -94,7 +110,7 @@ JUZGAR es **el acto de decisión que actúa aguas abajo contra la causa, se comp
 |---|---|---|
 | **Recorrer el grafo HACIA ATRÁS / re-abducir la causa / reclasificar síntoma/causa/restricción** | **DIAGNOSTICAR** (C4, G5) | `JudgeDeps.causal` es `Pick<CausalGraphRepository, "traverseDownstream">` — `traverseUpstream` **ausente por construcción**. JUZGAR **consume** el Diagnostico; no lo vuelve a producir. |
 | **Calibrar la confianza** de `relacion_causal`, palancas o priores; ajustar post-outcome | **RECONCILIAR** (C7, MOTOR §10.4) | `JudgeDeps` NO inyecta escritura de la familia C; JUZGAR **lee** la confianza calibrada (por RECONCILIAR previo) y **siembra** la expectativa; **nunca ajusta** confianzas. El puerto de política es de **solo lectura**. |
-| **Proyectar la decisión al rol en su lenguaje**; producir texto/pantalla/mensaje para el usuario | **ARTICULAR** (C6, G9) | La salida de JUZGAR es el tipo `Juicio` (dato); ARTICULAR lo traduce al idioma del rol. JUZGAR no produce ningún string para consumo del usuario. |
+| **Proyectar la decisión al rol en su lenguaje**; producir texto/pantalla/mensaje para el usuario | **ARTICULAR** (C6, G9) | La salida de JUZGAR es el tipo `Juicio` (dato); ARTICULAR lo traduce al idioma del rol. Los campos `string` del `Juicio` (`faltaParaDecidirSi`, `motivoEscalada`, `destinatario`) son **trazabilidad interna estructurada** — códigos/razones que ARTICULAR re-redacta —, **no** copy formateado para pantalla (JUZGAR.INV-11; `AQ-JUZGAR-TEXTO-TRAZA-VS-ARTICULAR`). |
 | **Rankear salience / asignar foco / reasignar presupuesto cognitivo** | **ATENDER** (C3, G4/G0.5) | JUZGAR **recibe** el foco ya priorizado (via el Diagnostico); no inyecta `SaliencePolicyPort` ni computa `Salience`. |
 | **Medir sorpresa / integrar hechos del mundo / emitir `perturbacion` / recomputar el lado observado de la brecha** | **OSE** (C2, G0–G3) | JUZGAR siembra la `expectativa` para que el OSE la mida *después*; **no llama** `perceiveSignal`/`writePerturbation`/`updateGapObservedSide`. |
 | **Promover la `intervencion` a HECHO** | Prohibido por canon | La `intervencion` nace HIPÓTESIS (`estado_ejecucion:"considerada"`); JUZGAR.INV-5. |
@@ -108,7 +124,7 @@ Tres confusiones son las más caras y se prohíben explícitamente:
 2. **JUZGAR ≠ RECONCILIAR (no calibra).** La confianza de una `relacion_causal` se ajusta **solo tras el outcome**, por RECONCILIAR (MOTOR §10.4). JUZGAR **lee** esa confianza calibrada y **siembra** la expectativa; **no la modifica**.
 3. **La `intervencion` nace HIPÓTESIS (nunca HECHO).** La `intervencion` (E3) nace en `estado_ejecucion:"considerada"` y **no se promueve a HECHO**. Es una apuesta derrotable; el bucle de aprendizaje la cierra cuando el OSE mide la sorpresa contra la `expectativa` sembrada y RECONCILIAR calibra.
 
-> **Criterio de fallo del componente.** Si JUZGAR recorriera el grafo hacia atrás (re-diagnosticar), calibrara confianzas (RECONCILIAR), redactara para el rol (ARTICULAR), rankeara salience (ATENDER), midiera sorpresa o integrara hechos (OSE), promoviera la `intervencion` a HECHO, escribiera solo E3 sin A2 y B3 (escritura parcial), o produjera un `Juicio kind:"juicio"` sin expectativa falsable, dejaría de ser el acto de juzgar.
+> **Criterio de fallo del componente.** Si JUZGAR recorriera el grafo hacia atrás (re-diagnosticar), calibrara confianzas (RECONCILIAR), redactara copy para el rol (ARTICULAR), rankeara salience (ATENDER), midiera sorpresa o integrara hechos (OSE), promoviera la `intervencion` a HECHO, escribiera solo E3 sin A2 y B3 (escritura parcial), produjera un `Juicio kind:"juicio"` sin expectativa falsable, **o nunca pudiera comprometerse/escalar por construcción**, dejaría de ser el acto de juzgar.
 
 ---
 
@@ -144,11 +160,13 @@ export type PalancaCandidata = {
 export type AbstencionDeliberativa = {
   readonly motivo:
     | "diagnostico_abstencion_heredada"          // C4 ya se abstuvo; JUZGAR no tiene causa sobre la que proyectar
-    | "confianza_insuficiente_para_el_stake"      // G6: confianza heredada < costo de error del rol (MOTOR G6)
-    | "grafo_downstream_sin_palanca_accionable"   // G7: traverseDownstream devuelve vacío o solo nodos no accionables
-    | "todas_palancas_fuera_de_restriccion"        // G7: todas las candidatas podadas por D2
+    | "confianza_insuficiente_para_el_stake"      // G6: confianza heredada < costo de error del rol (MOTOR §5 + G6)
+    | "causa_disyuntiva_sin_resolver"             // C4 entregó esDisyuntiva:true; proyectar desde causas[0] inflaría la certeza (MOV §5.2) → AQ-JUZGAR-DISJUNTIVA-CAUSA
+    | "grafo_downstream_sin_palanca_accionable"   // G7: traverseDownstream devuelve vacío (no había aristas aguas abajo)
+    | "todas_palancas_fuera_de_restriccion"        // G7: había aristas pero TODAS podadas por D2 → reetiquetar foco como restricción, volver a G5 (MOTOR G7 Freno) → AQ-JUZGAR-FRENO-G7-RECLASIFICA
+    | "palanca_no_falsable"                        // G8: la palanca elegida no porta condicion_falsacion → es dogma (MOTOR §6.2 Regla F) → AQ-JUZGAR-FALSADOR-PALANCA
     | "presupuesto_agotado"                        // Freno 3: techo de presupuesto (MOTOR §8 Freno 3)
-  readonly faltaParaDecidirSi: string             // qué observación/evidencia cambiaría la decisión (trazabilidad)
+  readonly faltaParaDecidirSi: string             // qué observación/evidencia cambiaría la decisión (trazabilidad estructurada, NO texto de pantalla — ARTICULAR lo re-redacta; JUZGAR.INV-11)
   readonly escalaDonde: string | null             // destinatario de escalada, si aplica; null si solo abstención
 }
 
@@ -378,17 +396,19 @@ La salida de JUZGAR es el `Juicio`: **una decisión comprometida con expectativa
 | **JUZGAR.INV-1 — Recorrido HACIA ADELANTE** (MOTOR §3.2 invariante (a)) | Recorre solo `traverseDownstream`; jamás `traverseUpstream` | `JudgeDeps.causal` es `Pick<…,"traverseDownstream">` (sin `traverseUpstream`) | F-JZ-1 |
 | **JUZGAR.INV-2 — Actúa contra la CAUSA** (MOTOR G7; ARQUITECTURA §2.1) | La palanca parte del `nodoCausalId` de la causa diagnosticada; jamás del nodoId del síntoma | `fromNodeId = causa.nodoCausalId`, no `brechaId` | F-JZ-8 |
 | **JUZGAR.INV-3 — Suficiencia relativa al costo de error (G6 primero)** (MOTOR G6) | G6 se ejecuta **antes** de G7; si falla, se abstiene sin recorrer downstream | G6 = primer paso post-Diagnostico; `abstencion_deliberativa` si `!meetsSufficiency` | F-JZ-6 |
-| **JUZGAR.INV-4 — Eslabón débil heredado** (MOV §0.7, §2.2) | `juicio.confianza <= diagnostico.confianza`; si `null` → `null` | la confianza del juicio se toma del Diagnostico, nunca se eleva | F-JZ-11 |
+| **JUZGAR.INV-4 — Eslabón débil heredado (tramo C4 *y* tramo G7)** (MOV §0.7, §2.2) | `juicio.confianza <= MIN(diagnostico.confianza, eslabón más débil del camino downstream G7)`. La ley §0.7 es transversal: no aplica solo al tramo de C4 | `applyWeakLinkDownstream(confianza, camino)`: nunca eleva; el cómputo exacto del sello por arista es CONTENIDO → AQ-JUZGAR-CONFIANZA-DOWNSTREAM | F-JZ-11 |
 | **JUZGAR.INV-5 — Nada a HECHO** (MOV §2.1 R1; MOTOR §6.1) | La `intervencion` (E3) nace HIPÓTESIS; `estado_ejecucion:"considerada"` | el tipo y la escritura siempre pasan `estatus:"HIPOTESIS"` | F-JZ-5 |
-| **JUZGAR.INV-6 — Derrotabilidad: expectativa sembrada** (MOTOR §6.2 Regla F) | Toda palanca elegida porta su falsador (B3 con `refutaSi` y `confirmaSi` no vacíos) | palanca sin falsador ⇒ abstención, no compromiso | F-JZ-10 |
+| **JUZGAR.INV-6 — Derrotabilidad: expectativa sembrada** (MOTOR §6.2 Regla F) | Toda palanca elegida porta su falsador (B3 con `refutaSi` y `confirmaSi` no vacíos) | palanca sin falsador ⇒ abstención `palanca_no_falsable` (motivo propio, ≠ grafo vacío), no compromiso | F-JZ-10 |
 | **JUZGAR.INV-7 — No calibra** (RECONCILIAR; MOTOR §10.4) | Cero escrituras de confianza en `relacion_causal`; los puertos de política son R/O | el pseudocódigo nunca llama `integrar` con `familia:"C"`; la RLS (AQ-JUZGAR-PERMISOS, AQ-gateada) lo refuerza a nivel DB | F-JZ-3 |
 | **JUZGAR.INV-8 — Abstención deliberativa de primera clase** (MOTOR §8 Freno 3; MOV §5.2) | Cualquier condición de abstención (G6/G7/presupuesto) produce `kind:"abstencion_deliberativa"` con `faltaParaDecidirSi`; nada escrito al MOV | rama de abstención explicita motivo y qué faltaría para decidir | F-JZ-12 |
 | **JUZGAR.INV-9 — Presupuesto bajo techo absoluto** (MOTOR §8 Freno 3) | Si `budgetRemaining <= 0` → abstención `presupuesto_agotado`, antes de escribir nada | consulta de presupuesto antes de `integrar` | F-JZ-7 |
 | **JUZGAR.INV-10 — Sin cuantificación en el dominio** (MOTOR §9) | El dominio no contiene umbral, peso, presupuesto ni profundidad numérica | grep al dominio: cero literales de control; todo por puertos | F-JZ-9 |
-| **JUZGAR.INV-11 — No re-diagnostica, no articula, no atiende, no percibe** (fronteras C4/C6/C3/C2) | Cero llamadas a traverseUpstream/perceiveSignal/writePerturb/updateGap/rankAttention/texto-para-rol | `JudgeDeps` excluye esos puertos; `Juicio` no contiene strings de usuario | F-JZ-1, F-JZ-2, F-JZ-4 |
-| **JUZGAR.INV-12 — Escritura atómica E3+A2+B3 o nada** (AQ-SYS-005) | Si escribe E3 sin A2 o B3 (o viceversa), es escritura parcial → MOV inconsistente | atomicidad AQ-gateada; la spec declara el invariante; la implementación lo garantiza | F-JZ-13 |
+| **JUZGAR.INV-11 — No re-diagnostica, no articula, no atiende, no percibe** (fronteras C4/C6/C3/C2) | Cero llamadas a traverseUpstream/perceiveSignal/writePerturb/updateGap/rankAttention; `Juicio` no contiene texto **FORMATEADO PARA PRESENTACIÓN** al rol | `JudgeDeps` excluye esos puertos; los campos `string` de `Juicio` (`faltaParaDecidirSi`, `motivoEscalada`, `destinatario`, `escalaDonde`) son **trazabilidad interna estructurada** que ARTICULAR re-redacta, no copy de pantalla → AQ-JUZGAR-TEXTO-TRAZA-VS-ARTICULAR | F-JZ-1, F-JZ-2, F-JZ-4 |
+| **JUZGAR.INV-12 — Escritura atómica E3+A2+B3 o nada** (AQ-SYS-005) | Si escribe E3 sin A2 o B3 (o viceversa), es escritura parcial → MOV inconsistente | atomicidad **diferida a AQ-JUZGAR-ESCRITURA-ATOMICA/AQ-SYS-005; NO garantizada por esta spec** — la envoltura `withMovTransaction` la materializa en implementación (C1.integrar es una-entidad-por-llamada) | F-JZ-13 |
+| **JUZGAR.INV-13 — `confianza===null` ⇒ insuficiente por LEY del acto** (MOV I-7, §5.2) | El guard de `null` vive en `judge` (FORMA), no en el puerto mockeable; misma entrada `null` ⇒ siempre `abstencion_deliberativa`, jamás `juicio` | `if (diagnostico.confianza === null) return abstencion` **antes** de `meetsSufficiency` | U-13 |
+| **JUZGAR.INV-14 — Las tres salidas de G8 son alcanzables** (MOTOR G8: elegir/abstenerse/escalar) | `kind:"escalada"` no es tipo muerto: hay una rama que lo produce (`!esAccionablePorRol`) | rama [9.5] antes del falsador; `Escalada` poblada con `esferaDeAccion` del rol | U-14 |
 
-> **Criterio de fallo del componente.** Si JUZGAR recorriera el grafo hacia atrás (JUZGAR.INV-1), actuara sobre el síntoma en vez de la causa (INV-2), saltara G6 (INV-3), elevara la confianza (INV-4), promoviera a HECHO (INV-5), comprometiera sin expectativa (INV-6), calibrara confianzas causales (INV-7), escribiera parcialmente E3 sin A2/B3 (INV-12), o produjera texto para el rol, dejaría de ser el acto de juzgar.
+> **Criterio de fallo del componente.** Si JUZGAR recorriera el grafo hacia atrás (JUZGAR.INV-1), actuara sobre el síntoma en vez de la causa (INV-2), saltara G6 (INV-3), elevara la confianza por encima del eslabón más débil — incluido el del camino G7 (INV-4) —, promoviera a HECHO (INV-5), comprometiera sin expectativa falsable (INV-6), calibrara confianzas causales (INV-7), comprometiera con `confianza===null` (INV-13), escribiera parcialmente E3 sin A2/B3 (INV-12), o produjera texto formateado para el rol (INV-11), dejaría de ser el acto de juzgar. **Modo de fallo deliberativo añadido (Gate especializado):** si por su construcción JUZGAR **nunca pudiera comprometerse** (toda ruta realista termina en abstención) o **nunca escalara** (INV-14), tampoco cumpliría su responsabilidad de decisión.
 
 ---
 
@@ -440,38 +460,40 @@ JUZGAR es orquestación sobre los puertos de C1 + puertos de política R/O, con 
         kind:"abstencion" → ABSTENCIÓN DELIBERATIVA motivo:"diagnostico_abstencion_heredada"
         kind:"diagnostico" → continuar
         │
- [2] ELEGIR CAUSA  causas[0] (mayor soporte de C4; disyuntiva si esDisyuntiva)
-        (AQ-JUZGAR-DISJUNTIVA-CAUSA: ¿cómo elegir si hay empate declarado?)
+ [2] ¿DISYUNTIVA?  esDisyuntiva:true → ABSTENCIÓN DELIBERATIVA motivo:"causa_disyuntiva_sin_resolver"
+        (no aplanar la disyunción, MOV §5.2; AQ-JUZGAR-DISJUNTIVA-CAUSA)
+        false → ELEGIR CAUSA causas[0] (única causa viva)
         │
- [3] G6 — GATE DE SUFICIENCIA  sufficiency.meetsSufficiency(tenantId, diagnostico.confianza, role)
-        NO (o confianza===null) → ABSTENCIÓN DELIBERATIVA motivo:"confianza_insuficiente_para_el_stake"
-                                   faltaParaDecidirSi: "confianza >= [umbral del rol costoDeError]"
+[3.0] BLINDAJE DE FORMA  diagnostico.confianza === null → ABSTENCIÓN motivo:"confianza_insuficiente_para_el_stake"
+        (LEY: null ⇒ insuficiente, MOV I-7/§5.2; lo garantiza el ACTO, no el puerto; JUZGAR.INV-13)
+        │
+ [3] G6 — GATE DE SUFICIENCIA  sufficiency.meetsSufficiency(tenantId, diagnostico.confianza, role)  (confianza ya no-null)
+        NO → ABSTENCIÓN DELIBERATIVA motivo:"confianza_insuficiente_para_el_stake"
         SÍ → continuar
         │
  [4] PROFUNDIDAD  depth ← lever.maxDownstreamDepth(tenantId, role)  (NO hardcodeada; JUZGAR.INV-10)
         │
- [5] RECORRER HACIA ADELANTE  causal.traverseDownstream(tenantId, causaNodeId, depth): AristaMov[]
-        (causaNodeId ← causas[0].nodoCausalId; AQ-JUZGAR-NODO-DOWNSTREAM)
-        vacío → ABSTENCIÓN DELIBERATIVA motivo:"grafo_downstream_sin_palanca_accionable"
+ [5+6] RECORRER + PODAR  projectForward → { candidatas, podadas, huboAristas }
+        traverseDownstream(tenantId, causa.nodoCausalId, depth); nodos ∈ activeConstraintIds se podan y SE REGISTRAN (JUZGAR.INV-2)
         │
- [6] PODAR POR RESTRICCIÓN  normative.listActiveConstraints → activeConstraintIds
-        Por cada nodo aguas abajo:
-          ∈ activeConstraintIds → excluido (restriccionAplicada); jamás es palanca (JUZGAR.INV-2)
-        Si todas excluidas → ABSTENCIÓN DELIBERATIVA motivo:"todas_palancas_fuera_de_restriccion"
-        │
- [7] GENERAR PALANCAS CANDIDATAS  PalancaCandidata[] con camino + restriccionesAplicadas + confianzaHeredada
-        (confianzaHeredada = diagnostico.confianza ≤ MIN del camino de C4; JUZGAR.INV-4)
+ [7] DISCRIMINAR SI NO HAY CANDIDATAS:
+        huboAristas && podadas>0 → ABSTENCIÓN motivo:"todas_palancas_fuera_de_restriccion"
+                                    (Freno G7: reetiquetar foco como restricción, volver a G5; JUZGAR no re-etiqueta → AQ-JUZGAR-FRENO-G7-RECLASIFICA)
+        si no                    → ABSTENCIÓN motivo:"grafo_downstream_sin_palanca_accionable"
+        candidatas con confianzaHeredada = applyWeakLinkDownstream(diagnostico.confianza, camino) ≤ MIN del camino G7 (MOV §0.7; JUZGAR.INV-4)
         │
  [8] VERIFICAR PRESUPUESTO  lever.budgetRemaining(tenantId, role)
         <= 0 → ABSTENCIÓN DELIBERATIVA motivo:"presupuesto_agotado"  (Freno 3; JUZGAR.INV-9)
         │
- [9] ORDENAR PALANCAS  lever.rankLevers (relación de orden; incomparables = empates)
-        Elegir best = primera del ranking (palancas[0])
+ [9] ORDENAR PALANCAS  lever.rankLevers (-1|0|1|null; SOLO -1 reordena; incomparables mantienen orden estable)
+        best = ranked[0]; desempate no-fundamentado se registra en rationale (AQ-JUZGAR-EMPATE-PALANCA)
         │
-[10] EXIGIR FALSADOR PARA LA PALANCA  refutaSi/confirmaSi no vacíos (JUZGAR.INV-6)
-        Si la palanca no tiene expectativa falsable → ABSTENCIÓN DELIBERATIVA motivo:"grafo_downstream_sin_palanca_accionable"
+[9.5] G8 — ESCALADA  esAccionablePorRol(best, role) falso → JUICIO kind:"escalada" (MOTOR G8; MOV §3.4; AQ-JUZGAR-ESCALADA-AUTORIDAD)
         │
-[11] ESCRIBIR E3+A2+B3 al MOV vía mov_integrar (AQ-SYS-005 para atomicidad)
+[10] EXIGIR FALSADOR PARA LA PALANCA  refutaSi/confirmaSi no vacíos (JUZGAR.INV-6; Regla F)
+        Si la palanca no es derrotable → ABSTENCIÓN DELIBERATIVA motivo:"palanca_no_falsable"
+        │
+[11] ESCRIBIR E3+A2+B3 al MOV (tres llamadas a integrar envueltas en transacción; AQ-SYS-005 para atomicidad)
         intervencion (E3): causaId, palancaNodeId, estatus:"HIPOTESIS", estado_ejecucion:"considerada"
         compromiso (A2): interventionId, causaId, brechaId, rationale (G6+G7+G8 gates)
         expectativa (B3): interventionId, refutaSi, confirmaSi, brechaId, causaId  (→ AQ-SYS-017)
@@ -490,7 +512,7 @@ JUZGAR es orquestación sobre los puertos de C1 + puertos de política R/O, con 
 
 ## 10. Pseudocódigo
 
-> **Placeholders AQ-gated.** Los siguientes símbolos NO están resueltos por el canon y aparecen como funciones-marcador: `causaNodeIdDe(causa)` (`AQ-JUZGAR-NODO-DOWNSTREAM`, hereda `AQ-DIAG-NODO-CAUSAL`), `refutaSiDePalanca(palanca)` / `confirmaSiDePalanca(palanca)` (`AQ-JUZGAR-FALSADOR-PALANCA`), y los campos exactos de `mov_integrar` para E3/A2/B3 (`AQ-JUZGAR-SCHEMA-MOV-ESCRITURA`). El pseudocódigo es **ilustrativo de la lógica G6/G7/G8**, NO compila hasta resolver esas AQ.
+> **Placeholders AQ-gated.** Los siguientes símbolos NO están resueltos por el canon y aparecen como funciones-marcador: `refutaSiDePalanca(palanca)` / `confirmaSiDePalanca(palanca)` (`AQ-JUZGAR-FALSADOR-PALANCA`); `applyWeakLinkDownstream(confianza, camino)` (aplica la ley del eslabón débil MOV §0.7 al camino G7; la extracción del sello por arista → `AQ-JUZGAR-CONFIANZA-DOWNSTREAM` + `AQ-JUZGAR-LECTURA-ENLACE-DOWNSTREAM`); `esAccionablePorRol(palanca, role)` (predicado de autoridad para la rama de escalada → `AQ-JUZGAR-ESCALADA-AUTORIDAD`); `withMovTransaction(...)` (envoltura atómica de las tres escrituras → `AQ-SYS-005` + `AQ-JUZGAR-ESCRITURA-ATOMICA`); el mapeo `CausaCandidata.nodoCausalId` → nodo del grafo asumido directo (`AQ-JUZGAR-NODO-DOWNSTREAM`, hereda `AQ-DIAG-NODO-CAUSAL`); y los atributos exactos de `integrar` para E3/A2/B3 (`AQ-JUZGAR-SCHEMA-MOV-ESCRITURA`). El pseudocódigo es **ilustrativo de la lógica G6/G7/G8**, NO compila hasta resolver esas AQ.
 
 ### 10.1 `projectForward` — proyección causal hacia adelante (G7, función pura de lectura)
 
@@ -508,30 +530,29 @@ import type { UUID } from "@/types/shared"
 export async function projectForward(
   deps: JudgeDeps,
   tenantId: UUID,
-  causaId: UUID,              // la causa diagnosticada (de C4)
+  causaNodeId: UUID,         // nodo causal de la causa diagnosticada (de C4); AQ-JUZGAR-NODO-DOWNSTREAM: se asume que CausaCandidata.nodoCausalId ya es el nodo del grafo
   diagnosticoConfianza: number | null,
   maxDepth: number,
   activeConstraintIds: ReadonlySet<UUID>,
-): Promise<PalancaCandidata[]> {
+): Promise<{ candidatas: PalancaCandidata[]; podadas: readonly UUID[]; huboAristas: boolean }> {
   // ÚNICA llamada al grafo hacia adelante (MOTOR §3.2 inv (a))
-  const aristas = await deps.causal.traverseDownstream(
-    tenantId,
-    causaNodeIdDe(causaId),   // AQ-JUZGAR-NODO-DOWNSTREAM: mapeo causaId → nodoCausalId
-    maxDepth,
-  )
+  const aristas = await deps.causal.traverseDownstream(tenantId, causaNodeId, maxDepth)
   const candidatas: PalancaCandidata[] = []
+  const podadas: UUID[] = []               // restricciones (D2) que podaron ramas en G7 (RD-4) — para discriminar la abstención
   for (const arista of aristas) {
-    const nodoId = arista.destinoId       // aguas abajo (dirección opuesta a C4)
-    if (activeConstraintIds.has(nodoId)) continue  // restricción activa: no es palanca (JUZGAR.INV-2, RD-4)
+    const nodoId = arista.destinoId        // aguas abajo (dirección opuesta a C4)
+    if (activeConstraintIds.has(nodoId)) { podadas.push(nodoId); continue }  // restricción activa: se poda y se REGISTRA (JUZGAR.INV-2, RD-4)
     candidatas.push({
       nodoId,
-      causaId,
-      camino: [arista],                   // camino mínimo; extensión a rutas largas → AQ-JUZGAR-RUTA-LARGA
-      restriccionesAplicadas: [...activeConstraintIds].filter(c => !activeConstraintIds.has(c)),
-      confianzaHeredada: diagnosticoConfianza, // hereda sin elevar (JUZGAR.INV-4)
+      causaId: causaNodeId,
+      camino: [arista],                    // camino de UN SALTO (v1); rutas largas → AQ-JUZGAR-RUTA-LARGA
+      restriccionesAplicadas: podadas,     // referencia compartida de la proyección: por qué se descartaron ramas hermanas (se completa durante el barrido)
+      // Ley del eslabón débil (MOV §0.7) aplicada AL CAMINO G7, no solo al tramo de C4: la confianza no excede el enlace downstream más débil.
+      // FORMA = ley; la extracción exacta del sello por arista es CONTENIDO → AQ-JUZGAR-CONFIANZA-DOWNSTREAM + AQ-JUZGAR-LECTURA-ENLACE-DOWNSTREAM.
+      confianzaHeredada: applyWeakLinkDownstream(diagnosticoConfianza, [arista]),
     })
   }
-  return candidatas
+  return { candidatas, podadas, huboAristas: aristas.length > 0 }
 }
 ```
 
@@ -560,9 +581,29 @@ export async function judge(
       abstencion: { motivo: "diagnostico_abstencion_heredada",
         faltaParaDecidirSi: diagnostico.abstencion.rescatariaSi, escalaDonde: null } }
 
-  const causa = diagnostico.causas[0]   // mayor soporte (AQ-JUZGAR-DISJUNTIVA-CAUSA si esDisyuntiva)
+  // [2] DISYUNTIVA — si C4 declara varias causas con la masa de creencia repartida, proyectar desde causas[0]
+  //     inflaría la certeza (MOV §5.2: una disyunción honesta no se aplana). Se abstiene pidiendo la
+  //     observación que discrimine, en vez de comprometerse sobre una causa con fracción de la creencia.
+  if (diagnostico.esDisyuntiva)
+    return { kind: "abstencion_deliberativa", ...base,
+      diagnosticoConfianza: diagnostico.confianza,
+      abstencion: { motivo: "causa_disyuntiva_sin_resolver",
+        faltaParaDecidirSi: "observacion que discrimine entre las causas candidatas declaradas (AQ-JUZGAR-DISJUNTIVA-CAUSA)",
+        escalaDonde: null } }
 
-  // [3] G6 — Suficiencia por consecuencia (SIEMPRE antes de G7; JUZGAR.INV-3)
+  const causa = diagnostico.causas[0]   // mayor soporte (única causa viva si no es disyuntiva)
+
+  // [3.0] BLINDAJE DE FORMA — confianza NO evaluada ⇒ insuficiente por LEY (MOV I-7, §5.2), no por política.
+  //       El acto lo garantiza con un guard; no lo delega al puerto mockeable (JUZGAR.INV-13).
+  if (diagnostico.confianza === null)
+    return { kind: "abstencion_deliberativa", ...base,
+      diagnosticoConfianza: null,
+      abstencion: { motivo: "confianza_insuficiente_para_el_stake",
+        faltaParaDecidirSi: "confianza del diagnostico evaluada (no null) para el costo de error del rol",
+        escalaDonde: null } }
+
+  // [3] G6 — Suficiencia por consecuencia (SIEMPRE antes de G7; JUZGAR.INV-3). Con confianza ya no-null,
+  //     el puerto decide solo la CUANTIFICACIÓN (umbral por costoDeError); la FORMA la fijó [3.0].
   const suficiente = await deps.sufficiency.meetsSufficiency(tenantId, diagnostico.confianza, deps.role)
   if (!suficiente)
     return { kind: "abstencion_deliberativa", ...base,
@@ -579,14 +620,23 @@ export async function judge(
   const activeConstraintIds = new Set(constraints.map(c => c.id))
 
   // [6+7] G7 — Proyectar hacia adelante y generar candidatas
-  const candidatas = await projectForward(
+  const { candidatas, podadas, huboAristas } = await projectForward(
     deps, tenantId, causa.nodoCausalId, diagnostico.confianza, depth, activeConstraintIds)
-  if (candidatas.length === 0)
+  if (candidatas.length === 0) {
+    // Discriminar el Freno de G7: ¿no había palanca (grafo vacío) o TODAS quedaron podadas por restricción?
+    const todasPodadas = huboAristas && podadas.length > 0
     return { kind: "abstencion_deliberativa", ...base,
       diagnosticoConfianza: diagnostico.confianza,
-      abstencion: { motivo: "grafo_downstream_sin_palanca_accionable",
-        faltaParaDecidirSi: "al menos un nodo accionable aguas abajo de la causa en relacion_causal",
-        escalaDonde: null } }
+      abstencion: todasPodadas
+        // MOTOR G7 Freno: "el foco se reetiqueta como restricción (vuelve conceptualmente a G5)". JUZGAR
+        // NO reetiqueta (sería re-diagnosticar, INV-1); señaliza el reenvío a G5 → AQ-JUZGAR-FRENO-G7-RECLASIFICA.
+        ? { motivo: "todas_palancas_fuera_de_restriccion",
+            faltaParaDecidirSi: "el foco debe re-diagnosticarse como restriccion y volver a G5 (MOTOR G7 Freno); JUZGAR no re-etiqueta (AQ-JUZGAR-FRENO-G7-RECLASIFICA)",
+            escalaDonde: null }
+        : { motivo: "grafo_downstream_sin_palanca_accionable",
+            faltaParaDecidirSi: "al menos un nodo accionable aguas abajo de la causa en relacion_causal",
+            escalaDonde: null } }
+  }
 
   // [8] Freno 3 — Presupuesto (JUZGAR.INV-9)
   const budget = await deps.lever.budgetRemaining(tenantId, deps.role)
@@ -597,7 +647,10 @@ export async function judge(
         faltaParaDecidirSi: "presupuesto cognitivo disponible (Freno 3 MOTOR §8)",
         escalaDonde: null } }
 
-  // [9] Ordenar por rendimiento esperado
+  // [9] Ordenar por rendimiento esperado. rankLevers devuelve -1|0|1|null; SOLO -1 reordena.
+  //     0 (empate) y null (incomparable) MANTIENEN el orden estable de inserción — NUNCA se fabrica
+  //     orden entre incomparables (§4.3). Si el top resulta empatado/incomparable, el desempate es
+  //     no-fundamentado y se registra en el rationale del A2 (trazabilidad) → AQ-JUZGAR-EMPATE-PALANCA.
   const ranked = [...candidatas]
   for (let i = 0; i < ranked.length; i++)
     for (let j = i + 1; j < ranked.length; j++) {
@@ -605,31 +658,44 @@ export async function judge(
       if (cmp === -1) { const t = ranked[i]; ranked[i] = ranked[j]; ranked[j] = t }
     }
   const best = ranked[0]
+  const desempateNoFundamentado =
+    ranked.length > 1 && (await deps.lever.rankLevers(tenantId, ranked[0], ranked[1])) !== 1
 
-  // [10] Exigir falsador para la palanca (JUZGAR.INV-6)
+  // [9.5] G8 — ESCALADA: la palanca existe pero excede la esferaDeAccion del rol → salida tipada de G8
+  //       (MOTOR G8 "elegir, abstenerse O escalar"; MOV §3.4: a quien no puede mover los bienes, se le escala).
+  //       NO es un tercer modo: es abstención articulada a otro rol. Predicado de autoridad → AQ-JUZGAR-ESCALADA-AUTORIDAD.
+  if (!esAccionablePorRol(best, deps.role))   // AQ-JUZGAR-ESCALADA-AUTORIDAD: mapeo palanca ↔ esferaDeAccion
+    return { kind: "escalada", ...base,
+      escalada: { destinatario: "rol_con_autoridad_sobre_la_palanca",   // dato estructurado; ARTICULAR lo redacta (INV-11)
+        motivoEscalada: "palanca_fuera_de_esfera_de_accion_del_rol",
+        brechaId: diagnostico.brechaId, causaId: causa.nodoCausalId } }
+
+  // [10] Exigir falsador para la palanca (JUZGAR.INV-6; Regla F MOTOR §6.2: sin falsador es dogma).
   const refutaSi = refutaSiDePalanca(best)      // AQ-JUZGAR-FALSADOR-PALANCA
   const confirmaSi = confirmaSiDePalanca(best)  // AQ-JUZGAR-FALSADOR-PALANCA
   if (!refutaSi || !confirmaSi)
     return { kind: "abstencion_deliberativa", ...base,
       diagnosticoConfianza: diagnostico.confianza,
-      abstencion: { motivo: "grafo_downstream_sin_palanca_accionable",
+      abstencion: { motivo: "palanca_no_falsable",   // hay palanca accionable, pero no es derrotable → NO se confunde con grafo vacío
         faltaParaDecidirSi: "relacion_causal downstream con condicion_falsacion (refutaSi/confirmaSi)",
         escalaDonde: null } }
 
-  // [11] Escribir E3+A2+B3 (efecto lateral; atomicidad → AQ-SYS-005 + AQ-JUZGAR-ESCRITURA-ATOMICA)
+  // [11] Escribir E3+A2+B3 (efecto lateral). C1.integrar acepta UNA entidad por llamada:
+  //      integrar({ tenantId, familia, entidad, aristas? }): Promise<UUID>, con familia ∈ FamiliaMov
+  //      ("A_sustancia" | "B_creencia" | … | "E_dinamica"). Por tanto son TRES llamadas, y la atomicidad
+  //      E3+A2+B3 exige envolverlas en una transacción/RPC superior → AQ-SYS-005 + AQ-JUZGAR-ESCRITURA-ATOMICA.
+  //      Los atributos exactos (sello epistémico/temporal obligatorios, MOV.I-0) → AQ-JUZGAR-SCHEMA-MOV-ESCRITURA.
   const interventionId: UUID = randomUUID()
-  // TODO (AQ-JUZGAR-SCHEMA-MOV-ESCRITURA): los atributos exactos dependen del esquema de mov_integrar
-  await deps.mov.integrar(tenantId, [
-    { familia: "E", tipo: "intervencion", id: interventionId,
-      attrs: { causaId: causa.nodoCausalId, palancaNodeId: best.nodoId,
-               estatus: "HIPOTESIS", estado_ejecucion: "considerada" } },
-    { familia: "A", tipo: "compromiso",
-      attrs: { interventionId, causaId: causa.nodoCausalId, brechaId: diagnostico.brechaId,
-               rationale: `G6(suficiente)+G7(downstream)+G8(elegida)` } },
-    { familia: "B", tipo: "expectativa",
-      attrs: { interventionId, refutaSi, confirmaSi,
-               brechaId: diagnostico.brechaId, causaId: causa.nodoCausalId } },
-  ])   // AQ-SYS-005: si falla parcialmente, mov_integrar debe revertir o esta llamada debe ser transaccional
+  const rationale = `G6(suficiente)+G7(downstream)+G8(elegida${desempateNoFundamentado ? ",desempate_no_fundamentado" : ""})`
+  // TODO (AQ-JUZGAR-SCHEMA-MOV-ESCRITURA + AQ-JUZGAR-ESCRITURA-ATOMICA): forma de llamada y atributos ilustrativos; NO compila.
+  await withMovTransaction(deps, tenantId, async (tx) => {     // envoltura atómica (AQ-SYS-005)
+    await tx.integrar({ tenantId, familia: "E_dinamica", entidad: { id: interventionId,
+      /* causaId, palancaNodeId, estatus:"HIPOTESIS", estado_ejecucion:"considerada", sello, tiempo */ } })
+    await tx.integrar({ tenantId, familia: "A_sustancia", entidad: {
+      /* interventionId, causaId, brechaId, rationale, sello, tiempo */ } })
+    await tx.integrar({ tenantId, familia: "B_creencia", entidad: {
+      /* interventionId, refutaSi, confirmaSi, brechaId, causaId, sello, tiempo */ } })
+  })
 
   // [12] Traza (sin confianza/score en metadata)
   await deps.audit.append({
@@ -678,7 +744,8 @@ function diagnosticoOk(overrides?: object) {
 }
 
 function setup(opts: { downstream?: any[]; constraints?: any[]; suficiente?: boolean;
-                       budget?: number; writeOk?: boolean; rankResult?: -1|0|1|null }) {
+                       budget?: number; writeOk?: boolean; rankResult?: -1|0|1|null;
+                       esAccionable?: boolean }) {
   const traverseDownstream = vi.fn().mockResolvedValue(opts.downstream ?? [
     { origenId: CAUSA, destinoId: PALANCA, confianza: 0.75, attrs: { refutaSi: "si X", confirmaSi: "si Y" } }
   ])
@@ -690,12 +757,15 @@ function setup(opts: { downstream?: any[]; constraints?: any[]; suficiente?: boo
     rankLevers: vi.fn().mockResolvedValue(opts.rankResult ?? 1),
     budgetRemaining: vi.fn().mockResolvedValue(opts.budget ?? 100),
   }
+  // esAccionablePorRol(best, role) se computa de role.esferaDeAccion (AQ-JUZGAR-ESCALADA-AUTORIDAD):
+  // esferaDeAccion que INCLUYE PALANCA ⇒ accionable; vacía ⇒ se escala. (esAccionable:false ⇒ esfera vacía)
+  const esferaDeAccion = (opts.esAccionable ?? true) ? [PALANCA] : []
   const deps = {
     causal: { traverseDownstream },
     normative: { listActiveConstraints },
     mov: { getById: vi.fn(), integrar },
     sufficiency, lever,
-    role: { rol: "supervisor", esferaDeAccion: [], horizonte: "semanas", costoDeError: "alto" },
+    role: { rol: "supervisor", esferaDeAccion, horizonte: "semanas", costoDeError: "alto" },
     audit: { append: vi.fn() },
     knowledgeNowMs: Date.parse("2026-06-29T00:00:00Z"),
     requestId: "44444444-4444-4444-4444-444444444444",
@@ -710,14 +780,18 @@ function setup(opts: { downstream?: any[]; constraints?: any[]; suficiente?: boo
 | **U-2** | Recorre HACIA ADELANTE; `traverseUpstream` ausente en `JudgeDeps` | MOTOR §3.2 inv (a) | `traverseDownstream` llamado con `(TENANT, CAUSA, 5)`; `(deps.causal as any).traverseUpstream === undefined` |
 | **U-3** | G6 falla (insuficiente) → `abstencion_deliberativa confianza_insuficiente_para_el_stake` | MOTOR G6 | `sufficiency.meetsSufficiency(…, 0.75, …) → false` ⇒ `r.kind==="abstencion_deliberativa"`; `r.abstencion.motivo===…stake` |
 | **U-4** | Diagnostico `kind:"abstencion"` → `abstencion_deliberativa diagnostico_abstencion_heredada` | MOTOR G6; RD-1 | `r.kind==="abstencion_deliberativa"`; `r.abstencion.motivo==="diagnostico_abstencion_heredada"` |
-| **U-5** | Nodo ∈ restricciones activas → podado, nunca palanca | ARQUITECTURA §2.1; RD-4 | con `constraints:[{id:PALANCA}]` y solo ese nodo downstream ⇒ `r.kind==="abstencion_deliberativa"`; `r.abstencion.motivo==="todas_palancas…"` |
+| **U-5** | Había aristas pero TODAS podadas → `todas_palancas_fuera_de_restriccion` (≠ grafo vacío) | ARQUITECTURA §2.1; RD-4; AQ-JUZGAR-FRENO-G7-RECLASIFICA | con `constraints:[{id:PALANCA}]` y solo PALANCA downstream ⇒ `huboAristas && podadas>0` ⇒ `r.abstencion.motivo==="todas_palancas_fuera_de_restriccion"`; `faltaParaDecidirSi` menciona el reenvío a G5 *(ahora satisfacible: projectForward propaga `podadas`/`huboAristas`)* |
 | **U-6** | Presupuesto agotado → `abstencion_deliberativa presupuesto_agotado` (Freno 3) | MOTOR §8 Freno 3 | `budget=0` ⇒ `r.kind==="abstencion_deliberativa"`; `motivo==="presupuesto_agotado"` |
 | **U-7** | `intervencion` nace HIPÓTESIS (nunca HECHO) | MOV §2.1 R1; JUZGAR.INV-5 | `integrar` llamado con `estatus:"HIPOTESIS"`, `estado_ejecucion:"considerada"` |
 | **U-8** | Confianza del Juicio ≤ confianza del Diagnostico (eslabón débil heredado) | MOV §0.7; JUZGAR.INV-4 | `r.confianza <= diagnosticoOk().confianza` (0.75) |
 | **U-9** | Expectativa sembrada con `refutaSi`/`confirmaSi` (falsador) | MOTOR §6.2 Regla F; JUZGAR.INV-6 | `integrar` llamado con `{ refutaSi: expect.stringContaining("…"), confirmaSi: … }` para B3 |
-| **U-10** | E3+A2+B3 escritos (tres entidades en la misma llamada o secuencia) | decisión 8; AQ-SYS-005 | `integrar` llamado al menos una vez conteniendo las tres familias E/A/B |
+| **U-10** | E3+A2+B3 escritos como tres `integrar` dentro de una envoltura transaccional | decisión 8; AQ-SYS-005 | `tx.integrar` llamado 3 veces con familias `E_dinamica`/`A_sustancia`/`B_creencia`; todo dentro de `withMovTransaction` (o no se llama si hay abstención) |
 | **U-11** | Profundidad viene del puerto, no del dominio | MOTOR §9; JUZGAR.INV-10 | `lever.maxDownstreamDepth` llamado; sin literal numérico en el cuerpo de `judge`/`projectForward` |
 | **U-12** | Abstención con `faltaParaDecidirSi` no vacío | RD-8; MOV §5.2 | en toda rama de abstención `r.abstencion.faltaParaDecidirSi.length > 0` |
+| **U-13** | `confianza===null` ⇒ abstención por el ACTO, **independiente del mock de `meetsSufficiency`** | MOV I-7/§5.2; JUZGAR.INV-13 | con `diagnostico.confianza=null` y `suficiente:true` ⇒ `r.kind==="abstencion_deliberativa"`; `motivo==="confianza_insuficiente_para_el_stake"`; `meetsSufficiency` **no** decide el resultado; `traverseDownstream` no se llama |
+| **U-14** | `kind:"escalada"` es alcanzable (G8 implementa las 3 salidas) | MOTOR G8; MOV §3.4; JUZGAR.INV-14 | con `esAccionablePorRol→false` ⇒ `r.kind==="escalada"`; `r.escalada.causaId===CAUSA`; `integrar` no se llama |
+| **U-15** | Palanca sin falsador ⇒ `palanca_no_falsable` (≠ `grafo_downstream_sin_palanca_accionable`) | MOTOR §6.2 Regla F; JUZGAR.INV-6 | con downstream sin `condicion_falsacion` ⇒ `motivo==="palanca_no_falsable"`; `integrar` no se llama |
+| **U-16** | `esDisyuntiva:true` ⇒ `causa_disyuntiva_sin_resolver` (no colapsa a `causas[0]`) | MOV §5.2; AQ-JUZGAR-DISJUNTIVA-CAUSA | con `esDisyuntiva:true` ⇒ `r.kind==="abstencion_deliberativa"`; `motivo==="causa_disyuntiva_sin_resolver"`; `traverseDownstream` no se llama |
 
 ```ts
 it("U-1: Diagnostico válido → juicio con palanca downstream (MOTOR G6/G7/G8)", async () => {
@@ -785,7 +859,9 @@ it("U-8: confianza del juicio ≤ confianza del diagnostico (JUZGAR.INV-4)", asy
 | **F-JZ-10** | expectativa sin falsador (`refutaSi`/`confirmaSi` vacíos) | MOTOR §6.2 Regla F; JUZGAR.INV-6 | palanca sin falsador ⇒ `abstencion_deliberativa`; `integrar` no llama sin B3 con falsador | dominio |
 | **F-JZ-11** | confianza del Juicio excede la del Diagnostico | MOV §0.7, §2.2; JUZGAR.INV-4 | `juicio.confianza <= diagnostico.confianza` siempre; no se eleva | dominio |
 | **F-JZ-12** | abstención sin `faltaParaDecidirSi` (opaca) | MOV §5.2; RD-8 | toda rama de abstención exige `faltaParaDecidirSi.length > 0` | dominio |
-| **F-JZ-13** | escritura parcial E3 sin A2 o sin B3 | AQ-SYS-005; JUZGAR.INV-12 | `integrar` solo se llama una vez con las tres familias (o no se llama si hay abstención) | dominio |
+| **F-JZ-13** | escritura parcial E3 sin A2 o sin B3 | AQ-SYS-005; JUZGAR.INV-12 | las tres `integrar` (E_dinamica/A_sustancia/B_creencia) ocurren dentro de `withMovTransaction` (todo-o-nada); en abstención/escalada no se llama ninguna | aplicación (transacción AQ-gateada) |
+| **F-JZ-14** | comprometerse con `confianza===null` porque la política mockeada devolvió `true` | MOV I-7/§5.2; JUZGAR.INV-13 | **imposible**: el guard de `null` vive en `judge` (FORMA), antes de `meetsSufficiency`; con `null` siempre `abstencion_deliberativa`, jamás `juicio` | dominio (guard del acto) |
+| **F-JZ-15** | `kind:"escalada"` jamás producible (tipo muerto) | MOTOR G8; JUZGAR.INV-14 | la rama `!esAccionablePorRol` produce `kind:"escalada"`; el tipo no es decorativo | dominio |
 
 ```ts
 it("F-JZ-1: traverseUpstream NO existe en JudgeDeps (MOTOR §3.2 inv (a))", async () => {
@@ -825,16 +901,31 @@ it("F-JZ-9: sin policy → JUDGE_NO_POLICY; cero literales numéricos en el domi
   // centinela CI: grep -RnE "[^a-zA-Z_][0-9]+" modules/juzgar/{domain,application} ⇒ cero literales de control
 })
 
-it("F-JZ-13: escritura solo con E3+A2+B3 completos; abstención → integrar NO se llama", async () => {
+it("F-JZ-13: escritura solo con E3+A2+B3 completos dentro de la transacción; abstención → integrar NO se llama", async () => {
   // rama de abstención: sin escritura
   const { deps: depsAbs, integrar: intAbs } = setup({ suficiente: false })
   await judge(depsAbs, { tenantId: TENANT, diagnostico: diagnosticoOk() })
   expect(intAbs).not.toHaveBeenCalled()
-  // rama de juicio: las tres familias presentes
+  // rama de juicio: las tres familias del enum FamiliaMov, dentro de withMovTransaction
   const { deps: depsJuicio, integrar: intJuicio } = setup({})
   await judge(depsJuicio, { tenantId: TENANT, diagnostico: diagnosticoOk() })
   const args = JSON.stringify(intJuicio.mock.calls)
-  expect(args).toContain('"E"'); expect(args).toContain('"A"'); expect(args).toContain('"B"')
+  expect(args).toContain("E_dinamica"); expect(args).toContain("A_sustancia"); expect(args).toContain("B_creencia")
+})
+
+it("F-JZ-14: confianza===null ⇒ abstención aunque la política diga suficiente (JUZGAR.INV-13)", async () => {
+  const { deps, traverseDownstream } = setup({ suficiente: true })   // política mockeada a true
+  const r = await judge(deps, { tenantId: TENANT, diagnostico: diagnosticoOk({ confianza: null }) })
+  expect(r.kind).toBe("abstencion_deliberativa")                     // el ACTO decide, no el puerto
+  if (r.kind === "abstencion_deliberativa") expect(r.abstencion.motivo).toBe("confianza_insuficiente_para_el_stake")
+  expect(traverseDownstream).not.toHaveBeenCalled()
+})
+
+it("F-JZ-15: kind:'escalada' es producible — G8 implementa las tres salidas (JUZGAR.INV-14)", async () => {
+  const { deps, integrar } = setup({ esAccionable: false })         // palanca fuera de la esferaDeAccion
+  const r = await judge(deps, { tenantId: TENANT, diagnostico: diagnosticoOk() })
+  expect(r.kind).toBe("escalada")
+  expect(integrar).not.toHaveBeenCalled()
 })
 ```
 
@@ -847,16 +938,17 @@ El acto JUZGAR está **terminado** (a nivel de esta spec; sujeto a las AQ de sus
 - **CA-1 — G6 siempre antes de G7.** `judge` invoca `SufficiencyPolicyPort.meetsSufficiency` **antes** de `traverseDownstream`; si G6 falla, `traverseDownstream` no se llama. U-3, U-2; F-JZ-6. *(MOTOR G6; JUZGAR.INV-3.)*
 - **CA-2 — Recorrido HACIA ADELANTE, nunca hacia atrás.** `judge` invoca solo `traverseDownstream`; `traverseUpstream` es ausente estructuralmente de `JudgeDeps`. U-2; F-JZ-1. *(MOTOR §3.2 inv (a); JUZGAR.INV-1.)*
 - **CA-3 — Palanca actúa sobre la CAUSA, nunca el síntoma.** `traverseDownstream` parte de `causaNodeId` (de C4), no de `brechaId`. U-1; F-JZ-8. *(MOTOR G7; JUZGAR.INV-2.)*
-- **CA-4 — Restricciones podadas correctamente.** Nodo ∈ `listActiveConstraints` nunca es palanca; si todas están podadas → abstención `todas_palancas_fuera_de_restriccion`. U-5. *(ARQUITECTURA §2.1; RD-4.)*
+- **CA-4 — Restricciones podadas y registradas; Freno G7 discriminado.** Nodo ∈ `listActiveConstraints` nunca es palanca y se **registra** en `podadas`; si **había** aristas y todas se podaron → abstención `todas_palancas_fuera_de_restriccion` con señal de reenvío a G5 (≠ grafo vacío). U-5. *(ARQUITECTURA §2.1; RD-4; AQ-JUZGAR-FRENO-G7-RECLASIFICA.)*
 - **CA-5 — Presupuesto respetado (Freno 3).** `budget <= 0` → abstención `presupuesto_agotado`; `integrar` no se llama. U-6; F-JZ-7. *(MOTOR §8 Freno 3; JUZGAR.INV-9.)*
 - **CA-6 — Intervención nace HIPÓTESIS; expectativa siembra falsador.** E3 con `estatus:"HIPOTESIS"`; B3 con `refutaSi`/`confirmaSi` no vacíos. U-7, U-9; F-JZ-5, F-JZ-10. *(MOV §2.1 R1; MOTOR §6.2 Regla F; JUZGAR.INV-5/6.)*
-- **CA-7 — Eslabón débil heredado.** `juicio.confianza <= diagnostico.confianza`; nunca se eleva. U-8; F-JZ-11. *(MOV §0.7, §2.2; JUZGAR.INV-4.)*
+- **CA-7 — Eslabón débil heredado (tramo C4 y tramo G7).** `juicio.confianza <= MIN(diagnostico.confianza, eslabón más débil del camino downstream)`; nunca se eleva (la ley §0.7 es transversal). U-8; F-JZ-11. *(MOV §0.7, §2.2; JUZGAR.INV-4; cómputo exacto → AQ-JUZGAR-CONFIANZA-DOWNSTREAM.)*
 - **CA-8 — Abstención deliberativa de primera clase con qué-falta.** Toda rama de abstención porta `motivo` exacto y `faltaParaDecidirSi` no vacío; nada se escribe al MOV. U-3, U-4, U-5, U-6; F-JZ-12. *(MOV §5.2; RD-8; JUZGAR.INV-8.)*
 - **CA-9 — Frontera DIAGNOSTICAR / RECONCILIAR / ARTICULAR / ATENDER / OSE intacta.** Cero re-diagnósticos; cero calibraciones de `relacion_causal`; cero texto para el rol; cero ranks de salience; cero llamadas `perceiveSignal`/`writePerturb`. F-JZ-1, F-JZ-2, F-JZ-3, F-JZ-4. *(ARQUITECTURA §3 actos 4/6/7/8; MOTOR §10.4.)*
-- **CA-10 — Escritura atómica E3+A2+B3 o nada.** `integrar` se llama solo si `kind:"juicio"`, con las tres familias; en abstención no se llama. F-JZ-13. *(AQ-SYS-005; JUZGAR.INV-12. Atomicidad declarada como AQ-gateada; la implementación la garantiza.)*
+- **CA-10 — Escritura atómica E3+A2+B3 o nada.** Las tres `integrar` (E_dinamica/A_sustancia/B_creencia) ocurren dentro de `withMovTransaction` solo si `kind:"juicio"`; en abstención/escalada no se llaman. F-JZ-13. *(AQ-SYS-005; JUZGAR.INV-12. Atomicidad NO garantizada por la spec — diferida a AQ-JUZGAR-ESCRITURA-ATOMICA; la implementación la materializa con la transacción.)*
 - **CA-11 — Forma fija, contenido inyectado, cero números en el dominio.** Suficiencia y palanca se leen de los puertos; sin ellos, rechazo. F-JZ-9; JUZGAR.INV-10. *(MOTOR §9.)*
-- **CA-12 — Cero conceptos nuevos.** Ningún tipo/acto/invariante fuera del canon; reusa `traverseDownstream`/`getById`/`listActiveConstraints`/`mov_integrar` de C1 (especificados; pendiente TypeScript — AQ-SYS-011); importa `RoleContext` de C3 y `Diagnostico` de C4 (fuentes únicas); no redefine el MOV ni añade tabla. *(Reglas duras 1-7.)*
-- **CA-13 — Ejecutabilidad condicionada.** U-1..U-12 y F-JZ-1..F-JZ-13 corren con vitest mockeando puertos, **una vez que `modules/mov`, `modules/atender`, `modules/diagnosticar` existan como TypeScript importable** (hoy no existen — AQ-SYS-011). Contra datos reales, **JUZGAR se abstiene siempre** hasta resolver: `AQ-JUZGAR-NODO-DOWNSTREAM` (sin punto de entrada al recorrido downstream) y `AQ-SYS-001`/`AQ-SYS-002` (sin brechas ni relacion_causal). "Construible YA" = esqueleto con puertos mockeados, NO operable end-to-end.
+- **CA-12 — Cero conceptos nuevos.** Ningún tipo/acto/invariante fuera del canon; reusa `traverseDownstream`/`getById`/`listActiveConstraints`/`mov_integrar` de C1 (especificados; pendiente TypeScript — AQ-SYS-011); importa `RoleContext` de C3 y `Diagnostico` de C4 (fuentes únicas); no redefine el MOV ni añade tabla. Los motivos de abstención nuevos (`causa_disyuntiva_sin_resolver`, `palanca_no_falsable`) y la rama de escalada son **valores/salidas dentro de tipos del canon** (MOTOR G8: elegir/abstenerse/escalar; Regla F; MOV §5.2), no conceptos nuevos. *(Reglas duras 1-7.)*
+- **CA-13 — Las tres salidas de G8 son alcanzables; ninguna entrada queda indefinida.** Existe entrada que produce `kind:"juicio"` (U-1), `kind:"abstencion_deliberativa"` (U-3..U-6, U-15, U-16) y `kind:"escalada"` (U-14); `confianza===null` (U-13) y `esDisyuntiva` (U-16) tienen resultado determinista por el acto, no por el puerto. *(MOTOR G8; JUZGAR.INV-13/14.)*
+- **CA-14 — Ejecutabilidad condicionada.** U-1..U-16 y F-JZ-1..F-JZ-15 corren con vitest mockeando puertos, **una vez que `modules/mov`, `modules/atender`, `modules/diagnosticar` existan como TypeScript importable** (hoy no existen — AQ-SYS-011). Contra datos reales, **JUZGAR se abstiene** hasta resolver: `AQ-JUZGAR-NODO-DOWNSTREAM` (sin punto de entrada al recorrido), `AQ-JUZGAR-RUTA-LARGA` (proyección de un salto), `AQ-JUZGAR-FALSADOR-PALANCA` (sin `condicion_falsacion` sembrada por la población del grafo, JUZGAR no se compromete — comportamiento CORRECTO por Regla F, no bug) y `AQ-SYS-001`/`AQ-SYS-002` (sin brechas ni relacion_causal). "Construible YA" = esqueleto con puertos mockeados, NO operable end-to-end.
 
 ---
 
@@ -877,7 +969,10 @@ El acto JUZGAR está **terminado** (a nivel de esta spec; sujeto a las AQ de sus
 | Atomicidad de escritura E3+A2+B3 | AQ-SYS-005 (SYSTEM_DECISIONS.md) |
 | Outcome Feedback Loop (expectativa → OSE → RECONCILIAR) | AQ-SYS-017 (SYSTEM_DECISIONS.md) |
 | `intervencion` nace HIPÓTESIS (`estado_ejecucion:"considerada"`) | MOTOR-COGNITIVO.md G7 §3.2 + MOV §2.1 R1 |
-| Eslabón débil heredado (confianza ≤ MIN del diagnóstico) | MOV §0.7, §2.2 |
+| Eslabón débil heredado (confianza ≤ MIN del diagnóstico **y** del camino G7) | MOV §0.7, §2.2 |
+| Salidas de G8: elegir / abstenerse / **escalar** | MOTOR-COGNITIVO.md G8 §3.2 + MOV §3.4 (por sección) |
+| Disyunción no se aplana (abstención si `esDisyuntiva`) | MOV §5.2 (por sección) |
+| Freno de G7: foco podado → reetiquetar como restricción, volver a G5 | MOTOR-COGNITIVO.md G7 §3.2 (Freno; por sección) |
 | Suficiencia = función del `costoDeError` del rol | CONSTITUCION §8 (costoDeError); MOTOR G6 |
 | Abstención deliberativa de primera clase | MOTOR §8 Freno 3 + MOV §5.2 (por sección) |
 | Presupuesto bajo techo absoluto (Freno 3) | MOTOR-COGNITIVO.md §8 Freno 3 (por sección) |
@@ -899,11 +994,15 @@ El acto JUZGAR está **terminado** (a nivel de esta spec; sujeto a las AQ de sus
 - **AQ-JUZGAR-ESCRITURA-ATOMICA** — Hereda AQ-SYS-005. Si `mov_integrar` solo acepta una entidad por llamada, tres llamadas separadas no son atómicas. La decisión de envolver, extender o crear una RPC superior queda diferida a la fase de implementación (C5_CONTRACT.md). NO resuelta.
 - **AQ-JUZGAR-UMBRAL-SUFICIENCIA** — Hereda AQ-SYS-006 y AQ-DIAG-UMBRAL-ABSTENCION. La FORMA de G6 (suficiencia relativa al `costoDeError` del rol) es ley; la CUANTIFICACIÓN (qué valor numérico de confianza alcanza para cada nivel de `costoDeError`) es contenido calibrable por RECONCILIAR. El seed inicial de `SufficiencyPolicyPort` no está definido. NO resuelta.
 - **AQ-JUZGAR-POLITICA-PALANCA** — Hereda AQ-SYS-006. La FORMA de G7/G8 (rendimiento esperado bajo restricción, techo de presupuesto) es ley; la CUANTIFICACIÓN (cómo se mide "rendimiento esperado") es contenido calibrable. El seed inicial de `LeverPolicyPort` no está definido. NO resuelta.
-- **AQ-JUZGAR-FALSADOR-PALANCA** — ¿Cómo JUZGAR obtiene el `refutaSi`/`confirmaSi` para la palanca? La `relacion_causal` downstream puede tener `condicion_falsacion` (igual que upstream; ver AQ-DIAG-LECTURA-ENLACE-CAUSAL). Pero si el nodo downstream no tiene `relacion_causal` explícita con falsador, JUZGAR se abstiene. El mapeo palanca-nodo → `condicion_falsacion` hereda AQ-DIAG-LECTURA-ENLACE-CAUSAL y AQ-JUZGAR-NODO-DOWNSTREAM. NO resuelta.
+- **AQ-JUZGAR-FALSADOR-PALANCA** (operativamente bloqueante) — ¿Cómo JUZGAR obtiene el `refutaSi`/`confirmaSi` para la palanca? La `relacion_causal` downstream puede tener `condicion_falsacion` (igual que upstream; ver AQ-DIAG-LECTURA-ENLACE-CAUSAL). Si el nodo downstream no porta falsador, JUZGAR se abstiene con motivo `palanca_no_falsable` (≠ grafo vacío) — comportamiento **correcto** por Regla F (MOTOR §6.2: sin falsador es dogma), no un defecto. **Consecuencia de cold-start (registrada por el Gate especializado):** en un grafo recién sembrado donde la población (AQ-SYS-002) aún no escribe `condicion_falsacion` en las `relacion_causal`, JUZGAR se abstendrá SIEMPRE y el bucle de aprendizaje no arranca. Regla F / MOV R5 obligan a que **todo** enlace porte su falsador; por tanto el compromiso es alcanzable en un grafo canon-compliant, pero **depende de que la población del grafo siembre falsadores**. El compromiso NO es el "camino normal" hasta que ese seed exista. El mapeo palanca-nodo → `condicion_falsacion` hereda AQ-DIAG-LECTURA-ENLACE-CAUSAL y AQ-JUZGAR-NODO-DOWNSTREAM. NO resuelta.
 - **AQ-JUZGAR-LECTURA-ENLACE-DOWNSTREAM** — Hereda AQ-DIAG-LECTURA-ENLACE-CAUSAL. Los atributos relevantes del enlace downstream (incluido el falsador de la palanca) viven en la entidad `relacion_causal`, no en la arista. JUZGAR debe hidratar el enlace downstream con `getById` igual que C4 lo hace aguas arriba. El mapeo arista→`relacion_causal` downstream comparte el mismo vacío que C4. NO resuelta.
-- **AQ-JUZGAR-DISJUNTIVA-CAUSA** — Si el Diagnostico de C4 tiene `esDisyuntiva:true` (varias causas candidatas con igual soporte), JUZGAR toma `causas[0]` por defecto. El canon no especifica si JUZGAR debe proyectar hacia adelante desde todas las causas simultáneamente o elegir una. Con una sola causa se actúa; con disyuntiva podría haber múltiples palancas desde distintos orígenes. NO resuelta.
-- **AQ-JUZGAR-CONFIANZA-DOWNSTREAM** — La confianza de la palanca se hereda del Diagnostico (JUZGAR.INV-4). ¿Debe JUZGAR también calcular el eslabón débil del camino downstream aguas abajo (análogo a `applyWeakLink` en C4 para el camino aguas arriba)? El canon exige "herencia por eslabón débil" pero no especifica si aplica solo al camino de C4 o también al camino de G7. NO resuelta.
+- **AQ-JUZGAR-DISJUNTIVA-CAUSA** — Si el Diagnostico de C4 tiene `esDisyuntiva:true` (masa de creencia repartida entre varias causas), el canon no especifica si JUZGAR debe proyectar desde todas las causas o elegir una. **Comportamiento por defecto (corregido por el Gate especializado):** NO colapsa a `causas[0]` en silencio (eso inflaría la certeza, MOV §5.2: la disyunción no se aplana); se abstiene con motivo `causa_disyuntiva_sin_resolver`, pidiendo la observación que discrimine. La proyección desde múltiples orígenes (con descuento de confianza por la masa de creencia) queda diferida. NO resuelta (pero la conducta por defecto ya es segura, no sobre-confiada).
+- **AQ-JUZGAR-CONFIANZA-DOWNSTREAM** — ¿La herencia por eslabón débil aplica solo al camino de C4 o también al camino G7? **Resuelto en FORMA por el Gate especializado:** la ley §0.7 es transversal e inmutable, así que SÍ aplica al camino G7 — `confianzaHeredada = applyWeakLinkDownstream(diagnosticoConfianza, camino)` ≤ MIN(C4, eslabón G7 más débil) (JUZGAR.INV-4 reformulado). Lo que queda diferido (CONTENIDO) es la **extracción del sello de confianza por arista downstream**, que comparte el vacío de AQ-JUZGAR-LECTURA-ENLACE-DOWNSTREAM (el sello vive en `relacion_causal`, no en la arista). NO resuelta (solo la cuantificación; la forma es ley).
 - **AQ-JUZGAR-PERMISOS** — El permiso `mov.write` para JUZGAR (familias A/B/E) debe estar sembrado en la RLS de C1. Sin el seed, `integrar` falla (errcode 42501). Análoga a C4 `AQ-DIAG-PERMISOS` pero para escritura. NO resuelta.
 - **AQ-JUZGAR-DISPARO** — Hereda AQ-DIAG-DISPARO. ¿Qué del stack invoca `judge` con el Diagnostico de C4? El canon no nombra el orquestador que conecta G5→G6 sin violar "el Motor no se enciende a sí mismo" (Freno 1). NO resuelta.
-- **AQ-JUZGAR-RUTA-LARGA** — `projectForward` actualmente construye palancas con `camino=[arista]` (arista inmediata). Para palancas en nodos más lejanos aguas abajo, el camino debe incluir todas las aristas hasta el nodo. La extensión a rutas largas (análoga a la abducción recursiva de C4) no está en el pseudocódigo por depender de AQ-JUZGAR-NODO-DOWNSTREAM. NO resuelta.
+- **AQ-JUZGAR-RUTA-LARGA** (operativamente bloqueante — reclasificada por el Gate especializado) — `projectForward` construye palancas de **un salto** (`camino=[arista]` inmediata). El propósito de G7 (MOTOR: "recorrido causal hacia adelante… proyectar la trayectoria") exige proyección multi-arista hasta `maxDepth`, con reconstrucción del camino. Hoy `maxDepth` se pasa a `traverseDownstream` pero el camino de cada candidata se trunca a una arista — la palanca elegida descansa sobre un camino de un paso, no una trayectoria. v1 es honestamente "palanca de un salto"; la proyección larga (análoga a la abducción recursiva de C4) está diferida y depende de AQ-JUZGAR-NODO-DOWNSTREAM. NO resuelta.
+- **AQ-JUZGAR-FRENO-G7-RECLASIFICA** (nueva — Gate especializado) — El canon (MOTOR G7 Freno) ordena: "si toda palanca queda podada por restricción, el foco se reetiqueta como restricción (vuelve conceptualmente a G5) y se articula como tal". JUZGAR **no puede re-etiquetar** (sería re-diagnosticar, viola JUZGAR.INV-1); por eso emite `abstencion_deliberativa todas_palancas_fuera_de_restriccion` cuyo `faltaParaDecidirSi` señaliza el reenvío a G5. **Quién ejecuta la reclasificación** del foco como restricción y **cómo se re-dispara G5** no lo fija el canon — es responsabilidad del orquestador (hereda AQ-JUZGAR-DISPARO). NO resuelta.
+- **AQ-JUZGAR-ESCALADA-AUTORIDAD** (nueva — Gate especializado) — G8 tiene tres salidas (elegir/abstenerse/escalar, MOTOR G8). La rama de escalada (`kind:"escalada"`) se dispara cuando la palanca excede la `esferaDeAccion` del rol (MOV §3.4: "a quien no puede mover los bienes, se le escala"). El **predicado exacto** `esAccionablePorRol(palanca, role)` —cómo se mapea una palanca-nodo a la esfera de autoridad del rol— no lo fija el canon; análogo a C4 `esAccionablePorRol`. Sin él, la rama existe estructuralmente pero su disparo es AQ-gateado. NO resuelta.
+- **AQ-JUZGAR-EMPATE-PALANCA** (nueva — Gate especializado) — `rankLevers` devuelve `null` (incomparable) o `0` (empate); el sort solo reordena ante `-1`, así que incomparables mantienen el orden estable de inserción (que depende del orden de `traverseDownstream`, topológico). Cuando el top está empatado/incomparable, `best` es un desempate **no fundamentado**; se registra en el `rationale` del A2 (trazabilidad) pero el canon no fija la política de desempate ("NUNCA fabrica orden entre incomparables", §4.3). Análoga a AQ-JUZGAR-DISJUNTIVA-CAUSA pero para palancas. NO resuelta.
+- **AQ-JUZGAR-TEXTO-TRAZA-VS-ARTICULAR** (nueva — Gate especializado) — Los campos `string` de `Juicio` (`faltaParaDecidirSi`, `motivoEscalada`, `destinatario`, `escalaDonde`) son trazabilidad interna que ARTICULAR re-redacta, NO copy de pantalla (JUZGAR.INV-11 reformulado). La frontera fina —¿deberían ser códigos enumerados + parámetros en vez de texto libre, para que ARTICULAR sea el único productor de prosa?— no la fija el canon. Mientras tanto se tratan como datos estructurados, no como salida para el rol. NO resuelta.
 - **AQ-JUZGAR-PREEMPCION** — Hereda AQ-SYS-012. Si el Motor preempta a JUZGAR (G0.5) a mitad de G7 (después de G6 pero antes de comprometerse), ¿qué ocurre con la deuda viva de la proyección (las candidatas generadas)? Su hogar persistente entre invocaciones no está definido. NO resuelta.

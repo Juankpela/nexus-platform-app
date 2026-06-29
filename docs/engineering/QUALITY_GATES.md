@@ -77,6 +77,6 @@
 | C2 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⚠️ pendiente push |
 | C3 | ✅ | ✅ | ✅ | ✅ | ✅ SURVIVED | ✅ | ✅ | ✅ | ⚠️ pendiente push |
 | C4 | ✅ | ✅ | ✅ | ✅ | ✅ SURVIVED+rework | ✅ | ✅ | ✅ | ⚠️ pendiente push |
-| C5 | ✅ | ✅ | ✅ | ✅ | ✅ SURVIVED+rework | ✅ | ✅ | ✅ | ⚠️ pendiente push |
+| C5 | ✅ | ✅ | ✅ | ✅ | ✅ SURVIVED (2 pasadas: genérica + **especializada deliberativa**) + rework sustancial | ✅ | ✅ | ✅ | ⚠️ pendiente push |
 
 > "⚠️ pendiente push" = Git local committeado (Gate 6/7/8 ✅); el push a GitHub (Gate 9) está pendiente por el bloqueo de auth del GCM y se completará en el punto de sincronización del cierre de Milestone 1. No es un fallo de gate arquitectónico.
