@@ -118,10 +118,11 @@
 - **AQ relacionadas:** `AQ-SYS-CITAS-FRAGILES` (renombrada aquí).
 
 ### AQ-SYS-016 — Persistencia de dos niveles (Git local / GitHub remoto)
-- **Descripción:** **Git local = fuente de verdad operativa** (basta para continuar si todo está committeado); **GitHub remoto = fuente de verdad compartida** (push obligatorio solo antes de: nueva fase · nuevo componente · cierre de milestone · entrega externa · fin de sesión). No se bloquea la producción por un push pendiente si no hay cambios sin commit, riesgo de pérdida, inconsistencia, conflictos ni divergencia.
+- **Descripción:** **Git local = fuente de verdad operativa** (basta para continuar si todo está committeado); **GitHub remoto = fuente de verdad compartida**. **División de responsabilidades (v2):** el agente (Claude) **modifica → commitea en Git local → verifica consistencia → informa los commits pendientes de sincronizar, pero NO ejecuta el push** (el Git Credential Manager y la auth interactiva están fuera de su control). El **operador humano** ejecuta **un único `git push`** al final de la sesión o del milestone. No se bloquea la producción de ingeniería por un push pendiente si no hay cambios sin commit, riesgo de pérdida, inconsistencia local, conflictos ni divergencia.
+- **Excepción dura:** **antes de iniciar un componente nuevo del Motor (p. ej. C5), el remoto DEBE estar sincronizado** (`origin/main == HEAD`) — ese push lo realiza el operador humano. Es el punto donde GitHub vuelve a ser la referencia común de una nueva etapa.
 - **Componentes afectados:** todos (gobernanza del repo).
-- **Estado:** **POLICY** (adoptada 2026-06-29, aprobada por el founder).
-- **Evidencia:** bloqueo de auth del Git Credential Manager (no arquitectónico) que impedía el push; el conocimiento ya está versionado en Git local.
+- **Estado:** **POLICY** (adoptada 2026-06-29; refinada por el founder: el push es responsabilidad del humano, no del agente).
+- **Evidencia:** bloqueo reproducible de auth del Git Credential Manager (no arquitectónico) en el entorno headless del agente; el conocimiento ya queda versionado en Git local con historial recuperable.
 
 ---
 

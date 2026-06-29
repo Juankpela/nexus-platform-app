@@ -9,7 +9,7 @@ _Última actualización: 2026-06-29._
 > ## 🏁 MILESTONE 1 — `v0.1.0-motor-foundation` — CERRADO (Git local)
 > Canon + C1–C4 **congelados y falsificados**; revisión transversal **APROBADA** (sin ciclos, DAG confirmado, responsabilidades aisladas). Release: [`docs/releases/MILESTONE_1.md`](../releases/MILESTONE_1.md). Gobernanza: [`QUALITY_GATES.md`](QUALITY_GATES.md) · [`SYSTEM_DECISIONS.md`](../architecture/SYSTEM_DECISIONS.md) · [`ROADMAP_TO_CODE.md`](ROADMAP_TO_CODE.md). **Sincronización GitHub: PENDIENTE** (bloqueo de auth GCM, no arquitectónico) → se completa en el punto de sync del cierre.
 >
-> **Política de persistencia (dos niveles, `AQ-SYS-016`):** Git local = fuente de verdad operativa (basta para trabajar si todo está committeado); GitHub remoto = fuente de verdad compartida (push obligatorio antes de: nueva fase · nuevo componente · cierre de milestone · entrega externa · fin de sesión). Detenerse solo ante: cambios sin commit · riesgo de pérdida · inconsistencia local · conflictos de merge · divergencia de ramas.
+> **Política de persistencia (dos niveles, `AQ-SYS-016`):** Git local = fuente de verdad operativa (basta para trabajar si todo está committeado); GitHub remoto = fuente de verdad compartida. El **agente commitea, verifica e informa commits pendientes pero NO ejecuta el push**; el **operador humano** hace **un único `git push`** antes de: nueva fase · nuevo componente · cierre de milestone · entrega externa · fin de sesión. Detenerse solo ante: cambios sin commit · riesgo de pérdida · inconsistencia local · conflictos de merge · divergencia de ramas.
 
 ## Estado por componente
 

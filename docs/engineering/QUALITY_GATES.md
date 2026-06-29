@@ -63,8 +63,9 @@
 - **Propósito:** sincronizar la **fuente de verdad compartida** (GitHub) en los puntos obligatorios.
 - **Criterios de entrada:** Gates 6–8 superados; todo committeado en Git local.
 - **Política de sincronización (`AQ-SYS-016`):** el push a GitHub es obligatorio **únicamente** antes de: (1) iniciar una nueva fase · (2) comenzar un nuevo componente · (3) cerrar un Milestone · (4) cualquier entrega externa · (5) abandonar una sesión. Entre esos puntos, el trabajo continúa sobre Git local si está committeado.
-- **Criterios de salida:** `git rev-parse HEAD` == `git rev-parse origin/main`.
-- **Condición de bloqueo:** existe divergencia funcional entre ramas, conflicto de merge, o cambios sin commit. **Un fallo de autenticación del Git Credential Manager NO es condición de bloqueo arquitectónico**: se reintenta o se delega el push al operador humano, pero no detiene la producción de ingeniería mientras Git local sea consistente.
+- **División de responsabilidades:** el **agente NO ejecuta el push** (GCM/auth interactiva fuera de su control); el agente **commitea, verifica consistencia local e informa los commits pendientes**. El **operador humano** ejecuta **un único `git push`** en el punto de sincronización.
+- **Criterios de salida:** `git rev-parse HEAD` == `git rev-parse origin/main` (tras el push del operador).
+- **Condición de bloqueo:** existe divergencia funcional entre ramas, conflicto de merge, o cambios sin commit. **Un fallo de autenticación del Git Credential Manager NO es condición de bloqueo arquitectónico** y NO detiene la producción de ingeniería mientras Git local sea consistente; solo retrasa la publicación remota hasta el push del operador.
 
 ---
 
