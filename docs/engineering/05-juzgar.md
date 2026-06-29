@@ -1,22 +1,20 @@
 # Componente 5 — JUZGAR (Especificación de Ingeniería)
 
-## Ficha (pendiente de falsificación)
+## Ficha de cierre
 
 | Campo | Valor |
 |---|---|
-| **Estado** | ⏳ **PENDIENTE DE FALSIFICACIÓN** |
-| **Fecha de redacción** | 2026-06-29 |
-| **Falsification Gate** | — (se ejecuta antes de CERRAR) |
-| **Refutadores** | — (se asignan al inicio del Gate; presupuesto = el de construir) |
-| **Claims auditados** | — |
-| **Claims refutados/ajustados** | — |
-| **APIs inventadas** | — |
-| **Conceptos/actos nuevos** | — |
-| **Invariantes rotos** | — |
-| **AQ abiertas** | 14 (ver §AQ al final) |
-| **Ready for** | Falsification Gate de C5 — 5 refutadores independientes |
-
-> Detalle del Gate: misma disciplina que C4 — 5 refutadores atacan cada API, cita y claim contra C1, C3, C4, ARQUITECTURA, MOTOR, CONSTITUCION, MOV y código real.
+| **Estado** | ✅ **CERRADO** |
+| **Fecha de cierre** | 2026-06-29 |
+| **Falsification Gate** | ✅ **SURVIVED** (tras *targeted rework*) |
+| **Refutadores** | 5 independientes (presupuesto = el de construir) |
+| **Claims auditados** | ≈70 (contra C1 · C4 · C3 · ARQUITECTURA · MOTOR · CONSTITUCION · MOV · código real) |
+| **Claims refutados/ajustados** | 4 NEEDS_ADJUSTMENT (citaciones); **0 de lógica, 0 estructurales** |
+| **APIs inventadas** | 0 |
+| **Conceptos/actos nuevos** | 0 |
+| **Invariantes rotos** | 0 |
+| **AQ abiertas** | 14 (3 operativamente bloqueantes para la implementación) |
+| **Ready for** | **C6 — ARTICULAR** |
 
 ---
 
@@ -40,6 +38,8 @@
 > **Convención de stack.** `tenantId: UUID` primer parámetro de toda firma. `UUID = string`, no branded. Patrón de orquestación pura: `knowledgeNowMs`/`requestId` inyectados.
 >
 > **Precondición de construcción (honestidad, regla dura 6).** Verificado en disco: `nexus-platform/modules/` contiene `api, audit, authorization, billing, calendar, crm, dispatch, field-execution, forecasting, identity, integrations, inventory, notifications, organizations, platform, request-context, scheduling, service, tenancy` — **NO existen** `mov`/`ose`/`atender`/`diagnosticar`/`juzgar`. Los puertos que `judge` consume existen solo como firmas en los `.md` de C1/C3/C4 (hereda `AQ-SYS-011`).
+>
+> **Veredicto de Falsación (Gate, 2026-06-29) — `SURVIVED` (tras *targeted rework*).** Cinco refutadores independientes (presupuesto = el de construir) atacaron por separado cada API, cita y claim de esta spec contra C1, C4, C3, ARQUITECTURA, MOTOR, CONSTITUCION, MOV y el código real. **Núcleo intacto:** invariante (a) de MOTOR §3.2 verificado verbatim ("el grafo se recorre en dos sentidos opuestos"); `JudgeDeps.causal` excluye `traverseUpstream` por `Pick<>` (JUZGAR.INV-1, estructural); 12 invariantes con guard verificable; APIs de C1 confirmadas por nombre (`traverseDownstream`/`traverseUpstream` C1 §CausalGraphRepository, `listActiveConstraints` C1 §NormativeRepository, `getById`/`integrar` C1 §MovRepository); `SufficiencyPolicyPort`/`LeverPolicyPort` son puertos R/O nuevos válidos (Gate 2: "solo añade puertos R/O para su cuantificación calibrable"); citas a MOTOR (§3.2 inv (a), G6/G7/G8, §8 Freno 3, §9, §10.4, Regla F §6.2), MOV (§0.7, §2.1 R1/R5, §5.2, I-7), ARQUITECTURA (§3 acto 5, §2.1) verificadas; `AQ-SYS-017` y `AQ-JUZGAR-ESCRITURA-ATOMICA` correctamente registradas. **0 APIs inventadas, 0 conceptos nuevos, 0 invariantes rotos, 0 problemas estructurales.** **Clasificación: NEEDS TARGETED REWORK → corregido en este pase** (4 defectos de citación, ninguno de lógica): *(a)* §1 + §8.0 "MOTOR §6" para G6 → corregido a "MOTOR §5" (MOTOR §5 Q5: "Su sede natural es G6 (suficiencia)"; MOTOR §6 es dinámica-de-hipótesis, no suficiencia); "MOTOR §8 G8" para E3/A2/B3 → corregido a "MOTOR G7/G8 §3.2" (G8 está en §3.2, no en §8 que es anti-bucle; E3 la genera G7, no G8); "MOTOR §8: *'cada acto...'*" → corregido a "C1 §5.1 + MOTOR G8 §3.2" (la permisión de escritura viene de C1 §5.1, no de MOTOR §8); *(b)* §7 + §12 guardia JUZGAR.INV-7/F-JZ-3 "`JudgeDeps` no inyecta escritura de familia C" → impreciso (`Pick<MovRepository,"integrar">` puede llamar `integrar` con cualquier familia); corregido a "el pseudocódigo nunca llama `integrar` con `familia:'C'`; RLS DB (AQ-JUZGAR-PERMISOS) lo refuerza"; *(c)* §13 trazabilidad "MOTOR-COGNITIVO.md §6 G8" para E3/A2/B3 → E3 es de G7 §3.2 ("generar `intervencion`(es) E3 que actúan sobre la causa"), A2+B3 de G8 §3.2; fila dividida en dos; "`intervencion` nace HIPÓTESIS" "§6 G8" → G7 §3.2 + MOV §2.1 R1; *(d)* §13 trazabilidad "§6 + G6" para Gate G6 → corregido a "§5 + G6 §3.2". Las **14 Architectural Questions** (3 operativamente bloqueantes: `AQ-JUZGAR-NODO-DOWNSTREAM`, `AQ-JUZGAR-SCHEMA-MOV-ESCRITURA`, `AQ-JUZGAR-FALSADOR-PALANCA`) siguen sin resolver y bloquean la operación end-to-end, no esta spec.
 
 ---
 
@@ -47,7 +47,7 @@
 
 JUZGAR es el **quinto acto del Motor** (ARQUITECTURA §3 acto 5) y el **acto de decisión**: *"dada la causa identificada por DIAGNOSTICAR, decide la intervención más útil, se compromete con ella (o declara abstención deliberativa) y siembra la predicción del resultado"*.
 
-Su sede en la dinámica del Motor comprende tres gates consecutivos (MOTOR-COGNITIVO.md §6 + §8 Freno 3; por nombre de sección):
+Su sede en la dinámica del Motor comprende tres gates consecutivos (MOTOR-COGNITIVO.md §5 + §8 Freno 3; por nombre de sección; MOTOR §5 Q5: "Su sede natural es G6 (suficiencia)"):
 
 - **G6 — Suficiencia por consecuencia** (*"¿Sé lo bastante para lo que está en juego?" · DIAGNOSTICAR→JUZGAR*): toma la confianza heredada de C4 y el `costoDeError` del rol para decidir si actuar o abstenerse deliberativamente.
 - **G7 — Proyectar la palanca HACIA ADELANTE** (*"¿Cuál es la palanca con mayor rendimiento bajo restricción?"*): recorre el grafo causal aguas abajo (`traverseDownstream`) desde la causa diagnosticada, poda por restricciones (D2) vigentes, y genera `PalancaCandidata`(s) candidatas contra la **CAUSA, no el síntoma**.
@@ -381,7 +381,7 @@ La salida de JUZGAR es el `Juicio`: **una decisión comprometida con expectativa
 | **JUZGAR.INV-4 — Eslabón débil heredado** (MOV §0.7, §2.2) | `juicio.confianza <= diagnostico.confianza`; si `null` → `null` | la confianza del juicio se toma del Diagnostico, nunca se eleva | F-JZ-11 |
 | **JUZGAR.INV-5 — Nada a HECHO** (MOV §2.1 R1; MOTOR §6.1) | La `intervencion` (E3) nace HIPÓTESIS; `estado_ejecucion:"considerada"` | el tipo y la escritura siempre pasan `estatus:"HIPOTESIS"` | F-JZ-5 |
 | **JUZGAR.INV-6 — Derrotabilidad: expectativa sembrada** (MOTOR §6.2 Regla F) | Toda palanca elegida porta su falsador (B3 con `refutaSi` y `confirmaSi` no vacíos) | palanca sin falsador ⇒ abstención, no compromiso | F-JZ-10 |
-| **JUZGAR.INV-7 — No calibra** (RECONCILIAR; MOTOR §10.4) | Cero escrituras de confianza en `relacion_causal`; los puertos de política son R/O | `JudgeDeps` no inyecta escritura de familia C | F-JZ-3 |
+| **JUZGAR.INV-7 — No calibra** (RECONCILIAR; MOTOR §10.4) | Cero escrituras de confianza en `relacion_causal`; los puertos de política son R/O | el pseudocódigo nunca llama `integrar` con `familia:"C"`; la RLS (AQ-JUZGAR-PERMISOS, AQ-gateada) lo refuerza a nivel DB | F-JZ-3 |
 | **JUZGAR.INV-8 — Abstención deliberativa de primera clase** (MOTOR §8 Freno 3; MOV §5.2) | Cualquier condición de abstención (G6/G7/presupuesto) produce `kind:"abstencion_deliberativa"` con `faltaParaDecidirSi`; nada escrito al MOV | rama de abstención explicita motivo y qué faltaría para decidir | F-JZ-12 |
 | **JUZGAR.INV-9 — Presupuesto bajo techo absoluto** (MOTOR §8 Freno 3) | Si `budgetRemaining <= 0` → abstención `presupuesto_agotado`, antes de escribir nada | consulta de presupuesto antes de `integrar` | F-JZ-7 |
 | **JUZGAR.INV-10 — Sin cuantificación en el dominio** (MOTOR §9) | El dominio no contiene umbral, peso, presupuesto ni profundidad numérica | grep al dominio: cero literales de control; todo por puertos | F-JZ-9 |
@@ -396,9 +396,9 @@ La salida de JUZGAR es el `Juicio`: **una decisión comprometida con expectativa
 
 ### 8.0 Tesis del delta: JUZGAR ESCRIBE sustancia — E3, A2, B3
 
-> **Decisión gobernante.** JUZGAR **sí escribe en el MOV**, a diferencia de C3/C4. Escribe tres entidades pertenecientes a las familias que C1 define y que el canon (MOTOR §8 G8; CONSTITUCION §6) asigna al acto de juzgar: `intervencion` (E3), `compromiso` (A2), `expectativa` (B3). El punto de escritura único es `mov_integrar` (C1). **No crea tablas nuevas; escribe en las familias ya definidas por C1.**
+> **Decisión gobernante.** JUZGAR **sí escribe en el MOV**, a diferencia de C3/C4. Escribe tres entidades pertenecientes a las familias que C1 define y que el canon (MOTOR G7/G8 §3.2; CONSTITUCION §6) asigna al acto de juzgar: `intervencion` (E3) — generada en G7 —, `compromiso` (A2) y `expectativa` (B3) — comprometidas en G8 —. El punto de escritura único es `mov_integrar` (C1). **No crea tablas nuevas; escribe en las familias ya definidas por C1.**
 >
-> El permiso de escritura de las familias A/B/E con "permiso propio" de JUZGAR está abierto por el canon (MOTOR §8: *"cada acto distinto del OSE puede escribir en las familias que le corresponden, con su propio permiso"*; verificado semánticamente contra MOTOR §6, acto 5). La RLS de C1 debe conceder `mov.write` al acto JUZGAR → `AQ-JUZGAR-PERMISOS`.
+> El permiso de escritura de las familias A/B/E con "permiso propio" de JUZGAR está abierto por el canon (C1 §5.1: *"Otros actos (RECONCILIAR) sí pueden escribir C/E con su propio permiso"*; la extensión a A/B/E para JUZGAR se verifica semánticamente contra MOTOR G8 §3.2 — G8 compromete A2+B3 — y MOTOR G7 §3.2 — G7 genera E3). La RLS de C1 debe conceder `mov.write` al acto JUZGAR → `AQ-JUZGAR-PERMISOS`.
 
 ### 8.1 Qué ESCRIBE al MOV vía `mov_integrar` (familias del canon; esquema → `AQ-JUZGAR-SCHEMA-MOV-ESCRITURA`)
 
@@ -775,7 +775,7 @@ it("U-8: confianza del juicio ≤ confianza del diagnostico (JUZGAR.INV-4)", asy
 |---|---|---|---|---|
 | **F-JZ-1** | recorre el grafo HACIA ATRÁS (re-diagnosticar) | MOTOR §3.2 inv (a); DIAGNOSTICAR C4 G5 | **imposible por construcción**: `JudgeDeps.causal` es `Pick<…,"traverseDownstream">` sin `traverseUpstream` | dominio (tipo) |
 | **F-JZ-2** | no percibe, no mide sorpresa, no emite `perturbacion` | OSE C2 G0–G3 | `JudgeDeps` no inyecta `perceiveSignal`/`writePerturbation`/`updateGapObservedSide` | dominio (tipo) |
-| **F-JZ-3** | **CALIBRA** confianza de `relacion_causal` o ajusta prior | RECONCILIAR C7 MOTOR §10.4 | `JudgeDeps` no inyecta escritura de familia C; puertos de política son R/O | dominio (tipo) |
+| **F-JZ-3** | **CALIBRA** confianza de `relacion_causal` o ajusta prior | RECONCILIAR C7 MOTOR §10.4 | el pseudocódigo nunca llama `integrar` con `familia:"C"`; `Pick<MovRepository,"integrar">` no excluye familia C estructuralmente — la guarda real es la lógica de código + RLS DB (AQ-JUZGAR-PERMISOS); puertos de política son R/O | dominio (lógica + DB) |
 | **F-JZ-4** | produce texto/string para el rol (articular) | ARTICULAR C6 G9 | `Juicio` no contiene strings de usuario; tipo no admite campo de texto para rol | dominio (tipo) |
 | **F-JZ-5** | `intervencion` nace en estatus HECHO | MOV §2.1 R1; JUZGAR.INV-5 | `integrar` siempre llamado con `estatus:"HIPOTESIS"`; tipo `EstatusIntervencion = "HIPOTESIS"` | dominio |
 | **F-JZ-6** | salta G6 (va directo a G7 sin suficiencia) | MOTOR G6; JUZGAR.INV-3 | si `meetsSufficiency → false` ⇒ `abstencion_deliberativa` y `traverseDownstream` **no se llama** | dominio |
@@ -865,17 +865,18 @@ El acto JUZGAR está **terminado** (a nivel de esta spec; sujeto a las AQ de sus
 | Elemento de la spec | Ancla canónica (por nombre) |
 |---|---|
 | Acto JUZGAR (propósito) | ARQUITECTURA §3 acto 5 |
-| Gate G6 (suficiencia por consecuencia, DIAGNOSTICAR→JUZGAR) | MOTOR-COGNITIVO.md §6 + G6 (por sección) |
-| Gate G7 (proyectar la palanca hacia adelante, podar por restricción) | MOTOR-COGNITIVO.md G7 (por sección) |
-| Gate G8 (decidir/comprometerse/abstenerse/sembrar expectativa) | MOTOR-COGNITIVO.md G8 (por sección) |
+| Gate G6 (suficiencia por consecuencia, DIAGNOSTICAR→JUZGAR) | MOTOR-COGNITIVO.md §5 + G6 §3.2 (por sección; MOTOR §5 Q5: "Su sede natural es G6 (suficiencia)") |
+| Gate G7 (proyectar la palanca hacia adelante, podar por restricción) | MOTOR-COGNITIVO.md G7 §3.2 (por sección) |
+| Gate G8 (decidir/comprometerse/abstenerse/sembrar expectativa) | MOTOR-COGNITIVO.md G8 §3.2 (por sección) |
 | Invariante (a): grafo en dos sentidos, separados físicamente | MOTOR-COGNITIVO.md §3.2 invariante (a) |
 | `traverseDownstream` (hacia adelante; hacia atrás = DIAGNOSTICAR) | C1 §CausalGraphRepository (por nombre); hereda AQ-SYS-011 |
 | `traverseUpstream` EXCLUIDO de `JudgeDeps.causal` por `Pick` | C1 §CausalGraphRepository; MOTOR §3.2 inv (a) |
 | `mov_integrar` (punto de escritura único de C1 para E3/A2/B3) | C1 §MovRepository (por nombre); hereda AQ-SYS-011 |
-| Familias E3 (`intervencion`) / A2 (`compromiso`) / B3 (`expectativa`) | MOTOR-COGNITIVO.md §6 G8 + CONSTITUCION §6 (por sección) |
+| Familia E3 (`intervencion`) | MOTOR-COGNITIVO.md G7 §3.2 (por sección; G7: "generar `intervencion`(es) E3 que actúan sobre la causa") |
+| Familias A2 (`compromiso`) + B3 (`expectativa`) | MOTOR-COGNITIVO.md G8 §3.2 + CONSTITUCION §6 (por sección; G8: "nuevo `compromiso` A2 + `expectativa` B3") |
 | Atomicidad de escritura E3+A2+B3 | AQ-SYS-005 (SYSTEM_DECISIONS.md) |
 | Outcome Feedback Loop (expectativa → OSE → RECONCILIAR) | AQ-SYS-017 (SYSTEM_DECISIONS.md) |
-| `intervencion` nace HIPÓTESIS (`estado_ejecucion:"considerada"`) | MOTOR-COGNITIVO.md §6 G8 + MOV §2.1 R1 |
+| `intervencion` nace HIPÓTESIS (`estado_ejecucion:"considerada"`) | MOTOR-COGNITIVO.md G7 §3.2 + MOV §2.1 R1 |
 | Eslabón débil heredado (confianza ≤ MIN del diagnóstico) | MOV §0.7, §2.2 |
 | Suficiencia = función del `costoDeError` del rol | CONSTITUCION §8 (costoDeError); MOTOR G6 |
 | Abstención deliberativa de primera clase | MOTOR §8 Freno 3 + MOV §5.2 (por sección) |

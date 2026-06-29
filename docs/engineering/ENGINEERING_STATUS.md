@@ -4,7 +4,7 @@
 >
 > **Reglas de gobierno (no negociables):** arquitectura congelada · ingeniería iterativa · **falsación primero** · no se avanza al siguiente componente hasta CERRAR el anterior · los vacíos del canon NO se inventan, se registran como **Architectural Question (AQ)**.
 
-_Última actualización: 2026-06-29._
+_Última actualización: 2026-06-29 (C5 CERRADO)._
 
 > ## 🏁 MILESTONE 1 — `v0.1.0-motor-foundation` — CERRADO (Git local)
 > Canon + C1–C4 **congelados y falsificados**; revisión transversal **APROBADA** (sin ciclos, DAG confirmado, responsabilidades aisladas). Release: [`docs/releases/MILESTONE_1.md`](../releases/MILESTONE_1.md). Gobernanza: [`QUALITY_GATES.md`](QUALITY_GATES.md) · [`SYSTEM_DECISIONS.md`](../architecture/SYSTEM_DECISIONS.md) · [`ROADMAP_TO_CODE.md`](ROADMAP_TO_CODE.md). **Sincronización GitHub: PENDIENTE** (bloqueo de auth GCM, no arquitectónico) → se completa en el punto de sync del cierre.
@@ -19,7 +19,7 @@ _Última actualización: 2026-06-29._
 | C2 | Operational State Engine (OSE) | ✅ CERRADO | ✅ pruebas de falsación internas | ✅ | 17 | [`02-operational-state-engine.md`](02-operational-state-engine.md) |
 | C3 | ATENDER | ✅ CERRADO | ✅ **SURVIVED** — Gate 5 refutadores (2026-06-29) | ✅ | 17 | [`03-atender.md`](03-atender.md) |
 | C4 | DIAGNOSTICAR | ✅ CERRADO | ✅ **SURVIVED** — Gate 5 refutadores + targeted rework (2026-06-29) | ✅ | 25 | [`04-diagnosticar.md`](04-diagnosticar.md) |
-| C5 | JUZGAR | 🟡 PENDIENTE DE FALSIFICACIÓN | — (Gate pendiente) | — | 14 | [`05-juzgar.md`](05-juzgar.md) |
+| C5 | JUZGAR | ✅ CERRADO | ✅ **SURVIVED** — Gate 5 refutadores + targeted rework (2026-06-29) | ✅ | 14 | [`05-juzgar.md`](05-juzgar.md) |
 | C6 | ARTICULAR | ⏳ PENDIENTE | — | — | — | — |
 | C7 | RECONCILIAR | ⏳ PENDIENTE | — | — | — | — |
 
@@ -48,7 +48,7 @@ No se abre un componente mientras el anterior no esté CERRADO. Cada componente 
 
 ## Siguiente componente autorizado
 
-> **C5 — JUZGAR.** **Engineering Specification COMPLETA** ([`05-juzgar.md`](05-juzgar.md)) — **PENDIENTE DE FALSIFICACIÓN**. Contrato **APROBADO** (2026-06-29) ([`C5_CONTRACT.md`](C5_CONTRACT.md)). `AQ-SYS-017` (Outcome Feedback Loop) registrada en [`SYSTEM_DECISIONS.md`](../architecture/SYSTEM_DECISIONS.md). 14 AQ abiertas; 3 operativamente bloqueantes: `AQ-JUZGAR-NODO-DOWNSTREAM`, `AQ-JUZGAR-SCHEMA-MOV-ESCRITURA`, `AQ-JUZGAR-FALSADOR-PALANCA`. Siguiente paso: **Falsification Gate** (5 refutadores independientes atacan la spec contra C1/C4/canon; presupuesto igual al de construir).
+> **C6 — ARTICULAR.** C5 JUZGAR está **CERRADO** (Falsification Gate SURVIVED, 2026-06-29). El siguiente componente es ARTICULAR: traduce la decisión de JUZGAR (`Juicio`) al idioma del rol (ARQUITECTURA §3 acto 6; MOTOR G9). Precondición: leer C5_CONTRACT.md y la frontera JUZGAR↔ARTICULAR (§Qué NO hace C5 + §Frontera con otros componentes). Empezar por el contrato `C6_CONTRACT.md` antes de escribir la spec.
 
 ## Forma de cada componente (contrato de la spec)
 
@@ -59,6 +59,7 @@ Stack real: Supabase/PostgreSQL + TypeScript + Next.js, hexagonal (`modules/<x>/
 
 ## Notas de cierre
 
+- **C5 (2026-06-29).** Falsificado por 5 refutadores independientes (presupuesto = el de construir) contra C1, C4, C3, MOTOR, ARQUITECTURA, CONSTITUCION, MOV y código real. Resultado **SURVIVED**: 0 APIs inventadas, 0 conceptos nuevos, 0 invariantes rotos, 0 problemas estructurales. Clasificación **NEEDS TARGETED REWORK**, corregido en el mismo pase (4 defectos de citación, ninguno de lógica): (a) §1+§8.0 "MOTOR §6"→"§5" para G6 (MOTOR §5 Q5: "Su sede natural es G6"); "MOTOR §8 G8"→"MOTOR G7/G8 §3.2" para E3/A2/B3 (G8 en §3.2, E3 en G7); "MOTOR §8: 'cada acto...'"→"C1 §5.1 + MOTOR G8 §3.2"; (b) §7+§12 guardia INV-7/F-JZ-3 "`JudgeDeps` no inyecta escritura de familia C"→"el pseudocódigo nunca llama `integrar` con `familia:'C'`; RLS DB (AQ-JUZGAR-PERMISOS)"; (c) §13 "§6 G8" para E3/A2/B3→fila dividida E3=G7 §3.2 / A2+B3=G8 §3.2; (d) §13 "§6 + G6"→"§5 + G6 §3.2". 14 AQ abiertas; 3 operativamente bloqueantes (`AQ-JUZGAR-NODO-DOWNSTREAM`, `AQ-JUZGAR-SCHEMA-MOV-ESCRITURA`, `AQ-JUZGAR-FALSADOR-PALANCA`).
 - **C3 (2026-06-29).** Falsificado por 5 refutadores independientes contra C1, C2 y los 4 docs de canon + el código real. Resultado **SURVIVED**: 0 APIs inventadas, 0 conceptos nuevos, 0 invariantes rotos; la llamada `audit.append` compila (`subjectType` es `string` libre). Los 4 claims refutados eran **etiquetas de cita** (`MOTOR §5 Q4` → `ARQUITECTURA §3 acto 3` + `MOTOR §3.2 G0.5/G4`; `§6 "control sobre las brechas"` → `§3 "la sustancia"`; nota de disciplina de citas invertida; aclaración de "verificado en disco"). Veredicto registrado dentro del propio doc.
 - **C4 (2026-06-29).** Falsificado por 5 refutadores contra C1, C3 y los 4 docs de canon + código real. **SURVIVED**: núcleo conceptual y citas verbatim, API de C1 y contrato de C3 correctos, 0 APIs inventadas / 0 conceptos nuevos / 0 invariantes rotos / 0 problemas estructurales. Clasificación **NEEDS TARGETED REWORK**, corregido en el mismo pase (4 defectos localizados, ninguno de lógica): citas a C3 reescritas **por nombre de símbolo** (las de línea se rompieron al editar C3 — lección de fragilidad); `getById` C1 L194→L156; `nivelCausalDe` AQ-gated (`nivel_causal` es columna, no `attrs`); `relacionCausalIdDe`/`esAccionablePorRol`/`nivelCausalDe` declarados **placeholders AQ-gated** (el pseudocódigo es ilustrativo, no compila hasta resolver sus AQ). 25 AQ abiertas; 4 operativamente bloqueantes (`AUTORIA-BRECHA`, `POBLADO-GRAFO`, `NODO-CAUSAL`, `LECTURA-ENLACE-CAUSAL`).
 - **Precondición compartida (C3/C4+).** C1 (`modules/mov`) y C2 (`modules/ose`) están especificados en `.md` pero **aún no existen como TypeScript** en `modules/`. Las pruebas de dominio/aplicación corren cuando C1/C2 sean código importable (C3 `AQ-ATENDER-PRECONDICION-C1C2`). El permiso `mov.read` lo referencia la RLS de C1 pero **no está sembrado** (C1 `AQ-PERMISOS` ↔ C3 `AQ-ATENDER-PERMISOS`).
