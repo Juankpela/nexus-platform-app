@@ -5,6 +5,7 @@ import { redirect } from "next/navigation"
 import { Brain } from "lucide-react"
 
 import { DashboardTabs } from "@/components/dashboard/dashboard-tabs"
+import { OnboardingCard } from "@/components/dashboard/onboarding-card"
 import { OperationalCenter } from "@/components/dispatch/operational-center"
 import { StartReceivingCard } from "@/components/dashboard/start-receiving-card"
 import { Button } from "@/components/ui/button"
@@ -14,6 +15,8 @@ import {
   NLABS_PERMISSIONS,
   hasPermission,
 } from "@/modules/authorization/domain/permission"
+import { buildOnboardingFlow } from "@/modules/platform/application/onboarding-flow"
+import { getOnboardingCounts } from "@/modules/platform/infrastructure/onboarding-counts"
 import { dashboardTabsFor } from "@/modules/platform/presentation/navigation"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 import { isTechnicianOnly } from "@/modules/request-context/domain/role"
@@ -39,6 +42,9 @@ export default async function MissionControlPage({
   const tabs = dashboardTabsFor(tenantSlug, context.effectivePermissions)
   const canNlabs = hasPermission(context.effectivePermissions, NLABS_PERMISSIONS.read)
 
+  // Activación: el siguiente paso para un tenant que aún no cierra su 1ª factura.
+  const onboarding = buildOnboardingFlow(await getOnboardingCounts(context.tenantId))
+
   return (
     <div className="space-y-7 px-5 py-6 sm:px-8">
       <header>
@@ -53,6 +59,11 @@ export default async function MissionControlPage({
           · {context.tenant.name} · ¿Qué necesita tu atención ahora?
         </p>
       </header>
+
+      {/* Guía de activación: por encima de los KPIs hasta cerrar la 1ª factura. */}
+      {onboarding.status === "in_progress" ? (
+        <OnboardingCard step={onboarding.step} tenantSlug={tenantSlug} />
+      ) : null}
 
       <DashboardTabs tabs={tabs} />
 
