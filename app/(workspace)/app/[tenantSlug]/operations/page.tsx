@@ -1,10 +1,10 @@
 import type { Metadata } from "next"
 
-import { MOCK_BELOW_THRESHOLD, MOCK_HEALTH, MOCK_ITEMS } from "@/components/operations/mock"
 import { SupervisionStation } from "@/components/operations/supervision-station"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
 import { SERVICE_PERMISSIONS } from "@/modules/authorization/domain/permission"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
+import { getSupervisionStation } from "@/modules/supervision/composition"
 
 export const metadata: Metadata = { title: "Supervisión operacional" }
 
@@ -19,7 +19,13 @@ export default async function OperationsPage({
   // dedicado sería un PR aparte.
   requirePermission(context.effectivePermissions, SERVICE_PERMISSIONS.dispatchRead)
 
-  // Datos simulados (Vertical Slice). El Read Model los sustituirá sin tocar la UI.
+  // Read Model determinístico: interpreta el estado operacional real y lo adapta a
+  // los contratos congelados. Solo cambia el ORIGEN de los datos; la UI no se toca.
+  const { items, health, belowThresholdCount } = await getSupervisionStation(
+    context.tenantId,
+    new Date(),
+  )
+
   return (
     <>
       {/* Título ligero: orientación mínima. Sin descripción de filosofía del producto
@@ -29,11 +35,7 @@ export default async function OperationsPage({
           Supervisión operacional
         </h1>
       </div>
-      <SupervisionStation
-        items={MOCK_ITEMS}
-        health={MOCK_HEALTH}
-        belowThresholdCount={MOCK_BELOW_THRESHOLD}
-      />
+      <SupervisionStation items={items} health={health} belowThresholdCount={belowThresholdCount} />
     </>
   )
 }
