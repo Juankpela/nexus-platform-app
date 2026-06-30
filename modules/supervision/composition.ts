@@ -10,6 +10,13 @@ import { buildHealth } from "@/modules/supervision/domain/health"
 import { judge } from "@/modules/supervision/domain/judge"
 import { prioritize } from "@/modules/supervision/domain/ranking"
 import { toHealthSnapshot, toSupervisionItem } from "@/modules/supervision/presentation/to-view-model"
+import {
+  buildSupervisionDecisionEvent,
+  toDecisionSnapshot,
+  type DecisionSnapshot,
+  type SupervisionDecisionInput,
+} from "@/modules/supervision/domain/decision-event"
+import { SupabaseAuditRepository } from "@/modules/audit/infrastructure/supabase-audit-repository"
 import type { UUID } from "@/types/shared"
 
 /**
@@ -22,6 +29,8 @@ export type SupervisionStationView = {
   items: SupervisionItem[]
   health: HealthSnapshot
   belowThresholdCount: number
+  /** Snapshot por compromiso accionable (id → estado al decidir), para el Decision Ledger. */
+  snapshots: Record<string, DecisionSnapshot>
 }
 
 /** Solo una factura emitida representa valor económico real ligado a la orden. */
@@ -102,5 +111,17 @@ export async function getSupervisionStation(
     items: actionable.map((j) => toSupervisionItem(j, cap)),
     health: toHealthSnapshot(figures),
     belowThresholdCount,
+    snapshots: Object.fromEntries(actionable.map((j) => [j.commitment.id, toDecisionSnapshot(j)])),
   }
+}
+
+// ── Decision Ledger (DECISION_LEDGER_SPEC_v1) ──────────────────────────────
+// Registra (append-only) la decisión del supervisor en audit_events. NO decide
+// ni recomienda: solo persiste la decisión humana como evidencia.
+function audit() {
+  return new SupabaseAuditRepository()
+}
+
+export function recordSupervisionDecision(input: SupervisionDecisionInput): Promise<void> {
+  return audit().append(buildSupervisionDecisionEvent(input))
 }
