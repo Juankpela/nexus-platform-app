@@ -1,3 +1,5 @@
+"use client"
+
 import { Button } from "@/components/ui/button"
 
 /**
@@ -25,8 +27,21 @@ export interface Decision {
  * Presentacional PURO: una sola decisión ejecutable, no una notificación.
  * `null` ⇒ SilencePanel: todo lo material está protegido (estado de silencio).
  * La acción recomendada es el único primario saturado de la pantalla (variant default).
+ * Las afordancias reciben callbacks de UI (no conoce qué hacen).
  */
-export function DecisionCard({ decision }: { decision: Decision | null }) {
+export function DecisionCard({
+  decision,
+  dimmed = false,
+  onAct,
+  onSeeEvidence,
+  onDismiss,
+}: {
+  decision: Decision | null
+  dimmed?: boolean
+  onAct?: () => void
+  onSeeEvidence?: () => void
+  onDismiss?: () => void
+}) {
   if (!decision) {
     return (
       <div className="flex min-h-[20rem] flex-col items-center justify-center rounded-2xl border bg-card px-8 py-14 text-center">
@@ -39,7 +54,11 @@ export function DecisionCard({ decision }: { decision: Decision | null }) {
   }
 
   return (
-    <div className="flex min-h-[20rem] flex-col rounded-2xl border bg-card px-7 py-6">
+    <div
+      className={`flex min-h-[20rem] flex-col rounded-2xl border bg-card px-7 py-6 transition-opacity ${
+        dimmed ? "pointer-events-none opacity-40" : ""
+      }`}
+    >
       <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
         La decisión de ahora
       </p>
@@ -62,14 +81,24 @@ export function DecisionCard({ decision }: { decision: Decision | null }) {
       </div>
 
       <div className="mt-6">
-        <Button size="lg">Actuar · {decision.recommendedAction}</Button>
+        <Button size="lg" onClick={onAct}>
+          Actuar · {decision.recommendedAction}
+        </Button>
       </div>
 
       <div className="mt-3 flex items-center gap-5 text-sm text-muted-foreground">
-        <button type="button" className="transition-colors hover:text-foreground">
+        <button
+          type="button"
+          onClick={onSeeEvidence}
+          className="transition-colors hover:text-foreground"
+        >
           Ver evidencia
         </button>
-        <button type="button" className="transition-colors hover:text-foreground">
+        <button
+          type="button"
+          onClick={onDismiss}
+          className="transition-colors hover:text-foreground"
+        >
           Descartar
         </button>
       </div>
