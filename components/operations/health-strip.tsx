@@ -1,9 +1,13 @@
 import { Minus, TrendingDown, TrendingUp } from "lucide-react"
 
 /**
- * Salud operacional (BLUEPRINT_ESTACION capa 2). Franja calma, peso visual
- * mínimo, glanceable en <2s. Cuatro magnitudes de valor + capacidad + 1
- * tendencia. El tinte global señala calma↔tensión. Presentacional puro.
+ * Salud operacional (BLUEPRINT_ESTACION capa 2). Franja FINA, monocroma y de
+ * peso mínimo: un vistazo glanceable que NUNCA compite con el Hero.
+ *
+ * Release Polish v1 — sin color saturado, sin lavado de tinte, tipografía
+ * pequeña. El único elemento primario saturado de la pantalla es la acción del
+ * Hero. La señal calma↔tensión la lleva el contenido (valor expuesto + tendencia),
+ * no el color. Presentacional puro.
  */
 export interface HealthSnapshot {
   /** Valor protegido hoy — el marcador (ya formateado). */
@@ -16,48 +20,27 @@ export interface HealthSnapshot {
   capacity: string
   /** Tendencia del valor expuesto en ventana: ¿la operación se enferma o sana? */
   trend: "up" | "down" | "flat"
-  /** Tinte global de la franja. */
+  /** Estado global (lo deriva el orquestador; el silencio fuerza "calm"). */
   tone: "calm" | "tension"
 }
 
-type Accent = "blue" | "emerald" | "orange" | "silver"
-
-const ACCENT_TEXT: Record<Accent, string> = {
-  blue: "text-nexus-blue",
-  emerald: "text-emerald-500 dark:text-emerald-400",
-  orange: "text-orange-500 dark:text-orange-400",
-  silver: "text-muted-foreground",
-}
-
-const ACCENT_DOT: Record<Accent, string> = {
-  blue: "bg-nexus-blue",
-  emerald: "bg-emerald-500 dark:bg-emerald-400",
-  orange: "bg-orange-500 dark:bg-orange-400",
-  silver: "bg-muted-foreground/40",
-}
-
-function Tile({
+function Metric({
   label,
   value,
-  accent,
   muted = false,
 }: {
   label: string
   value: string
-  accent: Accent
   muted?: boolean
 }) {
   return (
-    <div className="rounded-xl border bg-card px-3 py-2.5">
-      <div className="flex items-center gap-1.5">
-        <span className={`size-1.5 rounded-full ${muted ? "bg-muted-foreground/40" : ACCENT_DOT[accent]}`} />
-        <span className="truncate text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-          {label}
-        </span>
-      </div>
+    <div className="min-w-0">
+      <p className="truncate text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+        {label}
+      </p>
       <p
-        className={`mt-1 tabular-nums font-semibold tracking-tight ${
-          muted ? "text-base text-muted-foreground" : `text-2xl ${ACCENT_TEXT[accent]}`
+        className={`mt-0.5 truncate text-sm font-semibold tabular-nums ${
+          muted ? "text-muted-foreground" : "text-foreground"
         }`}
       >
         {value}
@@ -66,23 +49,10 @@ function Tile({
   )
 }
 
-function TrendTile({ trend }: { trend: HealthSnapshot["trend"] }) {
-  const config = {
-    up: { Icon: TrendingUp, tone: ACCENT_TEXT.orange, word: "Expuesto subiendo" },
-    down: { Icon: TrendingDown, tone: ACCENT_TEXT.emerald, word: "Expuesto bajando" },
-    flat: { Icon: Minus, tone: "text-muted-foreground", word: "Estable" },
-  }[trend]
-  return (
-    <div className="rounded-xl border bg-card px-3 py-2.5">
-      <span className="truncate text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-        Tendencia
-      </span>
-      <p className={`mt-1 flex items-center gap-1.5 text-base font-medium ${config.tone}`}>
-        <config.Icon className="size-4" />
-        {config.word}
-      </p>
-    </div>
-  )
+const TREND_WORD: Record<HealthSnapshot["trend"], string> = {
+  up: "Expuesto subiendo",
+  down: "Expuesto bajando",
+  flat: "Estable",
 }
 
 export function HealthStrip({
@@ -92,21 +62,28 @@ export function HealthStrip({
   snapshot: HealthSnapshot
   dimmed?: boolean
 }) {
-  const tension = snapshot.tone === "tension"
+  const TrendIcon =
+    snapshot.trend === "up" ? TrendingUp : snapshot.trend === "down" ? TrendingDown : Minus
   return (
     <div
-      className={`rounded-2xl border p-2 transition-opacity ${
-        tension
-          ? "border-orange-200/60 bg-orange-50/30 dark:border-orange-900/30 dark:bg-orange-950/10"
-          : "bg-card/40"
-      } ${dimmed ? "opacity-40" : ""}`}
+      className={`rounded-xl border bg-card/40 px-4 py-2.5 transition-opacity ${
+        dimmed ? "opacity-40" : ""
+      }`}
     >
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-        <Tile label="Protegido hoy" value={snapshot.protectedToday} accent="emerald" />
-        <Tile label="Expuesto en ventana" value={snapshot.exposedInWindow} accent={tension ? "orange" : "blue"} />
-        <Tile label="Perdido hoy" value={snapshot.lostToday} accent="silver" muted />
-        <Tile label="Capacidad" value={snapshot.capacity} accent="emerald" />
-        <TrendTile trend={snapshot.trend} />
+      <div className="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3 lg:grid-cols-5">
+        <Metric label="Protegido hoy" value={snapshot.protectedToday} />
+        <Metric label="Expuesto en ventana" value={snapshot.exposedInWindow} />
+        <Metric label="Perdido hoy" value={snapshot.lostToday} muted />
+        <Metric label="Capacidad" value={snapshot.capacity} />
+        <div className="min-w-0">
+          <p className="truncate text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+            Tendencia
+          </p>
+          <p className="mt-0.5 flex items-center gap-1 truncate text-sm font-medium text-muted-foreground">
+            <TrendIcon className="size-3.5 shrink-0" />
+            <span className="truncate">{TREND_WORD[snapshot.trend]}</span>
+          </p>
+        </div>
       </div>
     </div>
   )

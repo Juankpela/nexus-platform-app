@@ -58,6 +58,14 @@ export function SupervisionStation({
   const queueItems = live.slice(1)
   const focused = selectedId ? live.find((i) => i.id === selectedId) ?? null : null
 
+  // Silencio: sin compromisos vivos no hay nada expuesto en ventana, así que la
+  // franja de Salud pasa a calmado (expuesto $0, tendencia estable) y toda la
+  // pantalla comunica estabilidad, coherente con el Hero "Todo protegido".
+  const healthForView: HealthSnapshot =
+    live.length === 0
+      ? { ...health, exposedInWindow: "$0", trend: "flat", tone: "calm" }
+      : health
+
   const requestCapture = (action: SupervisionAction, itemId: string) =>
     setCapture({ action, itemId })
 
@@ -70,7 +78,7 @@ export function SupervisionStation({
   return (
     <>
       <OperationalStation
-        health={<HealthStrip snapshot={health} dimmed={!!focused} />}
+        health={<HealthStrip snapshot={healthForView} dimmed={!!focused} />}
         hero={
           <DecisionCard
             decision={heroItem ? toDecision(heroItem) : null}
