@@ -36,6 +36,7 @@ En el momento en que el supervisor **actúa** o **descarta** un compromiso en la
   "priorIntent": string | null,     // contrafactual "¿qué ibas a hacer?" (Gate-1)
 
   // Snapshot del compromiso AL decidir (evidencia; evita re-derivar después):
+  "workOrderNumber": string,                  // identidad legible (reconstruir desde el Ledger sin joins)
   "surfacedIntervention": "ASSIGN_TECHNICIAN" | "RESCHEDULE" | "FOLLOW_UP_CUSTOMER"
                         | "ESCALATE_PARTS" | "REVIEW" | null,   // lo que NEXUS CLASIFICÓ como requerido
   "exposedValue": number | null,            // del Read Model (null = sin factura → sin valor real)
@@ -81,3 +82,26 @@ desde el primer Validation Partner. Implica una **adición funcional** a la Capt
 La *estética* congelada no se toca; solo se completa el comportamiento de captura.
 
 Spec CONGELADA. La implementación sigue exactamente este contrato.
+
+## 7 · Criterios de aceptación (Gate-1)
+
+- Una decisión genera **exactamente un** `audit_events` append-only.
+- El evento contiene: `action` · `surfacedIntervention` · `reason` · `priorIntent` · snapshot · timestamp (`occurred_at`) · actor (`actor_id`).
+- **No se modifica** ninguna decisión previamente registrada (append-only).
+- Si **falla** la escritura del Ledger, la UI **informa el error y NO simula éxito**.
+- El Read Model sigue funcionando sin cambios.
+- **No** se crean tablas, migraciones ni infraestructura nueva.
+- **No** se incorporan métricas, dashboards ni analytics todavía.
+
+## 8 · Prueba de evidencia (pre-merge)
+
+Leyendo **únicamente** un evento de `audit_events` debe poder reconstruirse: (1) qué
+riesgo detectó NEXUS, (2) qué recomendó, (3) qué pensaba hacer el supervisor, (4) qué
+hizo, (5) por qué — más quién y cuándo. Si no es reconstruible solo desde el Ledger, el
+contrato está incompleto. *(Verificado en `decision-event.test.ts` → "PRUEBA DE EVIDENCIA".)*
+
+## 9 · Siguiente nivel (fuera de este PR)
+
+Outcome linkage: enlazar cada decisión con el resultado del compromiso para demostrar que
+las intervenciones **mejoran** los resultados. El snapshot ya deja todo lo necesario; no se
+implementa aquí.

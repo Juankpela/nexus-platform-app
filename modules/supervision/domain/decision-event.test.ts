@@ -98,3 +98,49 @@ describe("buildSupervisionDecisionEvent", () => {
     expect(buildSupervisionDecisionEvent(i)).toEqual(buildSupervisionDecisionEvent(i))
   })
 })
+
+describe("PRUEBA DE EVIDENCIA — reconstrucción desde el Ledger", () => {
+  it("desde el evento SOLO se reconstruye la decisión completa", () => {
+    // Compromiso real-ish: orden asignada, en ventana, con valor; plan que excede el plazo.
+    const j = judge(
+      raw({
+        workOrderNumber: "1423",
+        hasActiveAssignment: true,
+        technicianName: "Carlos",
+        estimatedDurationMinutes: 60,
+        exposedValue: 8_000_000,
+        scheduledEnd: iso(5),
+      }),
+      NOW,
+    )
+    const ev = buildSupervisionDecisionEvent(
+      input({
+        action: "reasignar",
+        reason: "Conocimiento tácito",
+        priorIntent: "No lo había visto",
+        snapshot: toDecisionSnapshot(j),
+      }),
+    )
+    const m = ev.metadata as Record<string, unknown>
+
+    // 1) ¿Qué riesgo detectó NEXUS?
+    expect(m.workOrderNumber).toBe("1423")
+    expect(m.estado).toBe("en_riesgo_accionable")
+    expect(m.slaStatus).toBe("at_risk")
+    expect(m.exposedValue).toBe(8_000_000)
+    expect(m.pointOfNoReturnStatus).toBe("KNOWN")
+    // 2) ¿Qué recomendó NEXUS? (plan que excede el plazo → reprogramar)
+    expect(m.surfacedIntervention).toBe("RESCHEDULE")
+    // 3) ¿Qué pensaba hacer el supervisor (sin NEXUS)?
+    expect(m.priorIntent).toBe("No lo había visto")
+    // 4) ¿Qué hizo?
+    expect(ev.action).toBe("act")
+    expect(m.action).toBe("reasignar")
+    // 5) ¿Por qué?
+    expect(m.reason).toBe("Conocimiento tácito")
+    // Quién (actor) y sobre qué orden (subject). El "cuándo" es audit_events.occurred_at
+    // (columna por defecto en cada fila), no parte de metadata.
+    expect(ev.actorId).toBe(ACTOR)
+    expect(ev.subjectId).toBe("wo-1")
+  })
+})

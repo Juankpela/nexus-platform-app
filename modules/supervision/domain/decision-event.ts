@@ -22,6 +22,8 @@ export type SupervisionActionKind =
 
 /** Estado del compromiso AL decidir (evidencia; evita re-derivar el pasado). */
 export type DecisionSnapshot = {
+  /** Identidad legible del compromiso (reconstruir desde el Ledger sin joins). */
+  workOrderNumber: string
   /** Lo que NEXUS clasificó como requerido (para comparar con lo que hizo el humano). */
   surfacedIntervention: InterventionType | null
   exposedValue: number | null
@@ -34,6 +36,7 @@ export type DecisionSnapshot = {
 /** Deriva el snapshot a partir del juicio del Read Model. Puro. */
 export function toDecisionSnapshot(j: Judgment): DecisionSnapshot {
   return {
+    workOrderNumber: j.commitment.workOrderNumber,
     surfacedIntervention: j.requiredIntervention,
     exposedValue: j.commitment.exposedValue,
     pointOfNoReturnStatus: j.pointOfNoReturn.status,
@@ -53,6 +56,15 @@ export type SupervisionDecisionInput = {
   reason: string
   /** Contrafactual "¿qué ibas a hacer?" (Gate-1). null si no se elicitó. */
   priorIntent: string | null
+  snapshot: DecisionSnapshot
+}
+
+/** Borrador desde el cliente; la server action añade tenantId + actorId del contexto. */
+export type SupervisionDecisionDraft = {
+  workOrderId: string
+  action: SupervisionActionKind
+  reason: string
+  priorIntent: string
   snapshot: DecisionSnapshot
 }
 
@@ -76,6 +88,7 @@ export function buildSupervisionDecisionEvent(input: SupervisionDecisionInput): 
       action: input.action,
       reason: input.reason,
       priorIntent: input.priorIntent,
+      workOrderNumber: input.snapshot.workOrderNumber,
       surfacedIntervention: input.snapshot.surfacedIntervention,
       exposedValue: input.snapshot.exposedValue,
       pointOfNoReturnStatus: input.snapshot.pointOfNoReturnStatus,
