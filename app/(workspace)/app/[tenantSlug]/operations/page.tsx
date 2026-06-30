@@ -2,7 +2,6 @@ import type { Metadata } from "next"
 
 import { MOCK_BELOW_THRESHOLD, MOCK_HEALTH, MOCK_ITEMS } from "@/components/operations/mock"
 import { SupervisionStation } from "@/components/operations/supervision-station"
-import { PageHeader } from "@/components/layout/page-header"
 import { requirePermission } from "@/modules/authorization/application/require-permission"
 import { SERVICE_PERMISSIONS } from "@/modules/authorization/domain/permission"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
@@ -23,10 +22,13 @@ export default async function OperationsPage({
   // Datos simulados (Vertical Slice). El Read Model los sustituirá sin tocar la UI.
   return (
     <>
-      <PageHeader
-        title="Supervisión operacional"
-        description="Protege los compromisos en riesgo antes de su punto de no retorno."
-      />
+      {/* Título ligero: orientación mínima. Sin descripción de filosofía del producto
+          (limpieza 2026-06-30): nada que explique el producto compite con el Hero. */}
+      <div className="px-5 pb-5 pt-7 sm:px-8">
+        <h1 className="text-[1.7rem] font-bold leading-tight tracking-[-0.02em] text-foreground">
+          Supervisión operacional
+        </h1>
+      </div>
       <SupervisionStation
         items={MOCK_ITEMS}
         health={MOCK_HEALTH}
