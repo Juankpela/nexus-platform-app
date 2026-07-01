@@ -6,6 +6,8 @@ import { SERVICE_PERMISSIONS } from "@/modules/authorization/domain/permission"
 import { getRequestContext } from "@/modules/request-context/application/get-request-context"
 import { getSupervisionStation } from "@/modules/supervision/composition"
 
+import { recordDecisionAction } from "./actions"
+
 export const metadata: Metadata = { title: "Supervisión operacional" }
 
 export default async function OperationsPage({
@@ -21,7 +23,7 @@ export default async function OperationsPage({
 
   // Read Model determinístico: interpreta el estado operacional real y lo adapta a
   // los contratos congelados. Solo cambia el ORIGEN de los datos; la UI no se toca.
-  const { items, health, belowThresholdCount } = await getSupervisionStation(
+  const { items, health, belowThresholdCount, snapshots } = await getSupervisionStation(
     context.tenantId,
     new Date(),
   )
@@ -35,7 +37,14 @@ export default async function OperationsPage({
           Supervisión operacional
         </h1>
       </div>
-      <SupervisionStation items={items} health={health} belowThresholdCount={belowThresholdCount} />
+      <SupervisionStation
+        items={items}
+        health={health}
+        belowThresholdCount={belowThresholdCount}
+        tenantSlug={tenantSlug}
+        snapshots={snapshots}
+        recordDecision={recordDecisionAction}
+      />
     </>
   )
 }

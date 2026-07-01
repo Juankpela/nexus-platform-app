@@ -10,12 +10,16 @@ import { HealthStrip, type HealthSnapshot } from "@/components/operations/health
 import { OperationalStation } from "@/components/operations/operational-station"
 import { SupervisionQueue, type QueueLine } from "@/components/operations/supervision-queue"
 import type { SupervisionItem } from "@/components/operations/mock"
+import type {
+  DecisionSnapshot,
+  SupervisionDecisionDraft,
+} from "@/modules/supervision/domain/decision-event"
 
 /**
  * Orquestador del Vertical Slice. Único componente con estado de UI (selección,
- * captura, ítems ya atendidos): compone los 6 bloques presentacionales dentro de
- * la carcasa `OperationalStation`. No conoce el dominio ni el Read Model — recibe
- * `SupervisionItem[]` (hoy mock) y mapea a las interfaces de cada bloque.
+ * captura, ítems ya atendidos) y el ÚNICO que persiste: al confirmar la captura
+ * registra la decisión en el Decision Ledger (server action inyectada como prop).
+ * Si la escritura falla, informa el error y NO avanza (no simula éxito).
  */
 function toDecision(item: SupervisionItem): Decision {
   return {
@@ -43,14 +47,22 @@ export function SupervisionStation({
   items,
   health,
   belowThresholdCount,
+  tenantSlug,
+  snapshots,
+  recordDecision,
 }: {
   items: SupervisionItem[]
   health: HealthSnapshot
   belowThresholdCount: number
+  tenantSlug: string
+  snapshots: Record<string, DecisionSnapshot>
+  recordDecision: (tenantSlug: string, draft: SupervisionDecisionDraft) => Promise<void>
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [actedIds, setActedIds] = useState<string[]>([])
   const [capture, setCapture] = useState<{ action: SupervisionAction; itemId: string } | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   // Lo vivo: el ranking sin los compromisos ya atendidos (el Hero "avanza").
   const live = items.filter((i) => !actedIds.includes(i.id))
@@ -66,13 +78,37 @@ export function SupervisionStation({
       ? { ...health, exposedInWindow: "$0", trend: "flat", tone: "calm" }
       : health
 
-  const requestCapture = (action: SupervisionAction, itemId: string) =>
+  const requestCapture = (action: SupervisionAction, itemId: string) => {
+    setError(null)
     setCapture({ action, itemId })
+  }
 
-  const confirmCapture = () => {
-    if (capture) setActedIds((prev) => [...prev, capture.itemId])
-    setCapture(null)
-    setSelectedId(null)
+  // Registra la decisión en el Ledger. Solo al confirmar la escritura se avanza.
+  const confirmCapture = async (reason: string, priorIntent: string) => {
+    if (!capture || saving) return
+    const snapshot = snapshots[capture.itemId]
+    if (!snapshot) {
+      setError("No se encontró el estado del compromiso para registrar la decisión.")
+      return
+    }
+    setSaving(true)
+    setError(null)
+    try {
+      await recordDecision(tenantSlug, {
+        workOrderId: capture.itemId,
+        action: capture.action,
+        reason,
+        priorIntent,
+        snapshot,
+      })
+      setActedIds((prev) => [...prev, capture.itemId])
+      setCapture(null)
+      setSelectedId(null)
+    } catch {
+      setError("No se pudo registrar la decisión. Reinténtalo.")
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -108,11 +144,23 @@ export function SupervisionStation({
         }
       />
 
+      {error ? (
+        <div className="pointer-events-none fixed inset-x-0 bottom-24 z-40 flex justify-center px-4">
+          <div className="pointer-events-auto rounded-xl border border-red-200/70 bg-card px-4 py-2 text-sm text-red-600 shadow-lg dark:border-red-900/40 dark:text-red-400">
+            {error}
+          </div>
+        </div>
+      ) : null}
+
       {capture ? (
         <CaptureChip
           action={capture.action}
           onCapture={confirmCapture}
-          onDismiss={() => setCapture(null)}
+          onDismiss={() => {
+            setCapture(null)
+            setError(null)
+          }}
+          pending={saving}
         />
       ) : null}
     </>
