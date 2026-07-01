@@ -104,8 +104,16 @@ export async function CommandCenter({
     overloadedTechnicians: stats?.overloadedTechnicians ?? 0,
     receivable,
   })
-  const onboardingInProgress = onboarding.status === "in_progress"
-  const headline = buildHeadline(briefing, { onboardingInProgress })
+  // Activación: la guía de primeros pasos solo vive en Inicio mientras la
+  // operación NO arranca (pasos 1-3: clientes → técnicos → órdenes). En cuanto
+  // hay órdenes, el checklist sale de la primera pantalla — hablarle de "pasos"
+  // a alguien que ya opera confunde; el lazo del dinero se cierra solo desde el
+  // cierre facturable del técnico.
+  const activationStep =
+    onboarding.status === "in_progress" && onboarding.step.stepNumber <= 3
+      ? onboarding.step
+      : null
+  const headline = buildHeadline(briefing, { onboardingInProgress: activationStep != null })
 
   // ── Ahora en Campo: técnicos con un trabajo vivo + ETA real ────────────────
   const activeEntries = board.entries.filter((e) => e.activeJob)
@@ -140,9 +148,9 @@ export async function CommandCenter({
       </h1>
 
       {/* ── Activación: para un tenant que aún no opera, ESTA es la decisión ── */}
-      {onboarding.status === "in_progress" ? (
+      {activationStep ? (
         <div className="mb-10">
-          <OnboardingCard step={onboarding.step} tenantSlug={tenantSlug} />
+          <OnboardingCard step={activationStep} tenantSlug={tenantSlug} />
         </div>
       ) : null}
 

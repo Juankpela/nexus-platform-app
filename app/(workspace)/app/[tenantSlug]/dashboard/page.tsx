@@ -34,11 +34,14 @@ export default async function MissionControlPage({
 
   const onboarding = buildOnboardingFlow(await getOnboardingCounts(context.tenantId))
 
-  // Enlace público de reportes: solo durante la activación (después es ruido;
-  // vive en Configuración para quien lo necesite).
+  // Enlace público de reportes: solo mientras la operación no arranca (pasos
+  // 1-3 de activación). Después es ruido; vive en Configuración para quien lo
+  // necesite.
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/\/$/, "")
   const reportUrl =
-    onboarding.status === "in_progress" && appUrl ? `${appUrl}/r/${tenantSlug}` : null
+    onboarding.status === "in_progress" && onboarding.step.stepNumber <= 3 && appUrl
+      ? `${appUrl}/r/${tenantSlug}`
+      : null
 
   // Paneles de detalle por área (antes tabs): enlaces discretos al pie.
   const areaTabs = dashboardTabsFor(tenantSlug, context.effectivePermissions).filter(
