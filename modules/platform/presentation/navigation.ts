@@ -1,11 +1,9 @@
 import {
-  BarChart3,
   BookOpen,
   Boxes,
   Brain,
   Building2,
   CalendarClock,
-  CalendarDays,
   Contact,
   Cpu,
   FileDown,
@@ -143,7 +141,6 @@ export const workspaceNavigation: readonly NavigationItem[] = [
   { label: "Solicitudes", segment: "cases", icon: LifeBuoy, permission: SERVICE_PERMISSIONS.casesRead, capability: "operations" },
   { label: "Órdenes de trabajo", segment: "work-orders", icon: Wrench, permission: SERVICE_PERMISSIONS.workOrdersRead, capability: "operations" },
   { label: "Agenda", segment: "schedule", icon: CalendarClock, permission: SERVICE_PERMISSIONS.schedulingRead, capability: "operations" },
-  { label: "Calendario", segment: "calendar", icon: CalendarDays, permission: SERVICE_PERMISSIONS.schedulingRead, capability: "operations" },
   { label: "Despacho", segment: "dispatch", icon: Route, permission: SERVICE_PERMISSIONS.dispatchRead, capability: "operations" },
   { label: "Monitor de campo", segment: "field-monitor", icon: Radio, permission: SERVICE_PERMISSIONS.dispatchRead, capability: "operations" },
   { label: "Equipo técnico", segment: "technicians", icon: HardHat, permission: SERVICE_PERMISSIONS.techniciansRead, capability: "operations" },
@@ -159,7 +156,6 @@ export const workspaceNavigation: readonly NavigationItem[] = [
   // ── Inteligencia (N-LABS) ─────────────────────────────────────────────────
   { label: "N-LABS", segment: "nlabs", icon: Brain, permission: NLABS_PERMISSIONS.read, capability: "intelligence" },
   { label: "Pronóstico", segment: "forecasting", icon: TrendingUp, permission: FORECASTING_PERMISSIONS.read, capability: "intelligence" },
-  { label: "Reportes", segment: "reports", icon: BarChart3, permission: FORECASTING_PERMISSIONS.read, capability: "intelligence" },
 
   // ── Administración (foundation) ───────────────────────────────────────────
   { label: "Usuarios", segment: "users", icon: Users, permission: FOUNDATION_PERMISSIONS.usersRead, capability: "admin" },

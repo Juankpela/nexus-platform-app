@@ -22,14 +22,9 @@ export default async function NLabsPage({
   return (
     <div className="space-y-7 px-5 py-6 sm:px-8">
       <header>
-        <div className="flex flex-wrap items-center gap-2.5">
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            N-LABS
-          </h1>
-          <span className="inline-flex items-center rounded-full border border-nexus-blue/30 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-nexus-blue">
-            Beta
-          </span>
-        </div>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+          N-LABS
+        </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Inteligencia operacional · {context.tenant.name} · Convierte tu
           operación en decisiones, no en reportes.

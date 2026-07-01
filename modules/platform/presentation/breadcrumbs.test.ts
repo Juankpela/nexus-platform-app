@@ -13,30 +13,33 @@ describe("buildBreadcrumbs", () => {
     })
   })
 
-  it("shows just the item for a pinned (ungrouped) Golden Path page", () => {
-    // Clientes is a primary, ungrouped item → no group crumb in between.
-    expect(labels(`/app/${T}/companies`)).toEqual(["Inicio", "Clientes"])
+  it("groups every nav page under its commercial capability", () => {
+    // Clientes vive bajo la capacidad CRM (navegación por capacidades, PRODUCT-004).
+    expect(labels(`/app/${T}/companies`)).toEqual(["Inicio", "CRM", "Clientes"])
   })
 
   it("adds a Detalle crumb and links the list on a detail page", () => {
     const crumbs = buildBreadcrumbs(`/app/${T}/work-orders/123`, T)
-    expect(crumbs.map((c) => c.label)).toEqual(["Inicio", "Trabajo", "Detalle"])
-    // Trabajo is ungrouped, so the list-linked crumb sits at index 1.
-    expect(crumbs[1].href).toBe(`/app/${T}/work-orders`)
+    expect(crumbs.map((c) => c.label)).toEqual([
+      "Inicio",
+      "Operaciones",
+      "Órdenes de trabajo",
+      "Detalle",
+    ])
+    // El crumb de la lista (índice 2, después del grupo) enlaza de vuelta.
+    expect(crumbs[2].href).toBe(`/app/${T}/work-orders`)
   })
 
-  it("classifies Service segments by process group", () => {
-    // Solicitudes (cases) is a pinned Golden Path item → ungrouped.
-    expect(labels(`/app/${T}/cases`)).toEqual(["Inicio", "Solicitudes"])
-    // Activos lives under the Service process group.
-    expect(labels(`/app/${T}/assets`)).toEqual(["Inicio", "Servicio y campo", "Activos"])
+  it("classifies Service segments under Operaciones", () => {
+    expect(labels(`/app/${T}/cases`)).toEqual(["Inicio", "Operaciones", "Solicitudes"])
+    expect(labels(`/app/${T}/assets`)).toEqual(["Inicio", "Operaciones", "Equipos"])
   })
 
-  it("classifies the manual dispatch board under its process group", () => {
+  it("classifies the manual dispatch board under Operaciones", () => {
     expect(labels(`/app/${T}/dispatch`)).toEqual([
       "Inicio",
-      "Servicio y campo",
-      "Tablero",
+      "Operaciones",
+      "Despacho",
     ])
   })
 

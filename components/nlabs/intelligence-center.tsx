@@ -1,10 +1,7 @@
 import {
   AlertTriangle,
   ArrowRight,
-  BookOpen,
   Gauge,
-  Lightbulb,
-  Radar,
   Receipt,
   ShieldCheck,
   Users,
@@ -62,8 +59,8 @@ const TONE_STYLES: Record<
  * N-LABS Intelligence Center. Reúsa por completo las consultas existentes del
  * Centro Operacional (sin queries nuevas) para entregar inteligencia operacional
  * REAL desde el primer minuto: problemas detectados, priorizados por impacto, con
- * la acción que los resuelve. Las otras tres capacidades se muestran como
- * estructura honesta (Beta), nunca como vapor funcional.
+ * la acción que los resuelve. Solo se muestra lo que funciona hoy; las capacidades
+ * futuras de N-LABS no aparecen hasta que existan.
  */
 export async function IntelligenceCenter({
   tenantSlug,
@@ -158,36 +155,6 @@ export async function IntelligenceCenter({
 
   return (
     <div className="space-y-8">
-      {/* ── Las cuatro capacidades de N-LABS ─────────────────────────────────── */}
-      <section aria-label="Capacidades de N-LABS">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <CapabilityTile
-            icon={Gauge}
-            name="Operational Intelligence"
-            status="live"
-            description="Detecta cuellos de botella en tu operación, los prioriza por impacto y te dice qué resolver primero."
-          />
-          <CapabilityTile
-            icon={Radar}
-            name="Market Intelligence"
-            status="beta"
-            description="Descubre empresas objetivo, analiza competencia y arma campañas de prospección."
-          />
-          <CapabilityTile
-            icon={BookOpen}
-            name="Knowledge Intelligence"
-            status="soon"
-            description="Convierte lo aprendido en patrones reutilizables: qué funcionó, con quién y por qué."
-          />
-          <CapabilityTile
-            icon={Lightbulb}
-            name="AI Decision Engine"
-            status="soon"
-            description="Analiza objetivamente y recomienda la mejor decisión —proceso, automatización, integración o no hacer nada—, no solo más software."
-          />
-        </div>
-      </section>
-
       {/* ── Operational Intelligence en vivo ─────────────────────────────────── */}
       <section aria-label="Problemas detectados">
         <div className="mb-3 flex items-center gap-2">
@@ -249,38 +216,3 @@ export async function IntelligenceCenter({
   )
 }
 
-function CapabilityTile({
-  icon: Icon,
-  name,
-  description,
-  status,
-}: {
-  icon: typeof Gauge
-  name: string
-  description: string
-  status: "live" | "beta" | "soon"
-}) {
-  const badge = {
-    live: { label: "En vivo", cls: "border-emerald-500/30 text-emerald-600 dark:text-emerald-400" },
-    beta: { label: "Beta", cls: "border-nexus-blue/30 text-nexus-blue" },
-    soon: { label: "Próximamente", cls: "border-border text-muted-foreground" },
-  }[status]
-  return (
-    <div className="flex gap-3 rounded-2xl border bg-card p-4">
-      <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-nexus-blue/10 text-nexus-blue">
-        <Icon className="size-5" />
-      </span>
-      <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-2">
-          <h3 className="text-sm font-semibold text-foreground">{name}</h3>
-          <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${badge.cls}`}>
-            {badge.label}
-          </span>
-        </div>
-        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-          {description}
-        </p>
-      </div>
-    </div>
-  )
-}
