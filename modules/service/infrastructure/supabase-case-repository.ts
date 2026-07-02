@@ -278,10 +278,20 @@ export class SupabaseCaseRepository implements CaseRepository {
 
   async getStats(tenantId: UUID): Promise<CaseStats> {
     const client = await createServerSupabaseClient()
-    const { data, error } = await client
-      .from("cases")
-      .select("status, priority, sla_due_at, resolved_at, closed_at")
-      .eq("tenant_id", tenantId)
+    const [{ data, error }, woRes] = await Promise.all([
+      client
+        .from("cases")
+        .select("id, status, priority, sla_due_at, resolved_at, closed_at")
+        .eq("tenant_id", tenantId),
+      // Casos ATENDIDOS: con alguna WO no cancelada (misma regla que el guard
+      // de despacho). Alimenta openBreachedUnattendedCount (decisión pendiente).
+      client
+        .from("work_orders")
+        .select("case_id")
+        .eq("tenant_id", tenantId)
+        .not("case_id", "is", null)
+        .neq("status", "cancelled"),
+    ])
 
     if (error) {
       throw new ApplicationError(
@@ -290,6 +300,9 @@ export class SupabaseCaseRepository implements CaseRepository {
         error,
       )
     }
+    const attendedCaseIds = new Set(
+      ((woRes.data ?? []) as { case_id: string | null }[]).map((r) => r.case_id),
+    )
 
     const byStatus = Object.fromEntries(
       CASE_STATUSES.map((s) => [s, 0]),
@@ -302,6 +315,7 @@ export class SupabaseCaseRepository implements CaseRepository {
     let openCount = 0
     let breachedCount = 0
     let openBreachedCount = 0
+    let openBreachedUnattendedCount = 0
     let slaTracked = 0
     let slaOk = 0
 
@@ -330,8 +344,11 @@ export class SupabaseCaseRepository implements CaseRepository {
           !row.resolved_at &&
           !row.closed_at &&
           new Date(row.sla_due_at).getTime() < now.getTime()
-        )
+        ) {
           openBreachedCount += 1
+          // Sin WO activa = nadie lo está atendiendo → decisión pendiente.
+          if (!attendedCaseIds.has(row.id as string)) openBreachedUnattendedCount += 1
+        }
       }
     }
 
@@ -342,6 +359,7 @@ export class SupabaseCaseRepository implements CaseRepository {
       byPriority,
       breachedCount,
       openBreachedCount,
+      openBreachedUnattendedCount,
       slaCompliancePct:
         slaTracked > 0 ? Math.round((slaOk / slaTracked) * 100) : null,
     }

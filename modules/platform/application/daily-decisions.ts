@@ -37,7 +37,10 @@ export type DailyBriefing = {
 }
 
 export type DailyDecisionsInput = {
-  /** Casos abiertos con SLA vencido (lo más urgente para el cliente). */
+  /**
+   * Casos con SLA vencido SIN atender (sin orden de trabajo activa). Un vencido
+   * ya despachado está "en atención": no es una decisión pendiente.
+   */
   openBreachedCount: number
   /** Propuestas de coordinación que N-LABS dejó listas para aprobar. */
   proposals: readonly {
@@ -67,12 +70,12 @@ export function buildDailyDecisions(
       tone: "critical",
       title:
         n === 1
-          ? "Resolver el compromiso con SLA vencido"
-          : `Resolver ${n} compromisos con SLA vencido`,
+          ? "Atender el compromiso vencido que nadie está atendiendo"
+          : `Atender ${n} compromisos vencidos que nadie está atendiendo`,
       detail:
         n === 1
-          ? "Un cliente con la promesa incumplida está esperando respuesta"
-          : "Clientes con la promesa incumplida están esperando respuesta",
+          ? "SLA incumplido y aún sin orden de trabajo — el cliente espera respuesta"
+          : "SLA incumplido y aún sin orden de trabajo — los clientes esperan respuesta",
       badge: "SLA vencido",
       actionLabel: "Resolver",
       segment: "cases?sla=overdue",

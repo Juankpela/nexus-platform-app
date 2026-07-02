@@ -98,7 +98,8 @@ export async function IntelligenceCenter({
   const openInvoices = invoices.filter((i) => i.balance > 0.01)
   const porCobrar = openInvoices.reduce((s, i) => s + i.balance, 0)
   const overloaded = stats?.overloadedTechnicians ?? 0
-  const overdueSla = caseStats?.openBreachedCount ?? 0
+  // Solo los vencidos SIN atender (sin WO activa): los ya despachados están en atención.
+  const overdueSla = caseStats?.openBreachedUnattendedCount ?? 0
 
   const signals: Signal[] = []
   if (overdueSla > 0) {

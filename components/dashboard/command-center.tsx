@@ -162,7 +162,7 @@ export async function CommandCenter({
     : null
 
   const briefing = buildDailyDecisions({
-    openBreachedCount: caseStats?.openBreachedCount ?? 0,
+    openBreachedCount: caseStats?.openBreachedUnattendedCount ?? 0,
     proposals: inbox.proposals.map((p) => ({
       caseNumber: p.caseNumber,
       subject: p.subject,
