@@ -88,9 +88,16 @@ import {
   type DispatchExplanation,
   type ExplainCandidate,
 } from "@/modules/scheduling/domain/dispatch-explanation"
-import type { DispatchCandidate } from "@/modules/scheduling/domain/dispatch-selection"
+import {
+  selectDispatch,
+  type DispatchCandidate,
+} from "@/modules/scheduling/domain/dispatch-selection"
+import { localDateMinute, localSlotToIso } from "@/modules/scheduling/domain/local-time"
 import { SKILL_LEVELS } from "@/modules/service/domain/skill"
-import { planAutoDispatch } from "@/modules/scheduling/application/use-cases/plan-auto-dispatch"
+import {
+  coordinatedStart,
+  planAutoDispatch,
+} from "@/modules/scheduling/application/use-cases/plan-auto-dispatch"
 import { KeywordReportClassifier } from "@/modules/scheduling/infrastructure/keyword-report-classifier"
 import { SupabaseDispatchCandidateReader } from "@/modules/scheduling/infrastructure/supabase-dispatch-candidate-reader"
 import type { UUID } from "@/types/shared"
@@ -433,6 +440,20 @@ const AUTO_DISPATCH_SLOT_GRANULARITY_MINUTES = 30
 /** Actor del sistema para la atribución "Nexus Autonomous Dispatch". */
 const AUTONOMOUS_DISPATCH_EVENT = "autonomous_dispatch.assigned"
 
+/**
+ * Alternativa de agenda que el motor ofrece cuando NO encontró opción dentro de
+ * las reglas (especialidad/SLA): mismo pipeline de selección pero RELAJADO. El
+ * supervisor la ejecuta con `scheduleCaseOption` bajo su criterio (auditado).
+ */
+export type AutoDispatchOption = {
+  technicianId: UUID
+  technicianName: string
+  startsAt: string
+  endsAt: string
+  /** La visita terminaría después del SLA comprometido del caso. */
+  outOfSla: boolean
+}
+
 export type AutoDispatchResult = {
   verdict: "PROCEED" | "HOLD" | "ESCALATE"
   workOrderId: UUID | null
@@ -442,6 +463,11 @@ export type AutoDispatchResult = {
   endsAt: string | null
   confidenceScore: number
   blockers: string[]
+  /**
+   * Salida asistida: mejores alternativas relajando especialidad y SLA. Solo se
+   * calculan cuando el motor escaló SIN candidato (nunca un callejón sin salida).
+   */
+  options: AutoDispatchOption[]
 }
 
 /**
@@ -613,6 +639,56 @@ export async function runAutoDispatchForCase(input: {
     source: "system",
   })
 
+  // ── Salida asistida: el motor nunca deja al supervisor en un callejón sin
+  // salida. Si escaló SIN candidato (ni siquiera hay opción que forzar), busca
+  // las mejores alternativas RELAJANDO especialidad y SLA con el mismo motor de
+  // selección, y las ofrece para que el humano decida (vía scheduleCaseOption).
+  let options: AutoDispatchOption[] = []
+  if (!workOrderId && !plan.chosen) {
+    const now = localDateMinute(new Date().toISOString(), TENANT_TIMEZONE)
+    if (now) {
+      const start = coordinatedStart(
+        now.date,
+        now.minute,
+        AUTO_DISPATCH_LEAD_MINUTES,
+        AUTO_DISPATCH_SLOT_GRANULARITY_MINUTES,
+      )
+      const snapshots = await new SupabaseDispatchCandidateReader(
+        TENANT_TIMEZONE,
+      ).listCandidates(input.tenantId, now.date, AUTO_DISPATCH_HORIZON_DAYS)
+      const relaxed = selectDispatch(snapshots, {
+        skillId: null,
+        minLevel: null,
+        zoneId: null,
+        durationMinutes: plan.classification.estimatedDurationMinutes,
+        fromDate: start.fromDate,
+        fromMinute: start.fromMinute,
+        horizonDays: AUTO_DISPATCH_HORIZON_DAYS,
+      })
+      options = [relaxed.chosen, ...relaxed.discarded]
+        .filter(
+          (c): c is NonNullable<typeof c> =>
+            c != null && c.slot != null && Object.values(c.reasons).every(Boolean),
+        )
+        .sort((a, b) =>
+          a.slot!.date === b.slot!.date
+            ? a.slot!.startMinute - b.slot!.startMinute
+            : a.slot!.date.localeCompare(b.slot!.date),
+        )
+        .slice(0, 3)
+        .map((c) => {
+          const endsAtIso = localSlotToIso(c.slot!.date, c.slot!.endMinute, TENANT_TIMEZONE)
+          return {
+            technicianId: c.technicianId,
+            technicianName: c.technicianName,
+            startsAt: localSlotToIso(c.slot!.date, c.slot!.startMinute, TENANT_TIMEZONE),
+            endsAt: endsAtIso,
+            outOfSla: serviceCase.slaDueAt != null && endsAtIso > serviceCase.slaDueAt,
+          }
+        })
+    }
+  }
+
   return {
     verdict: plan.verdict,
     workOrderId,
@@ -622,7 +698,96 @@ export async function runAutoDispatchForCase(input: {
     endsAt: plan.endsAt,
     confidenceScore: plan.confidence.score,
     blockers: plan.confidence.blockers,
+    options,
   }
+}
+
+/**
+ * El supervisor ejecuta una de las alternativas de la salida asistida: crea la
+ * WO desde el caso y asigna al técnico elegido en el horario elegido, aunque la
+ * opción esté fuera de las reglas del motor (sin especialidad verificada y/o
+ * fuera de SLA). Decisión 100% humana, auditada como override del supervisor.
+ * Reutiliza los use-cases validados (createWorkOrder + assignWorkOrder).
+ */
+export async function scheduleCaseOption(input: {
+  actorId: UUID
+  tenantId: UUID
+  requestId: UUID
+  caseId: UUID
+  technicianId: UUID
+  startsAt: string
+  endsAt: string
+}): Promise<{ workOrderId: UUID; assignmentId: UUID }> {
+  const [serviceCase, existingWorkOrders] = await Promise.all([
+    getCaseRecord(input.tenantId, input.caseId),
+    listWorkOrdersForCase(input.tenantId, input.caseId),
+  ])
+  if (!serviceCase) {
+    throw new ApplicationError("Caso no encontrado.", "CASE_NOT_FOUND")
+  }
+  if (hasActiveWorkOrder(existingWorkOrders)) {
+    throw new ApplicationError(
+      "Este caso ya tiene una orden de trabajo activa.",
+      "CASE_ALREADY_HAS_WORK_ORDER",
+    )
+  }
+
+  const workOrder = await createWorkOrderRecord({
+    actorId: input.actorId,
+    tenantId: input.tenantId,
+    requestId: input.requestId,
+    data: {
+      subject: serviceCase.subject,
+      description: serviceCase.description,
+      priority: serviceCase.priority,
+      companyId: serviceCase.companyId,
+      caseId: serviceCase.id,
+      assetId: serviceCase.assetId,
+      scheduledStart: input.startsAt,
+      scheduledEnd: input.endsAt,
+      slaDueAt: serviceCase.slaDueAt,
+      laborHours: null,
+      resolutionSummary: null,
+      completionNotes: null,
+    },
+  })
+
+  const assignment = await assignWorkOrderRecord({
+    actorId: input.actorId,
+    tenantId: input.tenantId,
+    requestId: input.requestId,
+    data: {
+      workOrderId: workOrder.id,
+      technicianId: input.technicianId,
+      scheduledStart: input.startsAt,
+      scheduledEnd: input.endsAt,
+    },
+  })
+
+  // Traza del override: quién decidió, qué opción y por qué el motor no la
+  // ejecutó solo (fuera de reglas). Explicabilidad para el Decision Ledger.
+  await new SupabaseAuditRepository(() => createAdminSupabaseClient()).append({
+    eventType: AUTONOMOUS_DISPATCH_EVENT,
+    actorType: "user",
+    actorId: input.actorId,
+    tenantId: input.tenantId,
+    subjectType: "case",
+    subjectId: input.caseId,
+    action: "autonomous_dispatch.supervisor_scheduled",
+    metadata: {
+      forced: true,
+      source: "assisted_fallback_option",
+      technicianId: input.technicianId,
+      startsAt: input.startsAt,
+      endsAt: input.endsAt,
+      workOrderId: workOrder.id,
+      assignmentId: assignment.id,
+    },
+    requestId: input.requestId,
+    source: "web",
+  })
+
+  return { workOrderId: workOrder.id, assignmentId: assignment.id }
 }
 
 const ASSIGNMENT_ACCEPTED_EVENT = "assignment.accepted"
