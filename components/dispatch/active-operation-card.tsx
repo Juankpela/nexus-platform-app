@@ -2,6 +2,7 @@ import { Clock3, Navigation } from "lucide-react"
 import Link from "next/link"
 
 import { EtaCountdown } from "@/components/service/eta-countdown"
+import { formatDateTime } from "@/lib/format/datetime"
 import type { ExecutionStatus } from "@/modules/field-execution/domain/execution"
 import { travelMinutes } from "@/modules/service/domain/eta"
 import type { LifecycleMilestone } from "@/modules/service/domain/service-lifecycle"
@@ -96,6 +97,10 @@ export function ActiveOperationCard({
   const arrivedAt = milestones.find((m) => m.key === "on_site")?.at ?? null
   const travel = travelMinutes(enRouteAt, arrivedAt)
   const counting = !!enRouteAt && !arrivedAt && !!etaArrivalAt
+  // Sello del último hito ALCANZADO: desde cuándo la operación está donde está.
+  // Hace visible una operación estancada (días "trabajando") sin ocultarla.
+  const sinceAt =
+    [...milestones].reverse().find((m) => m.state === "done" && m.at)?.at ?? null
 
   return (
     <div className="grid items-center gap-4 px-4 py-3.5 lg:grid-cols-[minmax(160px,1.1fr)_5fr_minmax(130px,1fr)]">
@@ -191,9 +196,16 @@ export function ActiveOperationCard({
             <Clock3 className="size-3" />
             desplazamiento {travel} min
           </span>
-        ) : current ? (
+        ) : null}
+        {sinceAt ? (
           <span className="font-mono text-[10px] text-muted-foreground">
-            hito: {SHORT_LABEL[current.key] ?? current.label}
+            desde{" "}
+            {formatDateTime(sinceAt, {
+              weekday: "short",
+              day: "numeric",
+              month: "short",
+              year: undefined,
+            })}
           </span>
         ) : null}
       </div>

@@ -13,8 +13,9 @@ import {
 import Link from "next/link"
 
 import { OnboardingCard } from "@/components/dashboard/onboarding-card"
+import { ActiveOperationCard } from "@/components/dispatch/active-operation-card"
 import { Button } from "@/components/ui/button"
-import { formatTime, todayInAppZone } from "@/lib/format/datetime"
+import { todayInAppZone } from "@/lib/format/datetime"
 import { formatCOP } from "@/lib/format/money"
 import {
   BILLING_PERMISSIONS,
@@ -24,7 +25,6 @@ import {
 import { listTenantInvoices } from "@/modules/billing/composition"
 import { getTenantDispatchStats } from "@/modules/dispatch/composition"
 import { getFieldMonitorBoard } from "@/modules/field-execution/composition"
-import { EXECUTION_STATUS_LABELS } from "@/modules/field-execution/domain/execution"
 import {
   buildDailyDecisions,
   buildHeadline,
@@ -32,7 +32,7 @@ import {
 } from "@/modules/platform/application/daily-decisions"
 import type { OnboardingFlow } from "@/modules/platform/application/onboarding-flow"
 import { listDispatchInbox, readEnRouteEta } from "@/modules/scheduling/composition"
-import { getTenantCaseStats } from "@/modules/service/composition"
+import { getTenantCaseStats, getWorkOrderLifecycle } from "@/modules/service/composition"
 import type { UUID } from "@/types/shared"
 
 const TONE_STYLES: Record<DecisionTone, { chip: string; badge: string }> = {
@@ -189,15 +189,20 @@ export async function CommandCenter({
       : null
   const headline = buildHeadline(briefing, { onboardingInProgress: activationStep != null })
 
-  // ── Ahora en Campo: técnicos con un trabajo vivo + ETA real ────────────────
+  // ── Ahora en Campo: técnicos con un trabajo vivo + línea de vida + ETA real ─
   const activeEntries = board.entries.filter((e) => e.activeJob)
-  const etas = await Promise.all(
-    activeEntries.map((e) =>
-      e.activeJob!.assignmentId
-        ? readEnRouteEta(tenantId, e.activeJob!.assignmentId)
-        : Promise.resolve(null),
+  const [lifecycles, etas] = await Promise.all([
+    Promise.all(
+      activeEntries.map((e) => getWorkOrderLifecycle(tenantId, e.activeJob!.workOrderId)),
     ),
-  )
+    Promise.all(
+      activeEntries.map((e) =>
+        e.activeJob!.assignmentId
+          ? readEnRouteEta(tenantId, e.activeJob!.assignmentId)
+          : Promise.resolve(null),
+      ),
+    ),
+  ])
 
   const slaPct = caseStats?.slaCompliancePct ?? null
 
@@ -250,10 +255,9 @@ export async function CommandCenter({
         />
       </div>
 
-      {/* ── #2 Decisiones + #3 Ahora en Campo ──────────────────────────────── */}
-      <div className="grid gap-5 lg:grid-cols-3">
-        <section aria-label="Decisiones del día" className="lg:col-span-2">
-          <div className="rounded-2xl border bg-card">
+      {/* ── #2 Decisiones del día (a lo ancho) ─────────────────────────────── */}
+      <section aria-label="Decisiones del día">
+        <div className="rounded-2xl border bg-card">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b px-5 py-4">
               <h2 className="text-base font-semibold text-foreground">{headline}</h2>
               {briefing.hiddenCount > 0 ? (
@@ -302,57 +306,49 @@ export async function CommandCenter({
                 })}
               </div>
             )}
-          </div>
-        </section>
+        </div>
+      </section>
 
-        <section aria-label="Ahora en campo">
-          <div className="flex h-full flex-col rounded-2xl border bg-card">
-            <div className="flex items-center gap-2 border-b px-5 py-4">
-              <h2 className="text-base font-semibold text-foreground">Ahora en campo</h2>
-              {activeEntries.length > 0 ? (
-                <span className="ml-auto inline-flex items-center gap-1.5 rounded bg-nexus-blue/10 px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase text-nexus-blue">
-                  <span className="size-1.5 animate-pulse rounded-full bg-nexus-blue" />
-                  Vivo
-                </span>
-              ) : null}
-            </div>
-            {activeEntries.length === 0 ? (
-              <p className="px-5 py-6 text-sm text-muted-foreground">
-                No hay operaciones en ejecución ahora.
-              </p>
-            ) : (
-              <div className="divide-y">
-                {activeEntries.map((e, i) => {
-                  const job = e.activeJob!
-                  const eta = etas[i]?.arrivalAt ?? null
-                  return (
-                    <Link
-                      key={e.technicianId}
-                      href={`${base}/work-orders/${job.workOrderId}`}
-                      className="block px-5 py-3 transition-colors hover:bg-muted/30"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="truncate text-sm font-medium text-foreground">
-                          {e.technicianName}
-                        </p>
-                        <span className="shrink-0 text-[11px] font-medium text-nexus-blue">
-                          {EXECUTION_STATUS_LABELS[job.executionStatus]}
-                          {eta ? ` · llega ${formatTime(eta)}` : ""}
-                        </span>
-                      </div>
-                      <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                        {job.workOrderNumber ? `#${job.workOrderNumber} · ` : ""}
-                        {job.workOrderSubject ?? "Orden en curso"}
-                        {job.companyName ? ` — ${job.companyName}` : ""}
-                      </p>
-                    </Link>
-                  )
-                })}
-              </div>
-            )}
+      {/* ── #3 Ahora en Campo (a lo ancho): línea de vida + contador ETA ────── */}
+      <section aria-label="Ahora en campo">
+        <div className="rounded-2xl border bg-card">
+          <div className="flex items-center gap-2 border-b px-5 py-4">
+            <h2 className="text-base font-semibold text-foreground">Ahora en campo</h2>
+            {activeEntries.length > 0 ? (
+              <span className="ml-auto inline-flex items-center gap-1.5 rounded bg-nexus-blue/10 px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase text-nexus-blue">
+                <span className="size-1.5 animate-pulse rounded-full bg-nexus-blue" />
+                Vivo
+              </span>
+            ) : null}
           </div>
-        </section>
-      </div>
+          {activeEntries.length === 0 ? (
+            <p className="px-5 py-6 text-sm text-muted-foreground">
+              No hay operaciones en ejecución ahora.
+            </p>
+          ) : (
+            <div className="divide-y">
+              {activeEntries.map((e, i) => (
+                <ActiveOperationCard
+                  key={e.technicianId}
+                  op={{
+                    technicianName: e.technicianName,
+                    technicianId: e.technicianId,
+                    workOrderNumber: e.activeJob!.workOrderNumber,
+                    workOrderId: e.activeJob!.workOrderId,
+                    workOrderSubject: e.activeJob!.workOrderSubject,
+                    companyName: e.activeJob!.companyName,
+                    priority: e.activeJob!.priority,
+                    executionStatus: e.activeJob!.executionStatus,
+                  }}
+                  milestones={lifecycles[i] ?? []}
+                  tenantSlug={tenantSlug}
+                  etaArrivalAt={etas[i]?.arrivalAt ?? null}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
     </div>
   )
 }
