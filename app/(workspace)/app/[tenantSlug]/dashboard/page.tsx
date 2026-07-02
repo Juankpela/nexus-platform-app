@@ -49,14 +49,20 @@ export default async function MissionControlPage({
   )
 
   return (
-    <div className="px-5 py-6 sm:px-8">
-      <p className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-        <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
-          <span className="size-1.5 animate-pulse rounded-full bg-emerald-500" />
-          En vivo
-        </span>
-        · {context.tenant.name} · {formatDate(new Date(), { weekday: "long", day: "numeric", month: "long" })}
-      </p>
+    <div className="space-y-6 px-5 py-6 sm:px-8">
+      <header>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+          Centro de Comando
+        </h1>
+        <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+            <span className="size-1.5 animate-pulse rounded-full bg-emerald-500" />
+            En vivo
+          </span>
+          · {context.tenant.name} ·{" "}
+          {formatDate(new Date(), { weekday: "long", day: "numeric", month: "long" })}
+        </p>
+      </header>
 
       <CommandCenter
         tenantSlug={tenantSlug}
@@ -66,13 +72,11 @@ export default async function MissionControlPage({
       />
 
       {reportUrl ? (
-        <div className="mx-auto mt-12 max-w-2xl">
-          <StartReceivingCard url={reportUrl} tenantName={context.tenant.name} />
-        </div>
+        <StartReceivingCard url={reportUrl} tenantName={context.tenant.name} />
       ) : null}
 
       {areaTabs.length > 0 ? (
-        <p className="mt-14 flex items-center justify-center gap-5 text-xs text-muted-foreground">
+        <p className="flex items-center gap-5 pt-4 text-xs text-muted-foreground">
           <span>Detalle por área:</span>
           {areaTabs.map((t) => (
             <Link key={t.href} href={t.href} className="hover:text-foreground">

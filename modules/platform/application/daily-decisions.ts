@@ -23,6 +23,8 @@ export type DailyDecision = {
   /** Frase accionable: verbo + objeto + consecuencia (es-CO, lenguaje de negocio). */
   title: string
   detail: string
+  /** Etiqueta corta de severidad/naturaleza para el badge de la fila. */
+  badge: string
   actionLabel: string
   /** Ruta relativa dentro del tenant donde se ejecuta la decisión. */
   segment: string
@@ -71,6 +73,7 @@ export function buildDailyDecisions(
         n === 1
           ? "Un cliente con la promesa incumplida está esperando respuesta"
           : "Clientes con la promesa incumplida están esperando respuesta",
+      badge: "SLA vencido",
       actionLabel: "Resolver",
       segment: "cases?sla=overdue",
     })
@@ -83,6 +86,7 @@ export function buildDailyDecisions(
       tone: "attention",
       title: `Confirmar a ${p.technicianName} para "${p.subject}"`,
       detail: `N-LABS ya encontró técnico y horario · ${p.scheduleLabel}`,
+      badge: "Listo para aprobar",
       actionLabel: "Decidir",
       segment: "dispatch",
     })
@@ -92,6 +96,7 @@ export function buildDailyDecisions(
       tone: "attention",
       title: `Confirmar ${input.proposals.length} coordinaciones que N-LABS dejó listas`,
       detail: "Técnico y horario ya propuestos; solo falta tu visto bueno",
+      badge: "Listo para aprobar",
       actionLabel: "Decidir",
       segment: "dispatch",
     })
@@ -104,6 +109,7 @@ export function buildDailyDecisions(
       tone: "attention",
       title: `Coordinar la solicitud ${e.caseNumber} que el motor no pudo asignar`,
       detail: e.subject,
+      badge: "Sin coordinar",
       actionLabel: "Coordinar",
       segment: "dispatch",
     })
@@ -113,6 +119,7 @@ export function buildDailyDecisions(
       tone: "attention",
       title: `Coordinar ${input.exceptions.length} solicitudes que el motor no pudo asignar`,
       detail: "Cada una es un cliente esperando respuesta",
+      badge: "Sin coordinar",
       actionLabel: "Coordinar",
       segment: "dispatch",
     })
@@ -128,6 +135,7 @@ export function buildDailyDecisions(
           ? "Rebalancear la carga del técnico sobrecargado"
           : `Rebalancear la carga de ${n} técnicos sobrecargados`,
       detail: "Riesgo de incumplir los compromisos de hoy",
+      badge: "Impacto alto",
       actionLabel: "Rebalancear",
       segment: "field-monitor",
     })
@@ -146,6 +154,7 @@ export function buildDailyDecisions(
         oldestDays != null && oldestDays > 0
           ? `La más antigua lleva ${oldestDays} ${oldestDays === 1 ? "día emitida" : "días emitida"}`
           : "Dinero ya ganado, aún no en caja",
+      badge: "Por cobrar",
       actionLabel: "Cobrar",
       segment: "invoices",
     })

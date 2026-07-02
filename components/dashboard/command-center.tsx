@@ -1,9 +1,21 @@
-import { ArrowRight } from "lucide-react"
+import {
+  Activity,
+  AlertTriangle,
+  ArrowRight,
+  Receipt,
+  ShieldAlert,
+  ShieldCheck,
+  Sparkles,
+  Users,
+  Wallet,
+  type LucideIcon,
+} from "lucide-react"
 import Link from "next/link"
 
 import { OnboardingCard } from "@/components/dashboard/onboarding-card"
 import { Button } from "@/components/ui/button"
 import { formatTime, todayInAppZone } from "@/lib/format/datetime"
+import { formatCOP } from "@/lib/format/money"
 import {
   BILLING_PERMISSIONS,
   SERVICE_PERMISSIONS,
@@ -23,24 +35,84 @@ import { listDispatchInbox, readEnRouteEta } from "@/modules/scheduling/composit
 import { getTenantCaseStats } from "@/modules/service/composition"
 import type { UUID } from "@/types/shared"
 
-const TONE_DOT: Record<DecisionTone, string> = {
-  critical: "bg-red-500",
-  attention: "bg-orange-500",
-  positive: "bg-emerald-500",
+const TONE_STYLES: Record<DecisionTone, { chip: string; badge: string }> = {
+  critical: {
+    chip: "bg-red-500/10 text-red-500",
+    badge: "border-red-500/30 text-red-600 dark:text-red-400",
+  },
+  attention: {
+    chip: "bg-orange-500/10 text-orange-500",
+    badge: "border-orange-500/30 text-orange-600 dark:text-orange-400",
+  },
+  positive: {
+    chip: "bg-emerald-500/10 text-emerald-500",
+    badge: "border-emerald-500/30 text-emerald-600 dark:text-emerald-400",
+  },
+}
+
+const DECISION_ICONS: Record<string, LucideIcon> = {
+  "sla-breached": ShieldAlert,
+  proposal: Sparkles,
+  exception: AlertTriangle,
+  overload: Users,
+  receivable: Receipt,
+}
+
+/** Tarjeta de estado: chip de ícono + etiqueta + cifra + contexto. Sin series inventadas. */
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  hint,
+  accent,
+}: {
+  icon: LucideIcon
+  label: string
+  value: string
+  hint?: string
+  accent: "blue" | "emerald" | "orange" | "silver"
+}) {
+  const styles = {
+    blue: { chip: "bg-nexus-blue/10 text-nexus-blue", value: "text-foreground" },
+    emerald: {
+      chip: "bg-emerald-500/10 text-emerald-500",
+      value: "text-emerald-600 dark:text-emerald-400",
+    },
+    orange: {
+      chip: "bg-orange-500/10 text-orange-500",
+      value: "text-orange-600 dark:text-orange-400",
+    },
+    silver: { chip: "bg-muted text-muted-foreground", value: "text-foreground" },
+  }[accent]
+  return (
+    <div className="rounded-2xl border bg-card p-4">
+      <div className="flex items-center gap-2.5">
+        <span className={`grid size-9 shrink-0 place-items-center rounded-xl ${styles.chip}`}>
+          <Icon className="size-4.5" />
+        </span>
+        <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+          {label}
+        </span>
+      </div>
+      <p className={`mt-3 text-3xl font-semibold tabular-nums tracking-tight ${styles.value}`}>
+        {value}
+      </p>
+      {hint ? <p className="mt-0.5 text-[11px] text-muted-foreground">{hint}</p> : null}
+    </div>
+  )
 }
 
 /**
- * Centro de Comando — la pantalla inicial de NEXUS (rediseño founder 2026-07-01).
+ * Centro de Comando — la pantalla inicial de NEXUS (rediseño founder, 2026-07-01;
+ * iteración visual con referencia NOC aprobada por el founder).
  *
- * No es un resumen del sistema: es un centro de atención. Cuatro piezas, nada más:
- *   1. La Frase — el titular del día ("Hoy hay N decisiones…").
- *   2. Las Decisiones — máx. 3 filas con gramática verbo+objeto+consecuencia.
- *   3. La Línea de Pulso — una línea de prosa que responde "¿está sana?".
- *   4. Ahora en Campo — la operación viva, compacta.
- *
- * Reutiliza íntegramente las consultas existentes (cero queries/tablas nuevas);
- * la fusión y el ranking viven en `buildDailyDecisions` (puro, testeado).
- * Todo lo que un módulo ya muestra (KPIs, distribución, históricos) NO vive aquí.
+ * Disciplina de datos intacta: solo entra lo que provoca una decisión.
+ *   1. Cuatro tarjetas de estado (ejecución, SLA, por cobrar, decisiones).
+ *   2. Panel de decisiones — La Frase como título; filas con chip, badge y acción.
+ *   3. Ahora en Campo — la operación viva con ETA real.
+ * Nada de series inventadas ni KPIs decorativos; los detalles viven en sus módulos.
+ * Reutiliza íntegramente las consultas existentes; la fusión y el ranking viven en
+ * `buildDailyDecisions` (puro, testeado).
  */
 export async function CommandCenter({
   tenantSlug,
@@ -104,6 +176,8 @@ export async function CommandCenter({
     overloadedTechnicians: stats?.overloadedTechnicians ?? 0,
     receivable,
   })
+  const totalDecisions = briefing.decisions.length + briefing.hiddenCount
+
   // Activación: la guía de primeros pasos solo vive en Inicio mientras la
   // operación NO arranca (pasos 1-3: clientes → técnicos → órdenes). En cuanto
   // hay órdenes, el checklist sale de la primera pantalla — hablarle de "pasos"
@@ -125,107 +199,160 @@ export async function CommandCenter({
     ),
   )
 
-  // ── La Línea de Pulso: una frase, no tarjetas ──────────────────────────────
-  const pulse: string[] = []
-  if (stats) {
-    pulse.push(
-      `${stats.availableTechnicians} ${stats.availableTechnicians === 1 ? "técnico disponible" : "técnicos disponibles"}`,
-    )
-  }
-  pulse.push(
-    `${activeEntries.length} ${activeEntries.length === 1 ? "orden en ejecución" : "órdenes en ejecución"}`,
-  )
-  if (caseStats?.slaCompliancePct != null) pulse.push(`SLA al ${caseStats.slaCompliancePct}%`)
-  if (briefing.decisions.length > 0 && briefing.hiddenCount === 0) {
-    pulse.push("nada más requiere tu atención")
-  }
+  const slaPct = caseStats?.slaCompliancePct ?? null
 
   return (
-    <div className="mx-auto max-w-2xl">
-      {/* ── #1 La Frase ─────────────────────────────────────────────────────── */}
-      <h1 className="mx-auto mt-10 mb-12 max-w-lg text-center text-[26px] font-semibold leading-snug tracking-tight text-foreground">
-        {headline}
-      </h1>
-
+    <div className="space-y-5">
       {/* ── Activación: para un tenant que aún no opera, ESTA es la decisión ── */}
       {activationStep ? (
-        <div className="mb-10">
-          <OnboardingCard step={activationStep} tenantSlug={tenantSlug} />
-        </div>
+        <OnboardingCard step={activationStep} tenantSlug={tenantSlug} />
       ) : null}
 
-      {/* ── #2 Las Decisiones ──────────────────────────────────────────────── */}
-      {briefing.decisions.length > 0 ? (
-        <div className="divide-y divide-border border-y border-border">
-          {briefing.decisions.map((d) => (
-            <div key={d.id} className="flex items-center gap-4 px-1 py-4">
-              <span className={`size-2 shrink-0 rounded-full ${TONE_DOT[d.tone]}`} />
-              <div className="min-w-0 flex-1">
-                <p className="text-[15px] font-medium leading-snug text-foreground">{d.title}</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">{d.detail}</p>
-              </div>
-              <Button asChild size="sm" variant="outline" className="shrink-0">
-                <Link href={`${base}/${d.segment}`}>{d.actionLabel}</Link>
-              </Button>
-            </div>
-          ))}
-        </div>
-      ) : null}
-      {briefing.hiddenCount > 0 ? (
-        <p className="mt-3 text-center text-xs text-muted-foreground">
-          <Link
-            href={`${base}/operations`}
-            className="inline-flex items-center gap-1 hover:text-foreground"
-          >
-            {briefing.hiddenCount === 1
-              ? "1 decisión más en la Estación de Supervisión"
-              : `${briefing.hiddenCount} decisiones más en la Estación de Supervisión`}
-            <ArrowRight className="size-3" />
-          </Link>
-        </p>
-      ) : null}
+      {/* ── #1 Estado en cuatro cifras (solo las que cambian decisiones) ────── */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatCard
+          icon={Activity}
+          label="Órdenes en ejecución"
+          value={String(activeEntries.length)}
+          hint={
+            stats
+              ? `${stats.availableTechnicians} ${stats.availableTechnicians === 1 ? "técnico disponible" : "técnicos disponibles"}`
+              : undefined
+          }
+          accent="blue"
+        />
+        <StatCard
+          icon={ShieldCheck}
+          label="Cumplimiento SLA"
+          value={slaPct != null ? `${slaPct}%` : "—"}
+          hint="casos dentro del compromiso"
+          accent={slaPct == null ? "silver" : slaPct >= 90 ? "emerald" : "orange"}
+        />
+        {receivable ? (
+          <StatCard
+            icon={Wallet}
+            label="Por cobrar"
+            value={formatCOP(receivable.total)}
+            hint={
+              receivable.count > 0
+                ? `${receivable.count} ${receivable.count === 1 ? "factura sin saldar" : "facturas sin saldar"}`
+                : "cartera al día"
+            }
+            accent="silver"
+          />
+        ) : null}
+        <StatCard
+          icon={AlertTriangle}
+          label="Decisiones pendientes"
+          value={String(totalDecisions)}
+          hint={totalDecisions > 0 ? "requieren tu acción" : "nada pendiente"}
+          accent={totalDecisions > 0 ? "orange" : "emerald"}
+        />
+      </div>
 
-      {/* ── #3 La Línea de Pulso ───────────────────────────────────────────── */}
-      {pulse.length > 0 ? (
-        <p className="mt-10 text-center text-[13px] text-muted-foreground">
-          {pulse.join(" · ")}
-        </p>
-      ) : null}
-
-      {/* ── #4 Ahora en Campo ──────────────────────────────────────────────── */}
-      {activeEntries.length > 0 ? (
-        <div className="mt-10">
-          <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-            Ahora en campo
-          </p>
-          <div className="divide-y divide-border border-t border-border">
-            {activeEntries.map((e, i) => {
-              const job = e.activeJob!
-              const eta = etas[i]?.arrivalAt ?? null
-              return (
+      {/* ── #2 Decisiones + #3 Ahora en Campo ──────────────────────────────── */}
+      <div className="grid gap-5 lg:grid-cols-3">
+        <section aria-label="Decisiones del día" className="lg:col-span-2">
+          <div className="rounded-2xl border bg-card">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b px-5 py-4">
+              <h2 className="text-base font-semibold text-foreground">{headline}</h2>
+              {briefing.hiddenCount > 0 ? (
                 <Link
-                  key={e.technicianId}
-                  href={`${base}/work-orders/${job.workOrderId}`}
-                  className="flex items-center gap-3 px-1 py-2.5 text-[13px] transition-colors hover:bg-muted/30"
+                  href={`${base}/operations`}
+                  className="inline-flex items-center gap-1 text-xs font-medium text-nexus-blue hover:underline"
                 >
-                  <span className="shrink-0 font-medium text-foreground">
-                    {e.technicianName}
-                  </span>
-                  <span className="min-w-0 flex-1 truncate text-muted-foreground">
-                    {job.workOrderNumber ? `#${job.workOrderNumber} · ` : ""}
-                    {job.workOrderSubject ?? "Orden en curso"}
-                    {job.companyName ? ` — ${job.companyName}` : ""}
-                  </span>
-                  <span className="shrink-0 text-nexus-blue">
-                    {EXECUTION_STATUS_LABELS[job.executionStatus].toLowerCase()}
-                    {eta ? ` · llega ${formatTime(eta)}` : ""}
-                  </span>
+                  Ver todas ({totalDecisions}) <ArrowRight className="size-3.5" />
                 </Link>
-              )
-            })}
+              ) : null}
+            </div>
+            {briefing.decisions.length === 0 ? (
+              <div className="flex items-center gap-3 px-5 py-6 text-sm text-muted-foreground">
+                <ShieldCheck className="size-5 shrink-0 text-emerald-500" />
+                Nada detenido, sin SLA vencidos y la cobranza al día. NEXUS sigue
+                vigilando por ti.
+              </div>
+            ) : (
+              <div className="divide-y">
+                {briefing.decisions.map((d) => {
+                  const tone = TONE_STYLES[d.tone]
+                  const Icon = DECISION_ICONS[d.id] ?? AlertTriangle
+                  return (
+                    <div key={d.id} className="flex items-center gap-4 px-5 py-4">
+                      <span
+                        className={`grid size-10 shrink-0 place-items-center rounded-xl ${tone.chip}`}
+                      >
+                        <Icon className="size-5" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium leading-snug text-foreground">
+                          {d.title}
+                        </p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">{d.detail}</p>
+                      </div>
+                      <span
+                        className={`hidden shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide sm:inline-flex ${tone.badge}`}
+                      >
+                        {d.badge}
+                      </span>
+                      <Button asChild size="sm" variant="outline" className="shrink-0">
+                        <Link href={`${base}/${d.segment}`}>{d.actionLabel}</Link>
+                      </Button>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
-        </div>
-      ) : null}
+        </section>
+
+        <section aria-label="Ahora en campo">
+          <div className="flex h-full flex-col rounded-2xl border bg-card">
+            <div className="flex items-center gap-2 border-b px-5 py-4">
+              <h2 className="text-base font-semibold text-foreground">Ahora en campo</h2>
+              {activeEntries.length > 0 ? (
+                <span className="ml-auto inline-flex items-center gap-1.5 rounded bg-nexus-blue/10 px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase text-nexus-blue">
+                  <span className="size-1.5 animate-pulse rounded-full bg-nexus-blue" />
+                  Vivo
+                </span>
+              ) : null}
+            </div>
+            {activeEntries.length === 0 ? (
+              <p className="px-5 py-6 text-sm text-muted-foreground">
+                No hay operaciones en ejecución ahora.
+              </p>
+            ) : (
+              <div className="divide-y">
+                {activeEntries.map((e, i) => {
+                  const job = e.activeJob!
+                  const eta = etas[i]?.arrivalAt ?? null
+                  return (
+                    <Link
+                      key={e.technicianId}
+                      href={`${base}/work-orders/${job.workOrderId}`}
+                      className="block px-5 py-3 transition-colors hover:bg-muted/30"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="truncate text-sm font-medium text-foreground">
+                          {e.technicianName}
+                        </p>
+                        <span className="shrink-0 text-[11px] font-medium text-nexus-blue">
+                          {EXECUTION_STATUS_LABELS[job.executionStatus]}
+                          {eta ? ` · llega ${formatTime(eta)}` : ""}
+                        </span>
+                      </div>
+                      <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                        {job.workOrderNumber ? `#${job.workOrderNumber} · ` : ""}
+                        {job.workOrderSubject ?? "Orden en curso"}
+                        {job.companyName ? ` — ${job.companyName}` : ""}
+                      </p>
+                    </Link>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
     </div>
   )
 }
